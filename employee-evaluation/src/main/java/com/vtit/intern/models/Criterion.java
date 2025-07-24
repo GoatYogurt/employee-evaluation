@@ -1,14 +1,14 @@
 package com.vtit.intern.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Data;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data
-public class Criteria {
+public class Criterion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -16,4 +16,7 @@ public class Criteria {
     private String name;
     private String description;
     private Double weight;
+
+    @OneToMany(mappedBy = "criterion")
+    private List<Evaluation> evaluations = new ArrayList<>();
 }

@@ -1,12 +1,12 @@
 package com.vtit.intern.controllers;
 
 import com.vtit.intern.dtos.EmployeeDTO;
+import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.services.EmployeeService;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,8 +31,9 @@ public class EmployeeController {
     @GetMapping("/{id}")
     public ResponseEntity<EmployeeDTO> getById(@PathVariable Long id) {
         Employee employee = employeeService.getById(id);
+
         EmployeeDTO employeeDTO = modelMapper.map(employee, EmployeeDTO.class);
-        return ResponseEntity.ok().body(employeeDTO);
+        return ResponseEntity.ok(modelMapper.map(employee, EmployeeDTO.class));
     }
 
     @PostMapping
@@ -55,7 +56,8 @@ public class EmployeeController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         employeeService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

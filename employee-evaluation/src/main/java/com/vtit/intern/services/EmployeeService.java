@@ -1,5 +1,6 @@
 package com.vtit.intern.services;
 
+import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.repositories.EmployeeRepository;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,7 @@ public class EmployeeService {
     }
 
     public Employee getById(Long id) {
-        return repository.findById(id).orElse(null);
+        return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
     }
 
     public Employee create(Employee employee) {
@@ -33,10 +34,14 @@ public class EmployeeService {
             employee.setDepartment(updated.getDepartment());
             employee.setSalary(updated.getSalary());
             return repository.save(employee);
-        }).orElse(null);
+        }).orElseThrow(() -> new ResourceNotFoundException("Cannot update. Employee not found with id: " + id));
     }
 
     public void delete(Long id) {
+        if (!repository.existsById(id)) {
+            throw new ResourceNotFoundException("Cannot delete. Employee not found with id: " + id);
+        }
+
         repository.deleteById(id);
     }
 }

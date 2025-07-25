@@ -15,37 +15,30 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/criteria")
 public class CriterionController {
     private final CriterionServiceImpl criteriaServiceImpl;
-    private final ModelMapper modelMapper;
 
-    public CriterionController(CriterionServiceImpl criteriaService, ModelMapper modelMapper) {
+    public CriterionController(CriterionServiceImpl criteriaService ) {
         this.criteriaServiceImpl = criteriaService;
-        this.modelMapper = modelMapper;
     }
 
     @GetMapping
     public List<CriterionDTO> getAllCriteria() {
-        return criteriaServiceImpl.getAllCriteria().stream()
-                .map(criterion -> modelMapper.map(criterion, CriterionDTO.class))
-                .collect(Collectors.toList());
+        return criteriaServiceImpl.getAllCriteria();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CriterionDTO> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(modelMapper.map(criteriaServiceImpl.getById(id), CriterionDTO.class));
+        return ResponseEntity.ok(criteriaServiceImpl.getById(id));
     }
 
     @PostMapping
     public ResponseEntity<CriterionDTO> create(@RequestBody CriterionDTO criterionDto) {
-        Criterion criterionToCreate = modelMapper.map(criterionDto, Criterion.class);
-        Criterion createdCriterion = criteriaServiceImpl.create(criterionToCreate);
-        return ResponseEntity.status(HttpStatus.CREATED).body(modelMapper.map(createdCriterion, CriterionDTO.class));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(criteriaServiceImpl.create(criterionDto));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<CriterionDTO> update(@PathVariable Long id, @RequestBody CriterionDTO criterionDto) {
-        Criterion updatedCriterion = modelMapper.map(criterionDto, Criterion.class);
-        Criterion savedCriterion = criteriaServiceImpl.update(id, updatedCriterion);
-        return ResponseEntity.ok(modelMapper.map(savedCriterion, CriterionDTO.class));
+        return ResponseEntity.ok(criteriaServiceImpl.update(id, criterionDto));
     }
 
     @DeleteMapping("/{id}")

@@ -15,35 +15,30 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/employees")
 public class EmployeeController {
     private final EmployeeServiceImpl employeeServiceImpl;
-    private final ModelMapper modelMapper;
 
-    public EmployeeController(EmployeeServiceImpl employeeServiceImpl, ModelMapper modelMapper) {
+    public EmployeeController(EmployeeServiceImpl employeeServiceImpl) {
         this.employeeServiceImpl = employeeServiceImpl;
-        this.modelMapper = modelMapper;
     }
 
     @GetMapping
     public List<EmployeeDTO> getAllEmployees() {
-        return employeeServiceImpl.getAllEmployees().stream().map(employee -> modelMapper.map(employee, EmployeeDTO.class)).collect(Collectors.toList());
+        return employeeServiceImpl.getAllEmployees();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<EmployeeDTO> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(modelMapper.map(employeeServiceImpl.getById(id), EmployeeDTO.class));
+        return ResponseEntity.ok(employeeServiceImpl.getById(id));
     }
 
     @PostMapping
     public ResponseEntity<EmployeeDTO> create(@RequestBody EmployeeDTO employeeDto) {
-        Employee employeeToCreate = modelMapper.map(employeeDto, Employee.class);
-        Employee createdEmployee = employeeServiceImpl.create(employeeToCreate);
-        return ResponseEntity.status(HttpStatus.CREATED).body(modelMapper.map(createdEmployee, EmployeeDTO.class));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(employeeServiceImpl.create(employeeDto));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<EmployeeDTO> update(@PathVariable Long id, @RequestBody EmployeeDTO employeeDto) {
-        Employee updatedEmployee = modelMapper.map(employeeDto, Employee.class);
-        Employee savedEmployee = employeeServiceImpl.update(id, updatedEmployee);
-        return ResponseEntity.ok(modelMapper.map(savedEmployee, EmployeeDTO.class));
+        return ResponseEntity.ok(employeeServiceImpl.update(id, employeeDto));
     }
 
     @DeleteMapping("/{id}")

@@ -1,14 +1,12 @@
-// src/components/EmployeeTable.jsx
-
 import React, { useEffect, useState } from 'react';
-import '../styles/EmployeeTable.css'
+import '../index.css';
+import { Link } from 'react-router-dom';
 
 const EmployeeTable = () => {
 	const [employees, setEmployees] = useState([]);
 	const username = 'admin';
 	const password = '123456';
 	const base64 = btoa(`${username}:${password}`);
-	console.log(base64);
 
 	useEffect(() => {
 		fetch('http://localhost:8080/api/employees', {
@@ -52,6 +50,7 @@ const EmployeeTable = () => {
 					<tr>
 						<th>ID</th>
 						<th>Name</th>
+						<th>Department</th>
 						<th>Position</th>
 						<th>Salary</th>
 						<th>Role</th>
@@ -62,17 +61,23 @@ const EmployeeTable = () => {
 					{employees.length > 0 ? (
 						employees.map((emp) => (
 							<tr key={emp.id}>
-								<td><a href="">{emp.id}</a></td>
+								<td>{emp.id}</td>
 								<td>{emp.name}</td>
+								<td>{emp.department}</td>
 								<td>{emp.position}</td>
 								<td>{emp.salary}</td>
 								<td>{emp.role}</td>
-								<td><button onClick={() => handleDelete(emp.id)}>Delete</button> <button>Update</button></td>
+								<td>
+									<button onClick={() => handleDelete(emp.id)}>Delete</button> 
+									<Link to={`/employee-view/${emp.id}`}>
+										<button>View</button>
+									</Link>
+								</td>
 							</tr>
 						))
 					) : (
 						<tr>
-							<td colSpan="5">No employees found.</td>
+							<td colSpan="6">No employees found.</td>
 						</tr>
 					)}
 				</tbody>

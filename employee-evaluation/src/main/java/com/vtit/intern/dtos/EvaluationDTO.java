@@ -10,6 +10,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EvaluationDTO {
+    private Long id;
     private Long employeeId;
     private Long criterionId;
     private Double score;

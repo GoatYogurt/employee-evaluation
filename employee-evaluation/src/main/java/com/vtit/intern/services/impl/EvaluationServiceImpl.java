@@ -53,4 +53,24 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .map(evaluation -> modelMapper.map(evaluation, EvaluationDTO.class))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public EvaluationDTO update(Long evaluationId, EvaluationDTO evaluationDTO) {
+        Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
+
+        existingEvaluation.setScore(evaluationDTO.getScore());
+        existingEvaluation.setComment(evaluationDTO.getComment());
+        existingEvaluation.setEvaluationDate(evaluationDTO.getEvaluationDate());
+
+        Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
+        return modelMapper.map(updatedEvaluation, EvaluationDTO.class);
+    }
+
+    @Override
+    public void delete(Long evaluationId) {
+        Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
+        evaluationRepository.delete(existingEvaluation);
+    }
 }

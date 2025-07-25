@@ -27,4 +27,8 @@ public class Evaluation {
     private Double score;
     private String comment;
     private LocalDate evaluationDate;
+
+    @ManyToOne
+    @JoinColumn(name = "evaluation_cycle_id")
+    private EvaluationCycle evaluationCycle;
 }

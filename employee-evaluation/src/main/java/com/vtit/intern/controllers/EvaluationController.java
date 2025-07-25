@@ -26,4 +26,15 @@ public class EvaluationController {
     public List<EvaluationDTO> getEvaluations(@PathVariable Long employeeId) {
         return evaluationServiceImpl.getEvaluationsByEmployeeId(employeeId);
     }
+
+    @PutMapping("/{evaluationId}")
+    public ResponseEntity<EvaluationDTO> updateEvaluation(@PathVariable Long evaluationId, @RequestBody EvaluationDTO evaluationDTO) {
+        return ResponseEntity.ok(evaluationServiceImpl.update(evaluationId, evaluationDTO));
+    }
+
+    @DeleteMapping("/{evaluationId}")
+    public ResponseEntity<Void> deleteEvaluation(@PathVariable Long evaluationId) {
+        evaluationServiceImpl.delete(evaluationId);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -77,7 +77,7 @@ const EmployeeTable = () => {
 						))
 					) : (
 						<tr>
-							<td colSpan="6">No employees found.</td>
+							<td colSpan="7">No employees found.</td>
 						</tr>
 					)}
 				</tbody>

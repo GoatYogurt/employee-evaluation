@@ -5,12 +5,13 @@ import '../index.css';
 function CriterionAdd() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [weight, setWeight] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const newCriterion = { name, description };
+    const newCriterion = { name, description, weight: parseFloat(weight) };
 
     fetch('http://localhost:8080/api/criteria', {
       method: 'POST',
@@ -49,6 +50,19 @@ function CriterionAdd() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Enter description"
+          />
+        </label>
+
+        <label style={{ marginTop: '10px' }}>
+          Weight:
+          <input
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+            required
+            onChange={(e) => setWeight(parseFloat(e.target.value))}
+            placeholder="Enter weight (0-1)"
           />
         </label>
 

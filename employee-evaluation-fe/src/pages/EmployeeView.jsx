@@ -109,6 +109,25 @@ function EmployeeView() {
             .catch(err => alert(err.message));
     };
 
+    const handleDeleteEvaluation = (evaluationId) => {
+        if (!window.confirm('Are you sure you want to delete this evaluation?')) return;
+        fetch(`http://localhost:8080/api/evaluations/${evaluationId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Basic ${base64}`,
+                'Content-Type': 'application/json',
+            },
+        })
+            .then(res => {
+                if (res.ok) {
+                    setEvaluations(prev => prev.filter(e => e.id !== evaluationId));
+                    alert('Evaluation deleted');
+                } else {
+                    alert('Failed to delete evaluation');
+                }
+            })
+            .catch(err => console.error('Error deleting evaluation:', err));
+    };
 
     if (!employee) return <div>Loading...</div>;
 
@@ -154,8 +173,10 @@ function EmployeeView() {
                         <tr>
                             <th>Criterion</th>
                             <th>Score</th>
+                            <th>Weight</th>
                             <th>Date</th>
                             <th>Comment</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -166,8 +187,18 @@ function EmployeeView() {
                                 </td>
 
                                 <td>{e.score}</td>
+                                <td>
+                                    {criteriaList.find(c => c.id === e.criterionId)?.weight || 'N/A'}
+                                </td>
                                 <td>{e.evaluationDate}</td>
                                 <td>{e.comment}</td>
+                                <td>
+                                    <button onClick={() => {
+                                        // Handle edit evaluation logic here
+                                        alert('Edit functionality not implemented yet');
+                                    }}>Edit</button>
+                                    <button onClick={() => handleDeleteEvaluation(e.id)}>Delete</button>
+                                </td>
                             </tr>
                         ))}
                     </tbody>

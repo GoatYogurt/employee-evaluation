@@ -12,6 +12,7 @@ import CriterionList from './pages/CriterionList'
 import EmployeeList from './pages/EmployeeList'
 import CriterionAdd from './pages/CriterionAdd'
 import CriterionView from './pages/CriterionView'
+import EvaluationCycleList from './pages/EvaluationCycleList'
 
 
 function App() {
@@ -28,6 +29,8 @@ function App() {
         <Route path='/criterion-list' element={<CriterionList />} />
         <Route path="/criterion-view/:id" element={<CriterionView />} />
         <Route path="/criterion-add" element={<CriterionAdd />} />
+
+        <Route path="/evaluation-cycle-list" element={<EvaluationCycleList />} />
       </Routes>
     </BrowserRouter>
   )

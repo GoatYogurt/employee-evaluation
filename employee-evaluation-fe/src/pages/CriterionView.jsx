@@ -79,6 +79,20 @@ function CriterionView() {
               onChange={handleChange}
             />
           </label>
+
+          <label>
+            Weight:
+            <input
+              type="number"
+              name="weight"
+              value={criterion.weight}
+              onChange={handleChange}
+              min="0"
+              max="1"
+              step="0.01"
+              required
+            />
+          </label>
           <br />
 
           <button type="submit">Save</button>
@@ -88,6 +102,7 @@ function CriterionView() {
         <div>
           <p><strong>Name:</strong> {criterion.name}</p>
           <p><strong>Description:</strong> {criterion.description}</p>
+          <p><strong>Weight:</strong> {criterion.weight}</p>
           <button onClick={() => setIsEditing(true)}>Edit</button>
           <button onClick={() => navigate('/criterion-list')}>Back</button>
         </div>

@@ -48,6 +48,7 @@ function CriterionList() {
                         <th>ID</th>
                         <th>Criterion Name</th>
                         <th>Description</th>
+                        <th>Weight</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -60,6 +61,7 @@ function CriterionList() {
                                 <td>{criterion.id}</td>
                                 <td>{criterion.name}</td>
                                 <td>{criterion.description}</td>
+                                <td>{criterion.weight}</td>
                                 <td>
                                     <button onClick={() => navigate(`/criterion-view/${criterion.id}`)}>View</button>
                                     <button onClick={() => handleDelete(criterion.id)}>Delete</button>

@@ -53,7 +53,7 @@ function CriterionAdd() {
         </label>
 
         <button type="submit" style={{ marginTop: '16px' }}>Add Criterion</button>
-        <button type="button" onClick={() => navigate('/criteria')} style={{ marginTop: '8px' }}>
+        <button type="button" onClick={() => navigate('/criterion-list')} style={{ marginTop: '8px' }}>
           Cancel
         </button>
       </form>

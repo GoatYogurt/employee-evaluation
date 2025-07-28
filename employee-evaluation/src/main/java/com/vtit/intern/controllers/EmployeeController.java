@@ -5,16 +5,21 @@ import com.vtit.intern.dtos.EmployeeDTO;
 import com.vtit.intern.dtos.PageResponse;
 import com.vtit.intern.services.impl.EmployeeServiceImpl;
 
-import org.springframework.data.domain.Page;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/employees")
+@Validated
 public class EmployeeController {
     private final EmployeeServiceImpl employeeServiceImpl;
 
@@ -28,35 +33,46 @@ public class EmployeeController {
             @RequestParam(required = false) String department,
             @RequestParam(required = false) String position,
             @RequestParam(required = false) String role,
-            @RequestParam(required = false) Double salaryMin,
-            @RequestParam(required = false) Double salaryMax,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) @PositiveOrZero(message = "Minimum salary must be 0 or greater") Double salaryMin,
+            @RequestParam(required = false) @Positive(message = "Maximum salary must be greater than 0") Double salaryMax,
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page index cannot be negative") int page,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size,
             @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir
+            @RequestParam(defaultValue = "asc") @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
     ) {
+        if (salaryMin != null && salaryMax != null && salaryMin > salaryMax) {
+            throw new IllegalArgumentException("Minimum salary cannot be greater than maximum salary");
+        }
+
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         return employeeServiceImpl.getAllEmployees(name, department, position, role, salaryMin, salaryMax, PageRequest.of(page, size, sort));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EmployeeDTO> getById(@PathVariable Long id) {
+    public ResponseEntity<EmployeeDTO> getById(
+            @PathVariable @Positive(message = "ID must be a positive number") Long id
+    ) {
         return ResponseEntity.ok(employeeServiceImpl.getById(id));
     }
 
     @PostMapping
-    public ResponseEntity<EmployeeDTO> create(@RequestBody EmployeeDTO employeeDto) {
+    public ResponseEntity<EmployeeDTO> create(@Valid @RequestBody EmployeeDTO employeeDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(employeeServiceImpl.create(employeeDto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<EmployeeDTO> update(@PathVariable Long id, @RequestBody EmployeeDTO employeeDto) {
+    public ResponseEntity<EmployeeDTO> update(
+            @PathVariable @Positive(message = "ID must be a positive number") Long id,
+            @Valid @RequestBody EmployeeDTO employeeDto
+    ) {
         return ResponseEntity.ok(employeeServiceImpl.update(id, employeeDto));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(
+            @PathVariable @Positive(message = "ID must be a positive number") Long id
+    ) {
         employeeServiceImpl.delete(id);
         return ResponseEntity.noContent().build();
     }

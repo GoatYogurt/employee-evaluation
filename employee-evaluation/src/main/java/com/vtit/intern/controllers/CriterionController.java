@@ -1,9 +1,12 @@
 package com.vtit.intern.controllers;
 
 import com.vtit.intern.dtos.CriterionDTO;
+import com.vtit.intern.dtos.PageResponse;
 import com.vtit.intern.models.Criterion;
 import com.vtit.intern.services.impl.CriterionServiceImpl;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,8 +24,14 @@ public class CriterionController {
     }
 
     @GetMapping
-    public List<CriterionDTO> getAllCriteria() {
-        return criteriaServiceImpl.getAllCriteria();
+    public PageResponse<CriterionDTO> getAllCriteria(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir
+    ) {
+        Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        return criteriaServiceImpl.getAllCriteria(PageRequest.of(page, size, sort));
     }
 
     @GetMapping("/{id}")

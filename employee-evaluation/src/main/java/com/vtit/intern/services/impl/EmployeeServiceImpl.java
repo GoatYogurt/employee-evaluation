@@ -1,12 +1,15 @@
 package com.vtit.intern.services.impl;
 
 import com.vtit.intern.dtos.EmployeeDTO;
+import com.vtit.intern.dtos.PageResponse;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.repositories.EmployeeRepository;
 import com.vtit.intern.services.EmployeeService;
+import org.springframework.data.domain.Page;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,10 +27,21 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public List<EmployeeDTO> getAllEmployees() {
-        return repository.findAll().stream()
-                .map(employee -> modelMapper.map(employee, EmployeeDTO.class))
+    public PageResponse<EmployeeDTO> getAllEmployees(Pageable pageable) {
+        Page<Employee> employeePage = repository.findAll(pageable);
+
+        List<EmployeeDTO> content = employeePage.getContent().stream()
+                .map(e -> modelMapper.map(e, EmployeeDTO.class))
                 .toList();
+
+        return new PageResponse<>(
+                content,
+                employeePage.getNumber(),
+                employeePage.getSize(),
+                employeePage.getTotalElements(),
+                employeePage.getTotalPages(),
+                employeePage.isLast()
+        );
     }
 
     @Override
@@ -51,7 +65,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         Employee employee = modelMapper.map(employeeDTO, Employee.class);
-        employee.setId(id); // Ensure the ID is set for the update
+        employee.setId(id);
         Employee updatedEmployee = repository.save(employee);
         return modelMapper.map(updatedEmployee, EmployeeDTO.class);
     }

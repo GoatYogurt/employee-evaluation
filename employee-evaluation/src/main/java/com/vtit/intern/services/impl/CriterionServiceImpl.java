@@ -1,12 +1,15 @@
 package com.vtit.intern.services.impl;
 
 import com.vtit.intern.dtos.CriterionDTO;
+import com.vtit.intern.dtos.PageResponse;
 import com.vtit.intern.models.Criterion;
 import com.vtit.intern.repositories.CriterionRepository;
 import com.vtit.intern.services.CriterionService;
 import org.hibernate.metamodel.model.domain.ManagedDomainType;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 
@@ -25,10 +28,20 @@ public class CriterionServiceImpl implements CriterionService {
     }
 
     @Override
-    public List<CriterionDTO> getAllCriteria() {
-        return repository.findAll().stream()
+    public PageResponse<CriterionDTO> getAllCriteria(Pageable pageable) {
+        Page<Criterion> criterionPage = repository.findAll(pageable);
+        List<CriterionDTO> content = criterionPage.getContent().stream()
                 .map(criterion -> modelMapper.map(criterion, CriterionDTO.class))
                 .toList();
+
+        return new PageResponse<>(
+                content,
+                criterionPage.getNumber(),
+                criterionPage.getSize(),
+                criterionPage.getTotalElements(),
+                criterionPage.getTotalPages(),
+                criterionPage.isLast()
+        );
     }
 
     @Override

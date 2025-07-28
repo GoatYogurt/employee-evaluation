@@ -1,13 +1,15 @@
 package com.vtit.intern.services.impl;
 
 import com.vtit.intern.dtos.EvaluationCycleDTO;
+import com.vtit.intern.dtos.PageResponse;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.mappers.EvaluationCycleMapper;
 import com.vtit.intern.models.EvaluationCycle;
 import com.vtit.intern.repositories.EvaluationCycleRepository;
 import com.vtit.intern.services.EvaluationCycleService;
-import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.vtit.intern.models.EvaluationCycleStatus;
 import java.util.List;
@@ -53,17 +55,37 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
     }
 
     @Override
-    public List<EvaluationCycleDTO> getAllEvaluationCycles() {
-        return evaluationCycleRepository.findAll().stream()
+    public PageResponse<EvaluationCycleDTO> getAllEvaluationCycles(Pageable pageable) {
+        Page<EvaluationCycle> evaluationCyclePage = evaluationCycleRepository.findAll(pageable);
+
+        List<EvaluationCycleDTO> content = evaluationCyclePage.getContent().stream()
                 .map(EvaluationCycleMapper::toDTO)
                 .collect(Collectors.toList());
+
+        return new PageResponse<>(
+                content,
+                evaluationCyclePage.getNumber(),
+                evaluationCyclePage.getSize(),
+                evaluationCyclePage.getTotalElements(),
+                evaluationCyclePage.getTotalPages(),
+                evaluationCyclePage.isLast()
+        );
     }
 
     @Override
-    public List<EvaluationCycleDTO> getActiveEvaluationCycles() {
-        return evaluationCycleRepository.findAll().stream()
-                .filter(evaluationCycle -> evaluationCycle.getStatus() == EvaluationCycleStatus.ACTIVE)
+    public PageResponse<EvaluationCycleDTO> getActiveEvaluationCycles(Pageable pageable) {
+        Page<EvaluationCycle> evaluationCyclePage = evaluationCycleRepository.findByStatus(String.valueOf(EvaluationCycleStatus.ACTIVE), pageable);
+        List<EvaluationCycleDTO> content = evaluationCyclePage.getContent().stream()
                 .map(EvaluationCycleMapper::toDTO)
                 .collect(Collectors.toList());
+
+        return new PageResponse<>(
+                content,
+                evaluationCyclePage.getNumber(),
+                evaluationCyclePage.getSize(),
+                evaluationCyclePage.getTotalElements(),
+                evaluationCyclePage.getTotalPages(),
+                evaluationCyclePage.isLast()
+        );
     }
 }

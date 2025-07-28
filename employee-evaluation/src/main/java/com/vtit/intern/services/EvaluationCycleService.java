@@ -1,6 +1,9 @@
 package com.vtit.intern.services;
 
 import com.vtit.intern.dtos.EvaluationCycleDTO;
+import com.vtit.intern.dtos.PageResponse;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 public interface EvaluationCycleService {
@@ -8,6 +11,6 @@ public interface EvaluationCycleService {
     EvaluationCycleDTO get(Long id);
     EvaluationCycleDTO update(Long id, EvaluationCycleDTO evaluationCycleDTO);
     void delete(Long id);
-    List<EvaluationCycleDTO> getAllEvaluationCycles();
-    List<EvaluationCycleDTO> getActiveEvaluationCycles();
+    PageResponse<EvaluationCycleDTO> getAllEvaluationCycles(Pageable pageable);
+    PageResponse<EvaluationCycleDTO> getActiveEvaluationCycles(Pageable pageable);
 }

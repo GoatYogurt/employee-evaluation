@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.vtit.intern.models.EvaluationCycleStatus;
+
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,8 +57,21 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
     }
 
     @Override
-    public PageResponse<EvaluationCycleDTO> getAllEvaluationCycles(Pageable pageable) {
-        Page<EvaluationCycle> evaluationCyclePage = evaluationCycleRepository.findAll(pageable);
+    public PageResponse<EvaluationCycleDTO> getAllEvaluationCycles(
+            String name,
+            String description,
+            EvaluationCycleStatus status,
+            LocalDate startDate,
+            LocalDate endDate,
+            Pageable pageable) {
+        Page<EvaluationCycle> evaluationCyclePage = evaluationCycleRepository.searchEvaluationCycles(
+                name != null ? name.trim() : null,
+                description != null ? description.trim() : null,
+                status,
+                startDate,
+                endDate,
+                pageable
+        );
 
         List<EvaluationCycleDTO> content = evaluationCyclePage.getContent().stream()
                 .map(EvaluationCycleMapper::toDTO)
@@ -74,7 +89,15 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
 
     @Override
     public PageResponse<EvaluationCycleDTO> getActiveEvaluationCycles(Pageable pageable) {
-        Page<EvaluationCycle> evaluationCyclePage = evaluationCycleRepository.findByStatus(String.valueOf(EvaluationCycleStatus.ACTIVE), pageable);
+        Page<EvaluationCycle> evaluationCyclePage = evaluationCycleRepository.searchEvaluationCycles(
+                null, // name
+                null, // description
+                EvaluationCycleStatus.ACTIVE, // status
+                null, // startDate
+                null, // endDate
+                pageable
+        );
+
         List<EvaluationCycleDTO> content = evaluationCyclePage.getContent().stream()
                 .map(EvaluationCycleMapper::toDTO)
                 .collect(Collectors.toList());

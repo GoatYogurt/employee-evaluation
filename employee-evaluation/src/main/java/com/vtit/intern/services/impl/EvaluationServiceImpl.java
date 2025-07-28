@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,12 +52,18 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
-    public PageResponse<EvaluationDTO> getEvaluationsByEmployeeId(Long employeeId, Pageable pageable) {
-        if (!employeeRepository.existsById(employeeId)) {
-            throw new ResourceNotFoundException("Employee not found with id: " + employeeId);
-        }
+    public PageResponse<EvaluationDTO> getEvaluations(Long employeeId, Long criterionId, Double minScore, Double maxScore, String comment, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        Page<Evaluation> evaluationPage = evaluationRepository.searchEvaluations(
+                employeeId,
+                criterionId,
+                minScore,
+                maxScore,
+                comment != null ? comment.trim() : null,
+                startDate,
+                endDate,
+                pageable
+        );
 
-        Page<Evaluation> evaluationPage = evaluationRepository.findByEmployeeId(employeeId, pageable);
         List<EvaluationDTO> content = evaluationPage.stream()
                 .map(evaluation -> modelMapper.map(evaluation, EvaluationDTO.class))
                 .collect(Collectors.toList());

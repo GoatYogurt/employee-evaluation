@@ -27,24 +27,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public PageResponse<EmployeeDTO> getAllEmployees(Pageable pageable) {
-        Page<Employee> employeePage = repository.findAll(pageable);
-
-        List<EmployeeDTO> content = employeePage.getContent().stream()
-                .map(e -> modelMapper.map(e, EmployeeDTO.class))
-                .toList();
-
-        return new PageResponse<>(
-                content,
-                employeePage.getNumber(),
-                employeePage.getSize(),
-                employeePage.getTotalElements(),
-                employeePage.getTotalPages(),
-                employeePage.isLast()
-        );
-    }
-
-    @Override
     public EmployeeDTO getById(Long id) {
         return repository.findById(id)
                 .map(employee -> modelMapper.map(employee, EmployeeDTO.class))
@@ -77,5 +59,32 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         repository.deleteById(id);
+    }
+
+    @Override
+    public PageResponse<EmployeeDTO> getAllEmployees(String name, String department, String position, String role, Double salaryMin, Double salaryMax, Pageable pageable) {
+        String searchName = name != null ? name.trim() : "";
+        String searchDepartment = department != null ? department.trim() : "";
+        String searchPosition = position != null ? position.trim() : "";
+        String searchRole = role != null ? role.trim() : "";
+        Double searchSalaryMin = salaryMin != null ? salaryMin : 0.0;
+        Double searchSalaryMax = salaryMax != null ? salaryMax : Double.MAX_VALUE;
+
+
+        Page<Employee> employeePage = repository
+                .searchEmployees(searchName, searchDepartment, searchPosition, searchRole, searchSalaryMin, searchSalaryMax, pageable);
+
+        List<EmployeeDTO> content = employeePage.getContent().stream()
+                .map(e -> modelMapper.map(e, EmployeeDTO.class))
+                .toList();
+
+        return new PageResponse<>(
+                content,
+                employeePage.getNumber(),
+                employeePage.getSize(),
+                employeePage.getTotalElements(),
+                employeePage.getTotalPages(),
+                employeePage.isLast()
+        );
     }
 }

@@ -7,9 +7,11 @@ import com.vtit.intern.services.impl.EvaluationServiceImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -26,15 +28,21 @@ public class EvaluationController {
         return ResponseEntity.status(201).body(evaluationServiceImpl.evaluate(evaluationDTO));
     }
 
-    @GetMapping("/employee/{employeeId}")
+    @GetMapping
     public PageResponse<EvaluationDTO> getEvaluations(
-            @PathVariable Long employeeId,
+            @RequestParam(required = false) Long employeeId,
+            @RequestParam(required = false) Long criterionId,
+            @RequestParam(required = false) Double minScore,
+            @RequestParam(required = false) Double maxScore,
+            @RequestParam(required = false) String comment,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
     ) {
-        return evaluationServiceImpl.getEvaluationsByEmployeeId(employeeId, PageRequest.of(page, size,
+        return evaluationServiceImpl.getEvaluations(employeeId, criterionId, minScore, maxScore, comment, startDate, endDate, PageRequest.of(page, size,
                 sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending()));
     }
 

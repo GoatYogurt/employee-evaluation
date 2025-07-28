@@ -25,13 +25,17 @@ public class CriterionController {
 
     @GetMapping
     public PageResponse<CriterionDTO> getAllCriteria(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) Double minWeight,
+            @RequestParam(required = false) Double maxWeight,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
     ) {
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        return criteriaServiceImpl.getAllCriteria(PageRequest.of(page, size, sort));
+        return criteriaServiceImpl.getAllCriteria(name, description, minWeight, maxWeight, PageRequest.of(page, size, sort));
     }
 
     @GetMapping("/{id}")

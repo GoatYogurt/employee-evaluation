@@ -28,8 +28,19 @@ public class CriterionServiceImpl implements CriterionService {
     }
 
     @Override
-    public PageResponse<CriterionDTO> getAllCriteria(Pageable pageable) {
-        Page<Criterion> criterionPage = repository.findAll(pageable);
+    public PageResponse<CriterionDTO> getAllCriteria(String name, String description, Double minWeight, Double maxWeight, Pageable pageable) {
+        String searchName = name != null ? name.trim() : null;
+        String searchDescription = description != null ? description.trim() : null;
+        Double searchMinWeight = minWeight != null ? minWeight : 0.0;
+        Double searchMaxWeight = maxWeight != null ? maxWeight : Double.MAX_VALUE;
+
+        Page<Criterion> criterionPage = repository.searchCriteria(
+                searchName,
+                searchDescription,
+                searchMinWeight,
+                searchMaxWeight,
+                pageable
+        );
         List<CriterionDTO> content = criterionPage.getContent().stream()
                 .map(criterion -> modelMapper.map(criterion, CriterionDTO.class))
                 .toList();

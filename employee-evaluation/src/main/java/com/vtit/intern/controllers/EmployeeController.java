@@ -13,9 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 @RestController
 @RequestMapping("/api/employees")
 public class EmployeeController {
@@ -27,13 +24,19 @@ public class EmployeeController {
 
     @GetMapping
     public PageResponse<EmployeeDTO> getAllEmployees(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String position,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) Double salaryMin,
+            @RequestParam(required = false) Double salaryMax,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
     ) {
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        return employeeServiceImpl.getAllEmployees(PageRequest.of(page, size, sort));
+        return employeeServiceImpl.getAllEmployees(name, department, position, role, salaryMin, salaryMax, PageRequest.of(page, size, sort));
     }
 
     @GetMapping("/{id}")

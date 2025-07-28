@@ -6,6 +6,8 @@ import com.vtit.intern.services.impl.EvaluationCycleServiceImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,8 +33,8 @@ public class EvaluationCycleController {
     }
 
     @GetMapping("/{id}")
-    public EvaluationCycleDTO getEvaluationCycleById(@PathVariable Long id) {
-        return evaluationCycleServiceImpl.get(id);
+    public ResponseEntity<EvaluationCycleDTO> getEvaluationCycleById(@PathVariable Long id) {
+        return ResponseEntity.ok(evaluationCycleServiceImpl.get(id));
     }
 
     @GetMapping("/active")
@@ -47,13 +49,13 @@ public class EvaluationCycleController {
     }
 
     @PostMapping
-    public EvaluationCycleDTO createEvaluationCycle(@RequestBody EvaluationCycleDTO evaluationCycleDTO) {
-        return evaluationCycleServiceImpl.create(evaluationCycleDTO);
+    public ResponseEntity<EvaluationCycleDTO> createEvaluationCycle(@RequestBody EvaluationCycleDTO evaluationCycleDTO) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(evaluationCycleServiceImpl.create(evaluationCycleDTO));
     }
 
     @PutMapping("/{id}")
-    public EvaluationCycleDTO updateEvaluationCycle(@PathVariable Long id, @RequestBody EvaluationCycleDTO evaluationCycleDTO) {
-        return evaluationCycleServiceImpl.update(id, evaluationCycleDTO);
+    public ResponseEntity<EvaluationCycleDTO> updateEvaluationCycle(@PathVariable Long id, @RequestBody EvaluationCycleDTO evaluationCycleDTO) {
+        return ResponseEntity.ok(evaluationCycleServiceImpl.update(id, evaluationCycleDTO));
     }
 
     @DeleteMapping("/{id}")

@@ -25,6 +25,23 @@ public class EvaluationCycleMapper {
                 .map(Employee::getId)
                 .collect(Collectors.toSet()));
 
+        evaluationCycleDTO.setEvaluations(
+                evaluationCycle.getEvaluations() == null ? null :
+                        evaluationCycle.getEvaluations().stream()
+                                .map(e -> {
+                                    EvaluationDTO eDto = new EvaluationDTO();
+                                    eDto.setId(e.getId());
+                                    eDto.setScore(e.getScore());
+                                    eDto.setComment(e.getComment());
+                                    eDto.setEvaluationDate(e.getEvaluationDate());
+                                    eDto.setEmployeeId(e.getEmployee() != null ? e.getEmployee().getId() : null);
+                                    eDto.setCriterionId(e.getCriterion() != null ? e.getCriterion().getId() : null);
+                                    eDto.setEvaluationCycleId(evaluationCycle.getId());
+                                    return eDto;
+                                })
+                                .collect(Collectors.toSet())
+        );
+
         return evaluationCycleDTO;
     }
 

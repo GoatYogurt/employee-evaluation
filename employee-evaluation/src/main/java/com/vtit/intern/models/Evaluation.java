@@ -2,13 +2,15 @@ package com.vtit.intern.models;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Setter;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
 @Entity
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class Evaluation {
@@ -31,4 +33,21 @@ public class Evaluation {
     @ManyToOne
     @JoinColumn(name = "evaluation_cycle_id")
     private EvaluationCycle evaluationCycle;
+
+//    public void setEvaluationCycle(EvaluationCycle evaluationCycle) {
+//        if (this.evaluationCycle != null) {
+//            this.evaluationCycle.removeEvaluation(this);
+//        }
+//        this.evaluationCycle = evaluationCycle;
+//        if (evaluationCycle != null) {
+//            evaluationCycle.addEvaluation(this);
+//        }
+//    }
+//
+//    public void removeEvaluationCycle() {
+//        if (this.evaluationCycle != null) {
+//            this.evaluationCycle.removeEvaluation(this);
+//            this.evaluationCycle = null;
+//        }
+//    }
 }

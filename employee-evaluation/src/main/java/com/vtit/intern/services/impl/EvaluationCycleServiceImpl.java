@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @Service
 public class EvaluationCycleServiceImpl implements EvaluationCycleService {
     @Autowired
-    private EvaluationCycleRepository evaluationCycleRepository;
+    private final EvaluationCycleRepository evaluationCycleRepository;
 
     private EvaluationCycleServiceImpl(EvaluationCycleRepository evaluationCycleRepository) {
         this.evaluationCycleRepository = evaluationCycleRepository;

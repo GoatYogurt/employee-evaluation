@@ -34,4 +34,7 @@ public class EvaluationDTO {
 
     @PastOrPresent(message = "Evaluation date cannot be in the future")
     private LocalDate evaluationDate;
+
+    @NotNull(message = "Evaluation cycle ID cannot be null")
+    private Long evaluationCycleId;
 }

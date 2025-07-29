@@ -18,6 +18,11 @@ public class Employee {
     private Long id;
 
     private String name;
+
+    private String username;
+    private String password;
+    private String email;
+
     private String position;
     private String department;
     private double salary;

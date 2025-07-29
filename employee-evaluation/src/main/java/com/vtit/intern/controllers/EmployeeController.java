@@ -6,10 +6,7 @@ import com.vtit.intern.dtos.PageResponse;
 import com.vtit.intern.services.impl.EmployeeServiceImpl;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -30,6 +27,8 @@ public class EmployeeController {
     @GetMapping
     public PageResponse<EmployeeDTO> getAllEmployees(
             @RequestParam(required = false) String name,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) @Email String email,
             @RequestParam(required = false) String department,
             @RequestParam(required = false) String position,
             @RequestParam(required = false) String role,
@@ -45,7 +44,7 @@ public class EmployeeController {
         }
 
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        return employeeServiceImpl.getAllEmployees(name, department, position, role, salaryMin, salaryMax, PageRequest.of(page, size, sort));
+        return employeeServiceImpl.getAllEmployees(name, username, email, department, position, role, salaryMin, salaryMax, PageRequest.of(page, size, sort));
     }
 
     @GetMapping("/{id}")

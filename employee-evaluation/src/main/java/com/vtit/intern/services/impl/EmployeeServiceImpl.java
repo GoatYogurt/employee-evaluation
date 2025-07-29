@@ -1,6 +1,5 @@
 package com.vtit.intern.services.impl;
 
-import com.vtit.intern.EmployeeEvaluationApplication;
 import com.vtit.intern.dtos.EmployeeDTO;
 import com.vtit.intern.dtos.PageResponse;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
@@ -63,17 +62,19 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public PageResponse<EmployeeDTO> getAllEmployees(String name, String department, String position, String role, Double salaryMin, Double salaryMax, Pageable pageable) {
+    public PageResponse<EmployeeDTO> getAllEmployees(String name, String username, String email, String department, String position, String role, Double salaryMin, Double salaryMax, Pageable pageable) {
         String searchName = name != null ? name.trim() : "";
         String searchDepartment = department != null ? department.trim() : "";
         String searchPosition = position != null ? position.trim() : "";
         String searchRole = role != null ? role.trim() : "";
         Double searchSalaryMin = salaryMin != null ? salaryMin : 0.0;
         Double searchSalaryMax = salaryMax != null ? salaryMax : Double.MAX_VALUE;
+        String searchUsername = username != null ? username.trim() : "";
+        String searchEmail = email != null ? email.trim() : "";
 
 
         Page<Employee> employeePage = repository
-                .searchEmployees(searchName, searchDepartment, searchPosition, searchRole, searchSalaryMin, searchSalaryMax, pageable);
+                .searchEmployees(searchName,searchUsername, searchEmail, searchDepartment, searchPosition, searchRole, searchSalaryMin, searchSalaryMax, pageable);
 
         List<EmployeeDTO> content = employeePage.getContent().stream()
                 .map(e -> modelMapper.map(e, EmployeeDTO.class))

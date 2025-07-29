@@ -6,6 +6,7 @@ import com.vtit.intern.dtos.PageResponse;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Evaluation;
 import com.vtit.intern.models.EvaluationCycle;
+import com.vtit.intern.models.EvaluationCycleStatus;
 import com.vtit.intern.repositories.CriterionRepository;
 import com.vtit.intern.repositories.EmployeeRepository;
 import com.vtit.intern.repositories.EvaluationCycleRepository;
@@ -45,6 +46,17 @@ public class EvaluationServiceImpl implements EvaluationService {
 
     @Override
     public EvaluationDTO evaluate(EvaluationDTO evaluationDTO) {
+        // find the evaluation cycle by ID
+        Long evaluationCycleId = evaluationDTO.getEvaluationCycleId();
+        EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(evaluationCycleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + evaluationCycleId));
+
+        // check if the evaluation cycle is still active
+        if (evaluationCycle.getStatus() == EvaluationCycleStatus.COMPLETED ||
+        evaluationCycle.getStatus() == EvaluationCycleStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot add evaluation to a completed or closed evaluation cycle.");
+        }
+
         Evaluation e = new Evaluation();
 
         e.setEmployee(employeeRepository.findById(evaluationDTO.getEmployeeId())
@@ -54,10 +66,6 @@ public class EvaluationServiceImpl implements EvaluationService {
         e.setScore(evaluationDTO.getScore());
         e.setComment(evaluationDTO.getComment());
         e.setEvaluationDate(evaluationDTO.getEvaluationDate());
-
-        Long evaluationCycleId = evaluationDTO.getEvaluationCycleId();
-        EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(evaluationCycleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + evaluationCycleId));
 
         evaluationCycle.addEvaluation(e);
         evaluationCycleRepository.save(evaluationCycle);
@@ -95,8 +103,16 @@ public class EvaluationServiceImpl implements EvaluationService {
 
     @Override
     public EvaluationDTO update(Long evaluationId, EvaluationDTO evaluationDTO) {
+
         Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
+
+        // validate that the evaluation cycle is still active
+        EvaluationCycle evaluationCycle = existingEvaluation.getEvaluationCycle();
+        if (evaluationCycle.getStatus() == EvaluationCycleStatus.COMPLETED ||
+            evaluationCycle.getStatus() == EvaluationCycleStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot update evaluation in a completed or closed evaluation cycle.");
+        }
 
         existingEvaluation.setScore(evaluationDTO.getScore());
         existingEvaluation.setComment(evaluationDTO.getComment());
@@ -110,6 +126,12 @@ public class EvaluationServiceImpl implements EvaluationService {
     public void delete(Long evaluationId) {
         Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
+
+        // validate that the evaluation cycle is still active
+        if (existingEvaluation.getEvaluationCycle().getStatus() == EvaluationCycleStatus.COMPLETED ||
+            existingEvaluation.getEvaluationCycle().getStatus() == EvaluationCycleStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot delete evaluation in a completed or closed evaluation cycle.");
+        }
 
         EvaluationCycle evaluationCycle = existingEvaluation.getEvaluationCycle();
         evaluationCycle.removeEvaluation(existingEvaluation);

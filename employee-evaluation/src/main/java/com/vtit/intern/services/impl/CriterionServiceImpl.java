@@ -88,4 +88,28 @@ public class CriterionServiceImpl implements CriterionService {
         }
         repository.deleteById(id);
     }
+
+    @Override
+    public CriterionDTO patch(Long id, CriterionDTO criterionDto) {
+        if (!repository.existsById(id)) {
+            throw new ResourceNotFoundException("Cannot patch. Criterion not found with id: " + id);
+        }
+
+        Criterion existingCriterion = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id));
+
+        // update only the fields that are present in the DTO
+        if (criterionDto.getName() != null) {
+            existingCriterion.setName(criterionDto.getName());
+        }
+        if (criterionDto.getDescription() != null) {
+            existingCriterion.setDescription(criterionDto.getDescription());
+        }
+        if (criterionDto.getWeight() != null) {
+            existingCriterion.setWeight(criterionDto.getWeight());
+        }
+
+        Criterion updatedCriterion = repository.save(existingCriterion);
+        return modelMapper.map(updatedCriterion, CriterionDTO.class);
+    }
 }

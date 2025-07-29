@@ -80,4 +80,20 @@ public class EvaluationController {
         evaluationServiceImpl.delete(evaluationId);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{evaluationId}/move")
+    public ResponseEntity<EvaluationDTO> moveEvaluationToCycle(
+            @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId,
+            @RequestParam @Positive(message = "New cycle ID must be positive") Long newCycleId
+    ) {
+        return ResponseEntity.ok(evaluationServiceImpl.moveEvaluationToCycle(evaluationId, newCycleId));
+    }
+
+    @PatchMapping("/{evaluationId}")
+    public ResponseEntity<EvaluationDTO> patchEvaluation(
+            @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId,
+            @Valid @RequestBody EvaluationDTO evaluationDTO
+    ) {
+        return ResponseEntity.ok(evaluationServiceImpl.patch(evaluationId, evaluationDTO));
+    }
 }

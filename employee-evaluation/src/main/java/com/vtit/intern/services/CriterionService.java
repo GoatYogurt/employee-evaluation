@@ -13,4 +13,5 @@ public interface CriterionService {
     CriterionDTO create(CriterionDTO criterionDto);
     CriterionDTO update(Long id, CriterionDTO criterionDto);
     void delete(Long id);
+    CriterionDTO patch(Long id, CriterionDTO criterionDto);
 }

@@ -12,6 +12,7 @@ import com.vtit.intern.repositories.EmployeeRepository;
 import com.vtit.intern.repositories.EvaluationCycleRepository;
 import com.vtit.intern.repositories.EvaluationRepository;
 import com.vtit.intern.services.EvaluationService;
+import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -137,5 +138,66 @@ public class EvaluationServiceImpl implements EvaluationService {
         evaluationCycle.removeEvaluation(existingEvaluation);
 
         evaluationCycleRepository.save(evaluationCycle);
+    }
+
+    @Override
+    @Transactional
+    public EvaluationDTO moveEvaluationToCycle(Long evaluationId, Long newCycleId) {
+        Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
+
+        EvaluationCycle newCycle = evaluationCycleRepository.findById(newCycleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + newCycleId));
+
+        // validate that the old cycle is still active
+        EvaluationCycle oldCycle = existingEvaluation.getEvaluationCycle();
+        if (oldCycle.getStatus() == EvaluationCycleStatus.COMPLETED ||
+            oldCycle.getStatus() == EvaluationCycleStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot move evaluation from a completed or closed evaluation cycle.");
+        }
+
+        // validate that the new cycle is active
+        if (newCycle.getStatus() == EvaluationCycleStatus.COMPLETED ||
+            newCycle.getStatus() == EvaluationCycleStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot move evaluation to a completed or closed evaluation cycle.");
+        }
+
+        // remove from old cycle
+        oldCycle.removeEvaluation(existingEvaluation);
+
+        // add to new cycle
+        newCycle.addEvaluation(existingEvaluation);
+        existingEvaluation.setEvaluationCycle(newCycle);
+
+        Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
+        evaluationCycleRepository.save(oldCycle);
+        evaluationCycleRepository.save(newCycle);
+
+        return modelMapper.map(updatedEvaluation, EvaluationDTO.class);
+    }
+
+    @Override
+    public EvaluationDTO patch(Long evaluationId, EvaluationDTO evaluationDTO) {
+        Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
+
+        // validate that the evaluation cycle is still active
+        if (existingEvaluation.getEvaluationCycle().getStatus() == EvaluationCycleStatus.COMPLETED ||
+            existingEvaluation.getEvaluationCycle().getStatus() == EvaluationCycleStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot patch evaluation in a completed or closed evaluation cycle.");
+        }
+
+        if (evaluationDTO.getScore() != null) {
+            existingEvaluation.setScore(evaluationDTO.getScore());
+        }
+        if (evaluationDTO.getComment() != null) {
+            existingEvaluation.setComment(evaluationDTO.getComment());
+        }
+        if (evaluationDTO.getEvaluationDate() != null) {
+            existingEvaluation.setEvaluationDate(evaluationDTO.getEvaluationDate());
+        }
+
+        Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
+        return modelMapper.map(updatedEvaluation, EvaluationDTO.class);
     }
 }

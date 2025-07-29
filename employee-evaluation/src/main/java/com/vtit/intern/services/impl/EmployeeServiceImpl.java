@@ -1,5 +1,6 @@
 package com.vtit.intern.services.impl;
 
+import com.vtit.intern.EmployeeEvaluationApplication;
 import com.vtit.intern.dtos.EmployeeDTO;
 import com.vtit.intern.dtos.PageResponse;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
@@ -86,5 +87,30 @@ public class EmployeeServiceImpl implements EmployeeService {
                 employeePage.getTotalPages(),
                 employeePage.isLast()
         );
+    }
+
+    @Override
+    public EmployeeDTO patch(Long id, EmployeeDTO employeeDto) {
+        Employee existingEmployee = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+
+        if (employeeDto.getName() != null) {
+            existingEmployee.setName(employeeDto.getName());
+        }
+        if (employeeDto.getDepartment() != null) {
+            existingEmployee.setDepartment(employeeDto.getDepartment());
+        }
+        if (employeeDto.getPosition() != null) {
+            existingEmployee.setPosition(employeeDto.getPosition());
+        }
+        if (employeeDto.getRole() != null) {
+            existingEmployee.setRole(employeeDto.getRole());
+        }
+        if (employeeDto.getSalary() != null) {
+            existingEmployee.setSalary(employeeDto.getSalary());
+        }
+
+        Employee updatedEmployee = repository.save(existingEmployee);
+        return modelMapper.map(updatedEmployee, EmployeeDTO.class);
     }
 }

@@ -94,4 +94,12 @@ public class EvaluationCycleController {
     ) {
         evaluationCycleServiceImpl.delete(id);
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<EvaluationCycleDTO> patchEvaluationCycle(
+            @PathVariable @Positive(message = "ID must be a positive number") Long id,
+            @RequestBody EvaluationCycleDTO evaluationCycleDTO
+    ) {
+        return ResponseEntity.ok(evaluationCycleServiceImpl.patch(id, evaluationCycleDTO));
+    }
 }

@@ -74,4 +74,11 @@ public class CriterionController {
         criteriaServiceImpl.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<CriterionDTO> patch(
+            @PathVariable @Positive(message = "ID must be a positive number") Long id,
+            @RequestBody CriterionDTO criterionDto) {
+        return ResponseEntity.ok(criteriaServiceImpl.patch(id, criterionDto));
+    }
 }

@@ -76,4 +76,12 @@ public class EmployeeController {
         employeeServiceImpl.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<EmployeeDTO> patch(
+            @PathVariable @Positive(message = "ID must be a positive number") Long id,
+            @RequestBody EmployeeDTO employeeDto
+    ) {
+        return ResponseEntity.ok(employeeServiceImpl.patch(id, employeeDto));
+        }
 }

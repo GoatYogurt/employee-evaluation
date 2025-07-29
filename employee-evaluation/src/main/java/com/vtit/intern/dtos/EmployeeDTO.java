@@ -31,7 +31,7 @@ public class EmployeeDTO {
     private String department;
 
     @PositiveOrZero(message = "Salary must be zero or positive")
-    private double salary;
+    private Double salary;
 
     @NotNull(message = "Role is required")
     private Role role;

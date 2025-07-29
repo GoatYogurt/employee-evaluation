@@ -1,6 +1,7 @@
 package com.vtit.intern.services.impl;
 
 import com.vtit.intern.dtos.EvaluationCycleDTO;
+import com.vtit.intern.dtos.EvaluationDTO;
 import com.vtit.intern.dtos.PageResponse;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.mappers.EvaluationCycleMapper;
@@ -110,5 +111,30 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
                 evaluationCyclePage.getTotalPages(),
                 evaluationCyclePage.isLast()
         );
+    }
+    @Override
+    public EvaluationCycleDTO patch(Long id, EvaluationCycleDTO evaluationCycleDTO) {
+        EvaluationCycle existingEvaluationCycle = evaluationCycleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
+
+        // Update fields selectively based on non-null values in evaluationCycleDTO
+        if (evaluationCycleDTO.getName() != null) {
+            existingEvaluationCycle.setName(evaluationCycleDTO.getName());
+        }
+        if (evaluationCycleDTO.getDescription() != null) {
+            existingEvaluationCycle.setDescription(evaluationCycleDTO.getDescription());
+        }
+        if (evaluationCycleDTO.getStatus() != null) {
+            existingEvaluationCycle.setStatus(evaluationCycleDTO.getStatus());
+        }
+        if (evaluationCycleDTO.getStartDate() != null) {
+            existingEvaluationCycle.setStartDate(evaluationCycleDTO.getStartDate());
+        }
+        if (evaluationCycleDTO.getEndDate() != null) {
+            existingEvaluationCycle.setEndDate(evaluationCycleDTO.getEndDate());
+        }
+
+        EvaluationCycle updatedEvaluationCycle = evaluationCycleRepository.save(existingEvaluationCycle);
+        return EvaluationCycleMapper.toDTO(updatedEvaluationCycle);
     }
 }

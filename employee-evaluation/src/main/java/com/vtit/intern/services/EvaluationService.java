@@ -13,4 +13,6 @@ public interface EvaluationService {
     PageResponse<EvaluationDTO> getEvaluations(Long employeeId, Long criterionId, Double minScore, Double maxScore, String comment, LocalDate startDate, LocalDate endDate, Pageable pageable);
     EvaluationDTO update(Long evaluationId, EvaluationDTO evaluationDTO);
     void delete(Long evaluationId);
+    EvaluationDTO moveEvaluationToCycle(Long evaluationId, Long newCycleId);
+    EvaluationDTO patch(Long evaluationId, EvaluationDTO evaluationDTO);
 }

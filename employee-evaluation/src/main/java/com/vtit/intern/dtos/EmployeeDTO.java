@@ -1,12 +1,7 @@
 package com.vtit.intern.dtos;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.vtit.intern.models.Employee;
 import com.vtit.intern.models.Role;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,9 +24,10 @@ public class EmployeeDTO {
 
     @NotBlank(message = "Email is required")
     @Size(max = 100, message = "Email must not exceed 100 characters")
+    @Email
     private String email;
 
-    @JsonIgnore
+    @NotBlank(message = "Password is required")
     private String password;
 
     @NotBlank(message = "Position is required")

@@ -44,5 +44,4 @@ class AuthRequest {
     // Getters and Setters
     private String username;
     private String password;
-
 }

@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,15 +21,22 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository repository;
     @Autowired
     private final ModelMapper modelMapper;
+    @Autowired
+    private final PasswordEncoder passwordEncoder;
 
-    public EmployeeServiceImpl(EmployeeRepository repository, ModelMapper modelMapper) {
+    public EmployeeServiceImpl(EmployeeRepository repository, ModelMapper modelMapper, PasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.modelMapper = modelMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public EmployeeDTO getById(Long id) {
         return repository.findById(id)
+                .map(employee -> {
+                    employee.setPassword(null); // Clear password before returning
+                    return employee;
+                })
                 .map(employee -> modelMapper.map(employee, EmployeeDTO.class))
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
     }
@@ -36,7 +44,12 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public EmployeeDTO create(EmployeeDTO employeeDto) {
         Employee employee = modelMapper.map(employeeDto, Employee.class);
+
+        // encode the password before saving
+        employee.setPassword(passwordEncoder.encode(employee.getPassword()));
+
         Employee savedEmployee = repository.save(employee);
+        savedEmployee.setPassword(null); // Clear password before returning
         return modelMapper.map(savedEmployee, EmployeeDTO.class);
     }
 
@@ -49,6 +62,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = modelMapper.map(employeeDTO, Employee.class);
         employee.setId(id);
         Employee updatedEmployee = repository.save(employee);
+        updatedEmployee.setPassword(null); // Clear password before returning
         return modelMapper.map(updatedEmployee, EmployeeDTO.class);
     }
 
@@ -77,6 +91,9 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .searchEmployees(searchName,searchUsername, searchEmail, searchDepartment, searchPosition, searchRole, searchSalaryMin, searchSalaryMax, pageable);
 
         List<EmployeeDTO> content = employeePage.getContent().stream()
+                .peek(e -> {
+                    e.setPassword(null); // Clear password before returning
+                })
                 .map(e -> modelMapper.map(e, EmployeeDTO.class))
                 .toList();
 
@@ -110,8 +127,15 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (employeeDto.getSalary() != null) {
             existingEmployee.setSalary(employeeDto.getSalary());
         }
+        if (employeeDto.getEmail() != null) {
+            existingEmployee.setEmail(employeeDto.getEmail());
+        }
+        if (employeeDto.getUsername() != null) {
+            existingEmployee.setUsername(employeeDto.getUsername());
+        }
 
         Employee updatedEmployee = repository.save(existingEmployee);
+        updatedEmployee.setPassword(null); // Clear password before returning
         return modelMapper.map(updatedEmployee, EmployeeDTO.class);
     }
 }

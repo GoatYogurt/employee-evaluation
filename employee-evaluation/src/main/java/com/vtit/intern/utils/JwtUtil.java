@@ -1,24 +1,41 @@
 package com.vtit.intern.utils;
 
+import com.vtit.intern.models.Employee;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class JwtUtil {
     @Value("${jwt.secret}")
     private String SECRET;
-    private final long EXPIRATION_TIME = 1000 * 60 * 60; // 1 hour
+    private final long EXPIRATION_TIME = 1000 * 60 * 30; // 30 minutes
 
-    public String generateToken(String username) {
+    public String generateToken(Employee employee) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", employee.getRole());
+        claims.put("username", employee.getUsername());
+        claims.put("employeeId", employee.getId());
+        claims.put("email", employee.getEmail());
+        claims.put("department", employee.getDepartment());
+        claims.put("name", employee.getName());
+        claims.put("position", employee.getPosition());
+        claims.put("salary", employee.getSalary());
+
+
         return Jwts.builder()
-                .subject(username)
+                .claims(claims)
+                .subject(employee.getUsername())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(getSigningKey(), Jwts.SIG.HS512)
@@ -44,6 +61,26 @@ public class JwtUtil {
         } catch (JwtException e) {
             return false;
         }
+    }
+
+    // Example usage of extractClaim method to get specific claims
+    //    String role = jwtUtil.extractClaim(token, claims -> claims.get("role", String.class));
+    //    Long employeeId = jwtUtil.extractClaim(token, claims -> claims.get("employeeId", Long.class));
+    public <T> T extractClaim(String token, String claimKey, Class<T> claimType) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get(claimKey, claimType);
+    }
+
+    private Claims parseAllClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     private SecretKey getSigningKey() {

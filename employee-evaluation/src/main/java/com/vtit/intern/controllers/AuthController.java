@@ -4,6 +4,8 @@ import com.vtit.intern.dtos.AuthResponseDTO;
 import com.vtit.intern.dtos.ChangePasswordRequestDTO;
 import com.vtit.intern.dtos.EmployeeDTO;
 import com.vtit.intern.dtos.LoginRequestDTO;
+import com.vtit.intern.models.Employee;
+import com.vtit.intern.repositories.EmployeeRepository;
 import com.vtit.intern.services.impl.EmployeeServiceImpl;
 import com.vtit.intern.utils.JwtUtil;
 import org.springframework.http.ResponseEntity;
@@ -24,33 +26,38 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final EmployeeServiceImpl employeeServiceImpl;
+    private final EmployeeRepository employeeRepository;
 
-    public AuthController(AuthenticationManager authenticationManager, JwtUtil jwtUtil, EmployeeServiceImpl employeeServiceImpl) {
+    public AuthController(AuthenticationManager authenticationManager, JwtUtil jwtUtil, EmployeeServiceImpl employeeServiceImpl, EmployeeRepository employeeRepository) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.employeeServiceImpl = employeeServiceImpl;
+        this.employeeRepository = employeeRepository;
     }
 
     @PostMapping("/login")
-    public AuthResponseDTO login(
-            @RequestBody LoginRequestDTO request
-    ) {
+    public AuthResponseDTO login(@RequestBody LoginRequestDTO request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
-            return new AuthResponseDTO(jwtUtil.generateToken(request.getUsername()), request.getUsername());
+
+            Employee employee = employeeRepository.findByUsername(request.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found with username: " + request.getUsername()));
+
+            return new AuthResponseDTO(jwtUtil.generateToken(employee), request.getUsername());
         } catch (AuthenticationException e) {
             throw new RuntimeException("Invalid username or password", e);
         }
     }
 
     @PostMapping("/register")
-    public AuthResponseDTO register(
-            @RequestBody EmployeeDTO employeeDTO
-    ) {
+    public AuthResponseDTO register(@RequestBody EmployeeDTO employeeDTO) {
         employeeServiceImpl.create(employeeDTO);
-        return new AuthResponseDTO(jwtUtil.generateToken(employeeDTO.getUsername()), employeeDTO.getUsername());
+        Employee employee = employeeRepository.findByUsername(employeeDTO.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found with username: " + employeeDTO.getUsername()));
+
+        return new AuthResponseDTO(jwtUtil.generateToken(employee), employeeDTO.getUsername());
     }
 
     @PostMapping("/change-password")

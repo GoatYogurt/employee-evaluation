@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("SELECT e FROM Employee e WHERE " +
@@ -32,5 +34,5 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
-    Employee findByUsername(String username);
+    Optional<Employee> findByUsername(String username);
 }

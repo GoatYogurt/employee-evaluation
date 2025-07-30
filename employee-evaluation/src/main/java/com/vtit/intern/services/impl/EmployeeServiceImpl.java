@@ -95,7 +95,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
 
         Page<Employee> employeePage = repository
-                .searchEmployees(searchName,searchUsername, searchEmail, searchDepartment, searchPosition, searchRole, searchSalaryMin, searchSalaryMax, pageable);
+                .searchEmployees(searchName, searchUsername, searchEmail, searchDepartment, searchPosition, searchRole, searchSalaryMin, searchSalaryMax, pageable);
 
         List<EmployeeDTO> content = employeePage.getContent().stream()
                 .peek(e -> {
@@ -148,10 +148,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public void changePassword(String username, String oldPassword, String newPassword) {
-        Employee employee = repository.findByUsername(username);
-        if (employee == null) {
-            throw new ResourceNotFoundException("Employee not found with username: " + username);
-        }
+        Employee employee = repository.findByUsername(username).
+                orElseThrow(() -> new ResourceNotFoundException("Employee not found with username: " + username));
 
         if (newPassword == null || newPassword.isEmpty()) {
             throw new IllegalArgumentException("New password cannot be null or empty.");

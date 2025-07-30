@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +28,7 @@ public class CriterionController {
         this.criteriaServiceImpl = criteriaService;
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping
     public PageResponse<CriterionDTO> getAllCriteria(
             @RequestParam(required = false) String name,
@@ -47,6 +49,7 @@ public class CriterionController {
         return criteriaServiceImpl.getAllCriteria(name, description, minWeight, maxWeight, PageRequest.of(page, size, sort));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<CriterionDTO> getById(
             @PathVariable @Positive(message = "ID must be a positive number") Long id
@@ -54,12 +57,14 @@ public class CriterionController {
         return ResponseEntity.ok(criteriaServiceImpl.getById(id));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<CriterionDTO> create(@Valid @RequestBody CriterionDTO criterionDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(criteriaServiceImpl.create(criterionDto));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CriterionDTO> update(
             @PathVariable @Positive(message = "ID must be a positive number") Long id,
@@ -67,6 +72,7 @@ public class CriterionController {
         return ResponseEntity.ok(criteriaServiceImpl.update(id, criterionDto));
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable @Positive(message = "ID must be a positive number") Long id
@@ -75,6 +81,7 @@ public class CriterionController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PatchMapping("/{id}")
     public ResponseEntity<CriterionDTO> patch(
             @PathVariable @Positive(message = "ID must be a positive number") Long id,

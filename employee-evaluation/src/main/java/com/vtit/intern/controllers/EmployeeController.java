@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +25,7 @@ public class EmployeeController {
         this.employeeServiceImpl = employeeServiceImpl;
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping
     public PageResponse<EmployeeDTO> getAllEmployees(
             @RequestParam(required = false) String name,
@@ -47,6 +49,7 @@ public class EmployeeController {
         return employeeServiceImpl.getAllEmployees(name, username, email, department, position, role, salaryMin, salaryMax, PageRequest.of(page, size, sort));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<EmployeeDTO> getById(
             @PathVariable @Positive(message = "ID must be a positive number") Long id
@@ -54,12 +57,14 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeServiceImpl.getById(id));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<EmployeeDTO> create(@Valid @RequestBody EmployeeDTO employeeDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(employeeServiceImpl.create(employeeDto));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<EmployeeDTO> update(
             @PathVariable @Positive(message = "ID must be a positive number") Long id,
@@ -68,6 +73,7 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeServiceImpl.update(id, employeeDto));
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable @Positive(message = "ID must be a positive number") Long id
@@ -76,6 +82,7 @@ public class EmployeeController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PatchMapping("/{id}")
     public ResponseEntity<EmployeeDTO> patch(
             @PathVariable @Positive(message = "ID must be a positive number") Long id,

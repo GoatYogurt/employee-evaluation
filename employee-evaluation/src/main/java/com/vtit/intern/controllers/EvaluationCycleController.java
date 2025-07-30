@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,6 +31,8 @@ public class EvaluationCycleController {
         this.evaluationCycleServiceImpl = evaluationCycleServiceImpl;
     }
 
+
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping
     public PageResponse<EvaluationCycleDTO> getAllEvaluationCycles(
             @RequestParam(required = false) String name,
@@ -54,6 +57,7 @@ public class EvaluationCycleController {
         );
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<EvaluationCycleDTO> getEvaluationCycleById(
             @PathVariable @Positive(message = "ID must be a positive number") Long id
@@ -61,6 +65,7 @@ public class EvaluationCycleController {
         return ResponseEntity.ok(evaluationCycleServiceImpl.get(id));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE, ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping("/active")
     public PageResponse<EvaluationCycleDTO> getActiveEvaluationCycles(
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page index cannot be negative") int page,
@@ -75,11 +80,13 @@ public class EvaluationCycleController {
         );
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<EvaluationCycleDTO> createEvaluationCycle(@Valid @RequestBody EvaluationCycleDTO evaluationCycleDTO) {
         return ResponseEntity.status(HttpStatus.CREATED).body(evaluationCycleServiceImpl.create(evaluationCycleDTO));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<EvaluationCycleDTO> updateEvaluationCycle(
             @PathVariable @Positive(message = "ID must be a positive number") Long id,
@@ -88,6 +95,7 @@ public class EvaluationCycleController {
         return ResponseEntity.ok(evaluationCycleServiceImpl.update(id, evaluationCycleDTO));
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
     public void deleteEvaluationCycle(
             @PathVariable @Positive(message = "ID must be a positive number") Long id
@@ -95,6 +103,7 @@ public class EvaluationCycleController {
         evaluationCycleServiceImpl.delete(id);
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PatchMapping("/{id}")
     public ResponseEntity<EvaluationCycleDTO> patchEvaluationCycle(
             @PathVariable @Positive(message = "ID must be a positive number") Long id,

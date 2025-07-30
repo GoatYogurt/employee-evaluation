@@ -43,6 +43,13 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeDTO create(EmployeeDTO employeeDto) {
+        if (repository.existsByUsername(employeeDto.getUsername())) {
+            throw new ResourceNotFoundException("Cannot create. Employee with username " + employeeDto.getUsername() + " already exists.");
+        }
+        if (repository.existsByEmail(employeeDto.getEmail())) {
+            throw new ResourceNotFoundException("Cannot create. Employee with email " + employeeDto.getEmail() + " already exists.");
+        }
+
         Employee employee = modelMapper.map(employeeDto, Employee.class);
 
         // encode the password before saving
@@ -137,5 +144,24 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee updatedEmployee = repository.save(existingEmployee);
         updatedEmployee.setPassword(null); // Clear password before returning
         return modelMapper.map(updatedEmployee, EmployeeDTO.class);
+    }
+
+    @Override
+    public void changePassword(String username, String oldPassword, String newPassword) {
+        Employee employee = repository.findByUsername(username);
+        if (employee == null) {
+            throw new ResourceNotFoundException("Employee not found with username: " + username);
+        }
+
+        if (newPassword == null || newPassword.isEmpty()) {
+            throw new IllegalArgumentException("New password cannot be null or empty.");
+        }
+
+        if (!passwordEncoder.matches(oldPassword, employee.getPassword())) {
+            throw new ResourceNotFoundException("Old password is incorrect.");
+        }
+
+        employee.setPassword(passwordEncoder.encode(newPassword));
+        repository.save(employee);
     }
 }

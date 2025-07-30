@@ -13,4 +13,5 @@ public interface EmployeeService {
     PageResponse<EmployeeDTO> getAllEmployees(String name, String username, String email, String department, String position, String role, Double salaryMin, Double salaryMax, Pageable pageable);
 
     EmployeeDTO patch(Long id, EmployeeDTO employeeDto);
+    void changePassword(String username, String oldPassword, String newPassword);
 }

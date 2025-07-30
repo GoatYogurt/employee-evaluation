@@ -29,4 +29,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             @Param("salaryMin") Double salaryMin,
             @Param("salaryMax") Double salaryMax,
             Pageable pageable);
+
+    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
+    Employee findByUsername(String username);
 }

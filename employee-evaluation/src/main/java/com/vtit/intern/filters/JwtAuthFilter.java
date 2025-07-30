@@ -34,7 +34,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         // Skip the filter for authentication endpoints
         if (Objects.equals(request.getServletPath(), "/auth/login")
-                || Objects.equals(request.getServletPath(), "/auth/register")) {
+                || Objects.equals(request.getServletPath(), "/auth/register")
+        || request.getServletPath().startsWith("/swagger-ui")) {
             filterChain.doFilter(request, response);
             return;
         }

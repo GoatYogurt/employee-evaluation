@@ -7,7 +7,6 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -19,9 +18,10 @@ import java.util.Map;
 public class JwtUtil {
     @Value("${jwt.secret}")
     private String SECRET;
-    private final long EXPIRATION_TIME = 1000 * 60 * 30; // 30 minutes
+    private final long ACCESS_TOKEN_EXPIRATION_TIME = 1000 * 60 * 30; // 30 minutes
+    private final long REFRESH_TOKEN_EXPIRATION_TIME = 1000 * 60 * 60 * 24 * 7; // 7 days
 
-    public String generateToken(Employee employee) {
+    public String generateAccessToken(Employee employee) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", employee.getRole());
         claims.put("username", employee.getUsername());
@@ -37,7 +37,16 @@ public class JwtUtil {
                 .claims(claims)
                 .subject(employee.getUsername())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .expiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION_TIME))
+                .signWith(getSigningKey(), Jwts.SIG.HS512)
+                .compact();
+    }
+
+    public String generateRefreshToken(Employee employee) {
+        return Jwts.builder()
+                .subject(employee.getUsername())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRATION_TIME * 2))
                 .signWith(getSigningKey(), Jwts.SIG.HS512)
                 .compact();
     }

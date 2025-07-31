@@ -1,7 +1,5 @@
-package com.vtit.intern.dtos;
+package com.vtit.intern.responses;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.vtit.intern.utils.JwtUtil;
 import lombok.Getter;
 import lombok.Setter;
 

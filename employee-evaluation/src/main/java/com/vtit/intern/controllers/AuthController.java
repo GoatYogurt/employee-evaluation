@@ -4,6 +4,10 @@ import com.vtit.intern.dtos.*;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.repositories.EmployeeRepository;
+import com.vtit.intern.requests.ChangePasswordRequestDTO;
+import com.vtit.intern.requests.LoginRequestDTO;
+import com.vtit.intern.requests.RefreshTokenRequestDTO;
+import com.vtit.intern.responses.AuthResponseDTO;
 import com.vtit.intern.services.impl.EmployeeServiceImpl;
 import com.vtit.intern.utils.JwtUtil;
 import org.springframework.http.ResponseEntity;
@@ -71,7 +75,6 @@ public class AuthController {
         Employee employee = employeeRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // ✅ issue new access token
         String newAccessToken = jwtUtil.generateAccessToken(employee);
 
         return new AuthResponseDTO(newAccessToken, refreshToken, username);

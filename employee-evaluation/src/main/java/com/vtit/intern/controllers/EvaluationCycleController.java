@@ -1,14 +1,13 @@
 package com.vtit.intern.controllers;
 
 import com.vtit.intern.dtos.EvaluationCycleDTO;
-import com.vtit.intern.dtos.PageResponse;
+import com.vtit.intern.responses.PageResponse;
 import com.vtit.intern.models.EvaluationCycleStatus;
 import com.vtit.intern.services.impl.EvaluationCycleServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -19,7 +18,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/evaluation-cycles")

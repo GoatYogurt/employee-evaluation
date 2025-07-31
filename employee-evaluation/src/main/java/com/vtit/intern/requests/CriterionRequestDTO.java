@@ -1,14 +1,13 @@
-package com.vtit.intern.dtos;
+package com.vtit.intern.requests;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class CriterionDTO {
+public class CriterionRequestDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id;
 

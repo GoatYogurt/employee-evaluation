@@ -1,4 +1,4 @@
-package com.vtit.intern.dtos;
+package com.vtit.intern.requests;
 
 import lombok.Getter;
 import lombok.Setter;

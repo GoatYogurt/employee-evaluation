@@ -2,7 +2,7 @@ package com.vtit.intern.controllers;
 
 import com.vtit.intern.dtos.EmployeeDTO;
 
-import com.vtit.intern.dtos.PageResponse;
+import com.vtit.intern.responses.PageResponse;
 import com.vtit.intern.services.impl.EmployeeServiceImpl;
 
 import jakarta.validation.Valid;

@@ -1,7 +1,7 @@
 package com.vtit.intern.services;
 
 import com.vtit.intern.dtos.EmployeeDTO;
-import com.vtit.intern.dtos.PageResponse;
+import com.vtit.intern.responses.PageResponse;
 import org.springframework.data.domain.Pageable;
 
 public interface EmployeeService {

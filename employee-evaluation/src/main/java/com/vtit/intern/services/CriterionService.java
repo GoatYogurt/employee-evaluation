@@ -1,11 +1,8 @@
 package com.vtit.intern.services;
 
 import com.vtit.intern.dtos.CriterionDTO;
-import com.vtit.intern.dtos.PageResponse;
-import com.vtit.intern.models.Criterion;
+import com.vtit.intern.responses.PageResponse;
 import org.springframework.data.domain.Pageable;
-
-import java.util.List;
 
 public interface CriterionService {
     PageResponse<CriterionDTO> getAllCriteria(String name, String description, Double minWeight, Double maxWeight, Pageable pageable);

@@ -1,7 +1,7 @@
 package com.vtit.intern.services.impl;
 
 import com.vtit.intern.dtos.EmployeeDTO;
-import com.vtit.intern.dtos.PageResponse;
+import com.vtit.intern.responses.PageResponse;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.repositories.EmployeeRepository;

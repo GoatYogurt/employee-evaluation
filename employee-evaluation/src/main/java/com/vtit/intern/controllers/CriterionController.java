@@ -1,15 +1,13 @@
 package com.vtit.intern.controllers;
 
 import com.vtit.intern.dtos.CriterionDTO;
-import com.vtit.intern.dtos.PageResponse;
-import com.vtit.intern.models.Criterion;
+import com.vtit.intern.responses.PageResponse;
 import com.vtit.intern.services.impl.CriterionServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;

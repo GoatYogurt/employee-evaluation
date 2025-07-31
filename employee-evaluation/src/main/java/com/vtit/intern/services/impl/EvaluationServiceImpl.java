@@ -1,8 +1,7 @@
 package com.vtit.intern.services.impl;
 
-import com.vtit.intern.dtos.EvaluationCycleDTO;
 import com.vtit.intern.dtos.EvaluationDTO;
-import com.vtit.intern.dtos.PageResponse;
+import com.vtit.intern.responses.PageResponse;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Evaluation;
 import com.vtit.intern.models.EvaluationCycle;

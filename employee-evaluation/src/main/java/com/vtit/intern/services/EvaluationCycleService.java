@@ -1,14 +1,11 @@
 package com.vtit.intern.services;
 
 import com.vtit.intern.dtos.EvaluationCycleDTO;
-import com.vtit.intern.dtos.EvaluationDTO;
-import com.vtit.intern.dtos.PageResponse;
+import com.vtit.intern.responses.PageResponse;
 import com.vtit.intern.models.EvaluationCycleStatus;
-import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
-import java.util.List;
 
 public interface EvaluationCycleService {
     EvaluationCycleDTO create(EvaluationCycleDTO evaluationCycleDTO);

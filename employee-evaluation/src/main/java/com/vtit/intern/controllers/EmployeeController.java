@@ -4,10 +4,12 @@ import com.vtit.intern.dtos.requests.EmployeeRequestDTO;
 import com.vtit.intern.dtos.responses.EmployeeResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.searches.EmployeeSearchDTO;
+import com.vtit.intern.services.EmployeeService;
 import com.vtit.intern.services.impl.EmployeeServiceImpl;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -20,10 +22,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/employees")
 @Validated
 public class EmployeeController {
-    private final EmployeeServiceImpl employeeServiceImpl;
+    @Autowired
+    private final EmployeeService employeeService;
 
-    public EmployeeController(EmployeeServiceImpl employeeServiceImpl) {
-        this.employeeServiceImpl = employeeServiceImpl;
+    public EmployeeController(EmployeeService employeeService) {
+        this.employeeService = employeeService;
     }
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
@@ -36,7 +39,7 @@ public class EmployeeController {
             @RequestParam(defaultValue = "asc") @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
     ) {
         if (dto == null) {
-            return employeeServiceImpl.getAllEmployees(null, null, null, null, null, null, null, null,
+            return employeeService.getAllEmployees(null, null, null, null, null, null, null, null,
                     PageRequest.of(page, size, Sort.by(sortBy).ascending()));
         }
 
@@ -45,7 +48,7 @@ public class EmployeeController {
         }
 
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        return employeeServiceImpl.getAllEmployees(dto.getName(), dto.getUsername(), dto.getEmail(), dto.getDepartment(),
+        return employeeService.getAllEmployees(dto.getName(), dto.getUsername(), dto.getEmail(), dto.getDepartment(),
                 dto.getPosition(), dto.getRole(), dto.getSalaryMin(), dto.getSalaryMax(), PageRequest.of(page, size, sort));
     }
 
@@ -54,14 +57,14 @@ public class EmployeeController {
     public ResponseEntity<EmployeeResponseDTO> getById(
             @PathVariable @Positive(message = "ID must be a positive number") Long id
     ) {
-        return ResponseEntity.ok(employeeServiceImpl.getById(id));
+        return ResponseEntity.ok(employeeService.getById(id));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<EmployeeResponseDTO> create(@Valid @RequestBody EmployeeRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(employeeServiceImpl.create(dto));
+                .body(employeeService.create(dto));
     }
 
 //    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
@@ -70,7 +73,7 @@ public class EmployeeController {
 //            @PathVariable @Positive(message = "ID must be a positive number") Long id,
 //            @Valid @RequestBody EmployeeRequestDTO dto
 //    ) {
-//        return ResponseEntity.ok(employeeServiceImpl.update(id, dto));
+//        return ResponseEntity.ok(employeeService.update(id, dto));
 //    }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -78,7 +81,7 @@ public class EmployeeController {
     public ResponseEntity<Void> delete(
             @PathVariable @Positive(message = "ID must be a positive number") Long id
     ) {
-        employeeServiceImpl.delete(id);
+        employeeService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -88,6 +91,6 @@ public class EmployeeController {
             @PathVariable @Positive(message = "ID must be a positive number") Long id,
             @RequestBody EmployeeRequestDTO dto
     ) {
-        return ResponseEntity.ok(employeeServiceImpl.patch(id, dto));
+        return ResponseEntity.ok(employeeService.patch(id, dto));
         }
 }

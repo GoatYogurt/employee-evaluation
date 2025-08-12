@@ -5,6 +5,7 @@ import com.vtit.intern.dtos.responses.EvaluationResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.searches.EvaluationSearchDTO;
 import com.vtit.intern.models.Employee;
+import com.vtit.intern.services.EvaluationService;
 import com.vtit.intern.services.impl.EvaluationServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -23,16 +24,16 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/evaluations")
 @Validated
 public class EvaluationController {
-    private final EvaluationServiceImpl evaluationServiceImpl;
+    private final EvaluationService evaluationService;
 
-    public EvaluationController(EvaluationServiceImpl evaluationServiceImpl) {
-        this.evaluationServiceImpl = evaluationServiceImpl;
+    public EvaluationController(EvaluationService evaluationService) {
+        this.evaluationService = evaluationService;
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<EvaluationResponseDTO> evaluate(@Valid @RequestBody EvaluationRequestDTO dto) {
-        return ResponseEntity.status(201).body(evaluationServiceImpl.evaluate(dto));
+        return ResponseEntity.status(201).body(evaluationService.evaluate(dto));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
@@ -45,7 +46,7 @@ public class EvaluationController {
             @RequestParam(defaultValue = "asc") @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
     ) {
         if (dto == null) {
-            return evaluationServiceImpl.getEvaluations(
+            return evaluationService.getEvaluations(
                     null, null, null, null, null, null, null,
                     PageRequest.of(page, size, sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
             );
@@ -64,14 +65,14 @@ public class EvaluationController {
         // Check if the authenticated user is an employee
         if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYEE"))) {
             System.out.println("Authenticated as employee: " + auth.getName());
-            return evaluationServiceImpl.getEvaluations(
+            return evaluationService.getEvaluations(
                     ((Employee) auth.getPrincipal()).getId(), dto.getCriterionId(), dto.getMinScore(), dto.getMaxScore(), dto.getComment(), dto.getStartDate(), dto.getEndDate(),
                     PageRequest.of(page, size,
                             sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
             );
         }
 
-        return evaluationServiceImpl.getEvaluations(
+        return evaluationService.getEvaluations(
                 dto.getEmployeeId(), dto.getCriterionId(), dto.getMinScore(), dto.getMaxScore(), dto.getComment(), dto.getStartDate(), dto.getEndDate(),
                 PageRequest.of(page, size,
                         sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
@@ -84,7 +85,7 @@ public class EvaluationController {
             @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId,
             @Valid @RequestBody EvaluationRequestDTO dto
     ) {
-        return ResponseEntity.ok(evaluationServiceImpl.update(evaluationId, dto));
+        return ResponseEntity.ok(evaluationService.update(evaluationId, dto));
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -92,7 +93,7 @@ public class EvaluationController {
     public ResponseEntity<Void> deleteEvaluation(
             @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId
     ) {
-        evaluationServiceImpl.delete(evaluationId);
+        evaluationService.delete(evaluationId);
         return ResponseEntity.noContent().build();
     }
 
@@ -102,7 +103,7 @@ public class EvaluationController {
             @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId,
             @RequestParam @Positive(message = "New cycle ID must be positive") Long newCycleId
     ) {
-        return ResponseEntity.ok(evaluationServiceImpl.moveEvaluationToCycle(evaluationId, newCycleId));
+        return ResponseEntity.ok(evaluationService.moveEvaluationToCycle(evaluationId, newCycleId));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
@@ -111,6 +112,6 @@ public class EvaluationController {
             @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId,
             @RequestBody EvaluationRequestDTO dto
     ) {
-        return ResponseEntity.ok(evaluationServiceImpl.patch(evaluationId, dto));
+        return ResponseEntity.ok(evaluationService.patch(evaluationId, dto));
     }
 }

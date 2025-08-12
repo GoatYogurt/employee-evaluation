@@ -2,12 +2,11 @@ package com.vtit.intern.dtos.requests;
 
 import com.vtit.intern.models.Role;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class EmployeeRequestDTO {

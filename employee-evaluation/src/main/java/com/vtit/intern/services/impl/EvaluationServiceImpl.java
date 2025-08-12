@@ -3,7 +3,9 @@ package com.vtit.intern.services.impl;
 import com.vtit.intern.dtos.requests.EvaluationRequestDTO;
 import com.vtit.intern.dtos.responses.EvaluationResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
+import com.vtit.intern.dtos.searches.EvaluationSearchDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
+import com.vtit.intern.models.Employee;
 import com.vtit.intern.models.Evaluation;
 import com.vtit.intern.models.EvaluationCycle;
 import com.vtit.intern.models.EvaluationCycleStatus;
@@ -17,6 +19,8 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -73,33 +77,6 @@ public class EvaluationServiceImpl implements EvaluationService {
 
 //        Evaluation savedEvaluation = evaluationRepository.save(e);
         return modelMapper.map(e, EvaluationResponseDTO.class);
-    }
-
-    @Override
-    public PageResponse<EvaluationResponseDTO> getEvaluations(Long employeeId, Long criterionId, Double minScore, Double maxScore, String comment, LocalDate startDate, LocalDate endDate, Pageable pageable) {
-        Page<Evaluation> evaluationPage = evaluationRepository.searchEvaluations(
-                employeeId,
-                criterionId,
-                minScore,
-                maxScore,
-                comment != null ? comment.trim() : null,
-                startDate,
-                endDate,
-                pageable
-        );
-
-        List<EvaluationResponseDTO> content = evaluationPage.stream()
-                .map(evaluation -> modelMapper.map(evaluation, EvaluationResponseDTO.class))
-                .collect(Collectors.toList());
-
-        return new PageResponse<>(
-                content,
-                evaluationPage.getNumber(),
-                evaluationPage.getSize(),
-                evaluationPage.getTotalElements(),
-                evaluationPage.getTotalPages(),
-                evaluationPage.isLast()
-        );
     }
 
     @Override
@@ -200,4 +177,99 @@ public class EvaluationServiceImpl implements EvaluationService {
         Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
         return modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class);
     }
+
+    @Override
+    public PageResponse<EvaluationResponseDTO> getEvaluations(
+            EvaluationSearchDTO dto, Pageable pageable, Authentication auth) {
+
+        // Validate score range
+        if (dto != null) {
+            if (dto.getMinScore() != null && dto.getMaxScore() != null &&
+                    dto.getMinScore() > dto.getMaxScore()) {
+                throw new IllegalArgumentException("Minimum score cannot be greater than maximum score");
+            }
+            if (dto.getStartDate() != null && dto.getEndDate() != null &&
+                    dto.getStartDate().isAfter(dto.getEndDate())) {
+                throw new IllegalArgumentException("Start date cannot be after end date");
+            }
+        }
+
+        // Determine who is allowed to see what
+        Long employeeId = null;
+
+        if (isEmployee(auth)) {
+            // Employees can only see their own evaluations
+            String username = auth.getName();
+            Employee employee = employeeRepository.findByUsername(username)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Employee not found with username: " + username));
+            employeeId = employee.getId();
+
+            // Force dto.employeeId to match the authenticated employee (or ignore it)
+            if (dto != null) {
+                dto.setEmployeeId(employeeId);
+            }
+
+        } else if (isManagerOrAdmin(auth)) {
+            // Managers/Admins can see any employee’s evaluations
+            if (dto != null) {
+                employeeId = dto.getEmployeeId();
+            }
+
+        } else {
+            throw new AccessDeniedException("You are not authorized to view evaluations");
+        }
+
+        // Perform the search
+        if (dto == null) {
+            return searchAndMap(employeeId, null, null, null, null, null, null, pageable);
+        }
+
+        return searchAndMap(
+                employeeId,
+                dto.getCriterionId(),
+                dto.getMinScore(),
+                dto.getMaxScore(),
+                trimOrNull(dto.getComment()),
+                dto.getStartDate(),
+                dto.getEndDate(),
+                pageable
+        );
+    }
+
+    private boolean isEmployee(Authentication auth) {
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYEE"));
+    }
+
+    private boolean isManagerOrAdmin(Authentication auth) {
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER") || a.getAuthority().equals("ROLE_ADMIN"));
+    }
+
+    private String trimOrNull(String str) {
+        return (str != null && !str.isBlank()) ? str.trim() : null;
+    }
+
+    private PageResponse<EvaluationResponseDTO> searchAndMap(
+            Long employeeId, Long criterionId, Double minScore, Double maxScore,
+            String comment, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+
+        Page<Evaluation> evaluationPage = evaluationRepository.searchEvaluations(
+                employeeId, criterionId, minScore, maxScore, comment, startDate, endDate, pageable);
+
+        List<EvaluationResponseDTO> content = evaluationPage.stream()
+                .map(evaluation -> modelMapper.map(evaluation, EvaluationResponseDTO.class))
+                .toList();
+
+        return new PageResponse<>(
+                content,
+                evaluationPage.getNumber(),
+                evaluationPage.getSize(),
+                evaluationPage.getTotalElements(),
+                evaluationPage.getTotalPages(),
+                evaluationPage.isLast()
+        );
+    }
+
 }

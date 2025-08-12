@@ -50,52 +50,9 @@ public class EvaluationController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
     ) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-        if (dto == null) {
-            System.out.println("Search DTO is null, returning all evaluations");
-            if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYEE"))) {
-                String username = auth.getName();
-                System.out.println("Authenticated as employee: " + username);
-                Employee employee = employeeRepository.findByUsername(username)
-                        .orElseThrow(() -> new IllegalArgumentException("Employee not found with username: " + username));
-                return evaluationService.getEvaluations(
-                        employee.getId(), null, null, null, null, null, null,
-                        PageRequest.of(page, size,
-                                sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
-                );
-            } else {
-                return evaluationService.getEvaluations(
-                        null, null, null, null, null, null, null,
-                        PageRequest.of(page, size, sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
-                );
-            }
-        }
-
-        if (dto.getMinScore() != null && dto.getMaxScore() != null && dto.getMinScore() > dto.getMaxScore()) {
-            throw new IllegalArgumentException("Minimum score cannot be greater than maximum score");
-        }
-
-        if (dto.getStartDate() != null && dto.getEndDate() != null && dto.getStartDate().isAfter(dto.getEndDate())) {
-            throw new IllegalArgumentException("Start date cannot be after end date");
-        }
-
-        // Check if the authenticated user is an employee
-        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYEE"))) {
-            String username = auth.getName();
-            System.out.println("Authenticated as employee: " + username);
-            Employee employee = employeeRepository.findByUsername(username)
-                    .orElseThrow(() -> new IllegalArgumentException("Employee not found with username: " + username));
-            return evaluationService.getEvaluations(
-                    employee.getId(), dto.getCriterionId(), dto.getMinScore(), dto.getMaxScore(), dto.getComment(), dto.getStartDate(), dto.getEndDate(),
-                    PageRequest.of(page, size, sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
-            );
-        }
-
-        return evaluationService.getEvaluations(
-                dto.getEmployeeId(), dto.getCriterionId(), dto.getMinScore(), dto.getMaxScore(), dto.getComment(), dto.getStartDate(), dto.getEndDate(),
-                PageRequest.of(page, size, sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
-        );
+        return evaluationService.getEvaluations(dto,
+                PageRequest.of(page, size, sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending()),
+                SecurityContextHolder.getContext().getAuthentication());
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")

@@ -1,17 +1,18 @@
 package com.vtit.intern.services;
 
-import com.vtit.intern.dtos.EmployeeDTO;
-import com.vtit.intern.responses.PageResponse;
+import com.vtit.intern.dtos.requests.EmployeeRequestDTO;
+import com.vtit.intern.dtos.responses.EmployeeResponseDTO;
+import com.vtit.intern.dtos.responses.PageResponse;
 import org.springframework.data.domain.Pageable;
 
 public interface EmployeeService {
-    EmployeeDTO getById(Long id);
-    EmployeeDTO create(EmployeeDTO employeeDto);
-    EmployeeDTO update(Long id, EmployeeDTO employeeDto);
+    EmployeeResponseDTO getById(Long id);
+    EmployeeResponseDTO create(EmployeeRequestDTO dto);
+    EmployeeResponseDTO update(Long id, EmployeeRequestDTO dto);
     void delete(Long id);
 
-    PageResponse<EmployeeDTO> getAllEmployees(String name, String username, String email, String department, String position, String role, Double salaryMin, Double salaryMax, Pageable pageable);
+    PageResponse<EmployeeResponseDTO> getAllEmployees(String name, String username, String email, String department, String position, String role, Double salaryMin, Double salaryMax, Pageable pageable);
 
-    EmployeeDTO patch(Long id, EmployeeDTO employeeDto);
+    EmployeeResponseDTO patch(Long id, EmployeeRequestDTO dto);
     void changePassword(String username, String oldPassword, String newPassword);
 }

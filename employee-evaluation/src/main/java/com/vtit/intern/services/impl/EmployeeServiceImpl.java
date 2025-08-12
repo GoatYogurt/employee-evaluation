@@ -1,7 +1,9 @@
 package com.vtit.intern.services.impl;
 
-import com.vtit.intern.dtos.EmployeeDTO;
-import com.vtit.intern.responses.PageResponse;
+import com.vtit.intern.dtos.requests.EmployeeRequestDTO;
+import com.vtit.intern.dtos.responses.EmployeeResponseDTO;
+import com.vtit.intern.dtos.responses.PageResponse;
+import com.vtit.intern.dtos.searches.EmployeeSearchDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.repositories.EmployeeRepository;
@@ -31,46 +33,46 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public EmployeeDTO getById(Long id) {
+    public EmployeeResponseDTO getById(Long id) {
         return repository.findById(id)
                 .map(employee -> {
                     employee.setPassword(null); // Clear password before returning
                     return employee;
                 })
-                .map(employee -> modelMapper.map(employee, EmployeeDTO.class))
+                .map(employee -> modelMapper.map(employee, EmployeeResponseDTO.class))
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
     }
 
     @Override
-    public EmployeeDTO create(EmployeeDTO employeeDto) {
-        if (repository.existsByUsername(employeeDto.getUsername())) {
-            throw new ResourceNotFoundException("Cannot create. Employee with username " + employeeDto.getUsername() + " already exists.");
+    public EmployeeResponseDTO create(EmployeeRequestDTO dto) {
+        if (repository.existsByUsername(dto.getUsername())) {
+            throw new ResourceNotFoundException("Cannot create. Employee with username " + dto.getUsername() + " already exists.");
         }
-        if (repository.existsByEmail(employeeDto.getEmail())) {
-            throw new ResourceNotFoundException("Cannot create. Employee with email " + employeeDto.getEmail() + " already exists.");
+        if (repository.existsByEmail(dto.getEmail())) {
+            throw new ResourceNotFoundException("Cannot create. Employee with email " + dto.getEmail() + " already exists.");
         }
 
-        Employee employee = modelMapper.map(employeeDto, Employee.class);
+        Employee employee = modelMapper.map(dto, Employee.class);
 
         // encode the password before saving
         employee.setPassword(passwordEncoder.encode(employee.getPassword()));
 
         Employee savedEmployee = repository.save(employee);
         savedEmployee.setPassword(null); // Clear password before returning
-        return modelMapper.map(savedEmployee, EmployeeDTO.class);
+        return modelMapper.map(savedEmployee, EmployeeResponseDTO.class);
     }
 
     @Override
-    public EmployeeDTO update(Long id, EmployeeDTO employeeDTO) {
+    public EmployeeResponseDTO update(Long id, EmployeeRequestDTO dto) {
         if (!repository.existsById(id)) {
             throw new ResourceNotFoundException("Cannot update. Employee not found with id: " + id);
         }
 
-        Employee employee = modelMapper.map(employeeDTO, Employee.class);
+        Employee employee = modelMapper.map(dto, Employee.class);
         employee.setId(id);
         Employee updatedEmployee = repository.save(employee);
         updatedEmployee.setPassword(null); // Clear password before returning
-        return modelMapper.map(updatedEmployee, EmployeeDTO.class);
+        return modelMapper.map(updatedEmployee, EmployeeResponseDTO.class);
     }
 
     @Override
@@ -83,7 +85,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public PageResponse<EmployeeDTO> getAllEmployees(String name, String username, String email, String department, String position, String role, Double salaryMin, Double salaryMax, Pageable pageable) {
+    public PageResponse<EmployeeResponseDTO> getAllEmployees(String name, String username, String email, String department, String position, String role, Double salaryMin, Double salaryMax, Pageable pageable) {
         String searchName = name != null ? name.trim() : "";
         String searchDepartment = department != null ? department.trim() : "";
         String searchPosition = position != null ? position.trim() : "";
@@ -97,11 +99,11 @@ public class EmployeeServiceImpl implements EmployeeService {
         Page<Employee> employeePage = repository
                 .searchEmployees(searchName, searchUsername, searchEmail, searchDepartment, searchPosition, searchRole, searchSalaryMin, searchSalaryMax, pageable);
 
-        List<EmployeeDTO> content = employeePage.getContent().stream()
+        List<EmployeeResponseDTO> content = employeePage.getContent().stream()
                 .peek(e -> {
                     e.setPassword(null); // Clear password before returning
                 })
-                .map(e -> modelMapper.map(e, EmployeeDTO.class))
+                .map(e -> modelMapper.map(e, EmployeeResponseDTO.class))
                 .toList();
 
         return new PageResponse<>(
@@ -115,35 +117,35 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public EmployeeDTO patch(Long id, EmployeeDTO employeeDto) {
+    public EmployeeResponseDTO patch(Long id, EmployeeRequestDTO dto) {
         Employee existingEmployee = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
 
-        if (employeeDto.getName() != null) {
-            existingEmployee.setName(employeeDto.getName());
+        if (dto.getName() != null) {
+            existingEmployee.setName(dto.getName());
         }
-        if (employeeDto.getDepartment() != null) {
-            existingEmployee.setDepartment(employeeDto.getDepartment());
+        if (dto.getDepartment() != null) {
+            existingEmployee.setDepartment(dto.getDepartment());
         }
-        if (employeeDto.getPosition() != null) {
-            existingEmployee.setPosition(employeeDto.getPosition());
+        if (dto.getPosition() != null) {
+            existingEmployee.setPosition(dto.getPosition());
         }
-        if (employeeDto.getRole() != null) {
-            existingEmployee.setRole(employeeDto.getRole());
+        if (dto.getRole() != null) {
+            existingEmployee.setRole(dto.getRole());
         }
-        if (employeeDto.getSalary() != null) {
-            existingEmployee.setSalary(employeeDto.getSalary());
+        if (dto.getSalary() != null) {
+            existingEmployee.setSalary(dto.getSalary());
         }
-        if (employeeDto.getEmail() != null) {
-            existingEmployee.setEmail(employeeDto.getEmail());
+        if (dto.getEmail() != null) {
+            existingEmployee.setEmail(dto.getEmail());
         }
-        if (employeeDto.getUsername() != null) {
-            existingEmployee.setUsername(employeeDto.getUsername());
+        if (dto.getUsername() != null) {
+            existingEmployee.setUsername(dto.getUsername());
         }
 
         Employee updatedEmployee = repository.save(existingEmployee);
         updatedEmployee.setPassword(null); // Clear password before returning
-        return modelMapper.map(updatedEmployee, EmployeeDTO.class);
+        return modelMapper.map(updatedEmployee, EmployeeResponseDTO.class);
     }
 
     @Override

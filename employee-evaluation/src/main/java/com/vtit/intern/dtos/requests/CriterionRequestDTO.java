@@ -1,4 +1,4 @@
-package com.vtit.intern.requests;
+package com.vtit.intern.dtos.requests;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;

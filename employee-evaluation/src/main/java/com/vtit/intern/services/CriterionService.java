@@ -1,14 +1,15 @@
 package com.vtit.intern.services;
 
-import com.vtit.intern.dtos.CriterionDTO;
-import com.vtit.intern.responses.PageResponse;
+import com.vtit.intern.dtos.requests.CriterionRequestDTO;
+import com.vtit.intern.dtos.responses.CriterionResponseDTO;
+import com.vtit.intern.dtos.responses.PageResponse;
 import org.springframework.data.domain.Pageable;
 
 public interface CriterionService {
-    PageResponse<CriterionDTO> getAllCriteria(String name, String description, Double minWeight, Double maxWeight, Pageable pageable);
-    CriterionDTO getById(Long id);
-    CriterionDTO create(CriterionDTO criterionDto);
-    CriterionDTO update(Long id, CriterionDTO criterionDto);
+    PageResponse<CriterionResponseDTO> getAllCriteria(String name, String description, Double minWeight, Double maxWeight, Pageable pageable);
+    CriterionResponseDTO getById(Long id);
+    CriterionResponseDTO create(CriterionRequestDTO dto);
+    CriterionResponseDTO update(Long id, CriterionRequestDTO dto);
     void delete(Long id);
-    CriterionDTO patch(Long id, CriterionDTO criterionDto);
+    CriterionResponseDTO patch(Long id, CriterionRequestDTO dto);
 }

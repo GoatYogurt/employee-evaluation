@@ -1,20 +1,19 @@
-package com.vtit.intern.dtos;
+package com.vtit.intern.dtos.requests;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class EvaluationDTO {
+public class EvaluationRequestDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id;
 

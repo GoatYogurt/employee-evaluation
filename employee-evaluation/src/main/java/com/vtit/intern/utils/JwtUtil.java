@@ -18,7 +18,7 @@ import java.util.Map;
 public class JwtUtil {
     @Value("${jwt.secret}")
     private String SECRET;
-    private final long ACCESS_TOKEN_EXPIRATION_TIME = 1000 * 60 * 30; // 30 minutes
+    private final long ACCESS_TOKEN_EXPIRATION_TIME = 1000 * 60 * 60 * 24 * 7; // FIXME: 7 days just for testing, change to 30 minutes in production
     private final long REFRESH_TOKEN_EXPIRATION_TIME = 1000 * 60 * 60 * 24 * 7; // 7 days
 
     public String generateAccessToken(Employee employee) {

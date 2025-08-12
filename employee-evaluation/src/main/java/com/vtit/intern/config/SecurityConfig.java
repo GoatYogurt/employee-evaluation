@@ -44,7 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/login", "/auth/register", "/auth/refresh").permitAll()
                         .requestMatchers("/swagger-ui/**").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/exports").permitAll() // FIXME: Just for testing export feature, remove this later
+                        .requestMatchers("/api/exports/**").permitAll() // FIXME: Just for testing export feature, remove this later
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

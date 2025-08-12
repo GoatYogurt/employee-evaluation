@@ -1,7 +1,8 @@
 package com.vtit.intern.services.impl;
 
-import com.vtit.intern.dtos.EvaluationDTO;
-import com.vtit.intern.responses.PageResponse;
+import com.vtit.intern.dtos.requests.EvaluationRequestDTO;
+import com.vtit.intern.dtos.responses.EvaluationResponseDTO;
+import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Evaluation;
 import com.vtit.intern.models.EvaluationCycle;
@@ -45,9 +46,9 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
-    public EvaluationDTO evaluate(EvaluationDTO evaluationDTO) {
+    public EvaluationResponseDTO evaluate(EvaluationRequestDTO dto) {
         // find the evaluation cycle by ID
-        Long evaluationCycleId = evaluationDTO.getEvaluationCycleId();
+        Long evaluationCycleId = dto.getEvaluationCycleId();
         EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(evaluationCycleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + evaluationCycleId));
 
@@ -59,23 +60,23 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         Evaluation e = new Evaluation();
 
-        e.setEmployee(employeeRepository.findById(evaluationDTO.getEmployeeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + evaluationDTO.getEmployeeId())));
-        e.setCriterion(criterionRepository.findById(evaluationDTO.getCriterionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + evaluationDTO.getCriterionId())));
-        e.setScore(evaluationDTO.getScore());
-        e.setComment(evaluationDTO.getComment());
-        e.setEvaluationDate(evaluationDTO.getEvaluationDate());
+        e.setEmployee(employeeRepository.findById(dto.getEmployeeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + dto.getEmployeeId())));
+        e.setCriterion(criterionRepository.findById(dto.getCriterionId())
+                .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + dto.getCriterionId())));
+        e.setScore(dto.getScore());
+        e.setComment(dto.getComment());
+        e.setEvaluationDate(dto.getEvaluationDate());
 
         evaluationCycle.addEvaluation(e);
         evaluationCycleRepository.save(evaluationCycle);
 
 //        Evaluation savedEvaluation = evaluationRepository.save(e);
-        return modelMapper.map(e, EvaluationDTO.class);
+        return modelMapper.map(e, EvaluationResponseDTO.class);
     }
 
     @Override
-    public PageResponse<EvaluationDTO> getEvaluations(Long employeeId, Long criterionId, Double minScore, Double maxScore, String comment, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+    public PageResponse<EvaluationResponseDTO> getEvaluations(Long employeeId, Long criterionId, Double minScore, Double maxScore, String comment, LocalDate startDate, LocalDate endDate, Pageable pageable) {
         Page<Evaluation> evaluationPage = evaluationRepository.searchEvaluations(
                 employeeId,
                 criterionId,
@@ -87,8 +88,8 @@ public class EvaluationServiceImpl implements EvaluationService {
                 pageable
         );
 
-        List<EvaluationDTO> content = evaluationPage.stream()
-                .map(evaluation -> modelMapper.map(evaluation, EvaluationDTO.class))
+        List<EvaluationResponseDTO> content = evaluationPage.stream()
+                .map(evaluation -> modelMapper.map(evaluation, EvaluationResponseDTO.class))
                 .collect(Collectors.toList());
 
         return new PageResponse<>(
@@ -102,7 +103,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
-    public EvaluationDTO update(Long evaluationId, EvaluationDTO evaluationDTO) {
+    public EvaluationResponseDTO update(Long evaluationId, EvaluationRequestDTO dto) {
 
         Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
@@ -114,12 +115,12 @@ public class EvaluationServiceImpl implements EvaluationService {
             throw new IllegalStateException("Cannot update evaluation in a completed or closed evaluation cycle.");
         }
 
-        existingEvaluation.setScore(evaluationDTO.getScore());
-        existingEvaluation.setComment(evaluationDTO.getComment());
-        existingEvaluation.setEvaluationDate(evaluationDTO.getEvaluationDate());
+        existingEvaluation.setScore(dto.getScore());
+        existingEvaluation.setComment(dto.getComment());
+        existingEvaluation.setEvaluationDate(dto.getEvaluationDate());
 
         Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
-        return modelMapper.map(updatedEvaluation, EvaluationDTO.class);
+        return modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class);
     }
 
     @Override
@@ -141,7 +142,7 @@ public class EvaluationServiceImpl implements EvaluationService {
 
     @Override
     @Transactional
-    public EvaluationDTO moveEvaluationToCycle(Long evaluationId, Long newCycleId) {
+    public EvaluationResponseDTO moveEvaluationToCycle(Long evaluationId, Long newCycleId) {
         Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
 
@@ -172,11 +173,11 @@ public class EvaluationServiceImpl implements EvaluationService {
         evaluationCycleRepository.save(oldCycle);
         evaluationCycleRepository.save(newCycle);
 
-        return modelMapper.map(updatedEvaluation, EvaluationDTO.class);
+        return modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class);
     }
 
     @Override
-    public EvaluationDTO patch(Long evaluationId, EvaluationDTO evaluationDTO) {
+    public EvaluationResponseDTO patch(Long evaluationId, EvaluationRequestDTO dto) {
         Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
 
@@ -186,17 +187,17 @@ public class EvaluationServiceImpl implements EvaluationService {
             throw new IllegalStateException("Cannot patch evaluation in a completed or closed evaluation cycle.");
         }
 
-        if (evaluationDTO.getScore() != null) {
-            existingEvaluation.setScore(evaluationDTO.getScore());
+        if (dto.getScore() != null) {
+            existingEvaluation.setScore(dto.getScore());
         }
-        if (evaluationDTO.getComment() != null) {
-            existingEvaluation.setComment(evaluationDTO.getComment());
+        if (dto.getComment() != null) {
+            existingEvaluation.setComment(dto.getComment());
         }
-        if (evaluationDTO.getEvaluationDate() != null) {
-            existingEvaluation.setEvaluationDate(evaluationDTO.getEvaluationDate());
+        if (dto.getEvaluationDate() != null) {
+            existingEvaluation.setEvaluationDate(dto.getEvaluationDate());
         }
 
         Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
-        return modelMapper.map(updatedEvaluation, EvaluationDTO.class);
+        return modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class);
     }
 }

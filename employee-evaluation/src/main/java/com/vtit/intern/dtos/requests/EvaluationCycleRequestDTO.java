@@ -1,5 +1,6 @@
-package com.vtit.intern.dtos;
+package com.vtit.intern.dtos.requests;
 
+import com.vtit.intern.dtos.responses.EvaluationResponseDTO;
 import com.vtit.intern.models.EvaluationCycleStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.FutureOrPresent;
@@ -17,7 +18,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class EvaluationCycleDTO {
+public class EvaluationCycleRequestDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id;
 
@@ -39,7 +40,7 @@ public class EvaluationCycleDTO {
     private EvaluationCycleStatus status;
 
     @Valid
-    private Set<EvaluationDTO> evaluations;
+    private Set<EvaluationResponseDTO> evaluations;
 
     @NotNull(message = "Employees cannot be null")
     @Size(min = 1, message = "At least one employee must be selected")

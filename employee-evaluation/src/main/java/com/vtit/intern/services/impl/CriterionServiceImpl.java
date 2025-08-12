@@ -1,7 +1,8 @@
 package com.vtit.intern.services.impl;
 
-import com.vtit.intern.dtos.CriterionDTO;
-import com.vtit.intern.responses.PageResponse;
+import com.vtit.intern.dtos.requests.CriterionRequestDTO;
+import com.vtit.intern.dtos.responses.CriterionResponseDTO;
+import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.models.Criterion;
 import com.vtit.intern.repositories.CriterionRepository;
 import com.vtit.intern.services.CriterionService;
@@ -27,7 +28,7 @@ public class CriterionServiceImpl implements CriterionService {
     }
 
     @Override
-    public PageResponse<CriterionDTO> getAllCriteria(String name, String description, Double minWeight, Double maxWeight, Pageable pageable) {
+    public PageResponse<CriterionResponseDTO> getAllCriteria(String name, String description, Double minWeight, Double maxWeight, Pageable pageable) {
         String searchName = name != null ? name.trim() : null;
         String searchDescription = description != null ? description.trim() : null;
         Double searchMinWeight = minWeight != null ? minWeight : 0.0;
@@ -40,8 +41,8 @@ public class CriterionServiceImpl implements CriterionService {
                 searchMaxWeight,
                 pageable
         );
-        List<CriterionDTO> content = criterionPage.getContent().stream()
-                .map(criterion -> modelMapper.map(criterion, CriterionDTO.class))
+        List<CriterionResponseDTO> content = criterionPage.getContent().stream()
+                .map(criterion -> modelMapper.map(criterion, CriterionResponseDTO.class))
                 .toList();
 
         return new PageResponse<>(
@@ -55,29 +56,29 @@ public class CriterionServiceImpl implements CriterionService {
     }
 
     @Override
-    public CriterionDTO getById(Long id) {
+    public CriterionResponseDTO getById(Long id) {
         return repository.findById(id)
-                .map(criterion -> modelMapper.map(criterion, CriterionDTO.class))
+                .map(criterion -> modelMapper.map(criterion, CriterionResponseDTO.class))
                 .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id));
     }
 
     @Override
-    public CriterionDTO create(CriterionDTO criterionDto) {
-        Criterion criterion = modelMapper.map(criterionDto, Criterion.class);
+    public CriterionResponseDTO create(CriterionRequestDTO dto) {
+        Criterion criterion = modelMapper.map(dto, Criterion.class);
         Criterion savedCriterion = repository.save(criterion);
-        return modelMapper.map(savedCriterion, CriterionDTO.class);
+        return modelMapper.map(savedCriterion, CriterionResponseDTO.class);
     }
 
     @Override
-    public CriterionDTO update(Long id, CriterionDTO criterionDto) {
+    public CriterionResponseDTO update(Long id, CriterionRequestDTO dto) {
         if (!repository.existsById(id)) {
             throw new ResourceNotFoundException("Cannot update. Criterion not found with id: " + id);
         }
 
-        Criterion criterion = modelMapper.map(criterionDto, Criterion.class);
+        Criterion criterion = modelMapper.map(dto, Criterion.class);
         criterion.setId(id); // Ensure the ID is set for the update
         Criterion updatedCriterion = repository.save(criterion);
-        return modelMapper.map(updatedCriterion, CriterionDTO.class);
+        return modelMapper.map(updatedCriterion, CriterionResponseDTO.class);
     }
 
     @Override
@@ -89,7 +90,7 @@ public class CriterionServiceImpl implements CriterionService {
     }
 
     @Override
-    public CriterionDTO patch(Long id, CriterionDTO criterionDto) {
+    public CriterionResponseDTO patch(Long id, CriterionRequestDTO dto) {
         if (!repository.existsById(id)) {
             throw new ResourceNotFoundException("Cannot patch. Criterion not found with id: " + id);
         }
@@ -98,17 +99,17 @@ public class CriterionServiceImpl implements CriterionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id));
 
         // update only the fields that are present in the DTO
-        if (criterionDto.getName() != null) {
-            existingCriterion.setName(criterionDto.getName());
+        if (dto.getName() != null) {
+            existingCriterion.setName(dto.getName());
         }
-        if (criterionDto.getDescription() != null) {
-            existingCriterion.setDescription(criterionDto.getDescription());
+        if (dto.getDescription() != null) {
+            existingCriterion.setDescription(dto.getDescription());
         }
-        if (criterionDto.getWeight() != null) {
-            existingCriterion.setWeight(criterionDto.getWeight());
+        if (dto.getWeight() != null) {
+            existingCriterion.setWeight(dto.getWeight());
         }
 
         Criterion updatedCriterion = repository.save(existingCriterion);
-        return modelMapper.map(updatedCriterion, CriterionDTO.class);
+        return modelMapper.map(updatedCriterion, CriterionResponseDTO.class);
     }
 }

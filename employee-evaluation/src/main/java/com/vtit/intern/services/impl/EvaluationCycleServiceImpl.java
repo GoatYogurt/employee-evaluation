@@ -1,7 +1,8 @@
 package com.vtit.intern.services.impl;
 
-import com.vtit.intern.dtos.EvaluationCycleDTO;
-import com.vtit.intern.responses.PageResponse;
+import com.vtit.intern.dtos.requests.EvaluationCycleRequestDTO;
+import com.vtit.intern.dtos.responses.EvaluationCycleResponseDTO;
+import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.mappers.EvaluationCycleMapper;
 import com.vtit.intern.models.EvaluationCycle;
@@ -27,26 +28,26 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
     }
 
     @Override
-    public EvaluationCycleDTO create(EvaluationCycleDTO evaluationCycleDTO) {
-        EvaluationCycle evaluationCycle = EvaluationCycleMapper.toEntity(evaluationCycleDTO);
+    public EvaluationCycleResponseDTO create(EvaluationCycleRequestDTO dto) {
+        EvaluationCycle evaluationCycle = EvaluationCycleMapper.requestToEntity(dto);
         EvaluationCycle savedEvaluationCycle = evaluationCycleRepository.save(evaluationCycle);
-        return EvaluationCycleMapper.toDTO(savedEvaluationCycle);
+        return EvaluationCycleMapper.entityToResponse(savedEvaluationCycle);
     }
 
     @Override
-    public EvaluationCycleDTO get(Long id) {
+    public EvaluationCycleResponseDTO get(Long id) {
         EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
-        return EvaluationCycleMapper.toDTO(evaluationCycle);
+        return EvaluationCycleMapper.entityToResponse(evaluationCycle);
     }
 
     @Override
-    public EvaluationCycleDTO update(Long id, EvaluationCycleDTO evaluationCycleDTO) {
+    public EvaluationCycleResponseDTO update(Long id, EvaluationCycleRequestDTO dto) {
         EvaluationCycle existingEvaluationCycle = evaluationCycleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
 
         EvaluationCycle updatedEvaluationCycle = evaluationCycleRepository.save(existingEvaluationCycle);
-        return EvaluationCycleMapper.toDTO(updatedEvaluationCycle);
+        return EvaluationCycleMapper.entityToResponse(updatedEvaluationCycle);
     }
 
     @Override
@@ -57,7 +58,7 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
     }
 
     @Override
-    public PageResponse<EvaluationCycleDTO> getAllEvaluationCycles(
+    public PageResponse<EvaluationCycleResponseDTO> getAllEvaluationCycles(
             String name,
             String description,
             EvaluationCycleStatus status,
@@ -73,8 +74,8 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
                 pageable
         );
 
-        List<EvaluationCycleDTO> content = evaluationCyclePage.getContent().stream()
-                .map(EvaluationCycleMapper::toDTO)
+        List<EvaluationCycleResponseDTO> content = evaluationCyclePage.getContent().stream()
+                .map(EvaluationCycleMapper::entityToResponse)
                 .collect(Collectors.toList());
 
         return new PageResponse<>(
@@ -88,7 +89,7 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
     }
 
     @Override
-    public PageResponse<EvaluationCycleDTO> getActiveEvaluationCycles(Pageable pageable) {
+    public PageResponse<EvaluationCycleResponseDTO> getActiveEvaluationCycles(Pageable pageable) {
         Page<EvaluationCycle> evaluationCyclePage = evaluationCycleRepository.searchEvaluationCycles(
                 null, // name
                 null, // description
@@ -98,8 +99,8 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
                 pageable
         );
 
-        List<EvaluationCycleDTO> content = evaluationCyclePage.getContent().stream()
-                .map(EvaluationCycleMapper::toDTO)
+        List<EvaluationCycleResponseDTO> content = evaluationCyclePage.getContent().stream()
+                .map(EvaluationCycleMapper::entityToResponse)
                 .collect(Collectors.toList());
 
         return new PageResponse<>(
@@ -112,28 +113,28 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
         );
     }
     @Override
-    public EvaluationCycleDTO patch(Long id, EvaluationCycleDTO evaluationCycleDTO) {
+    public EvaluationCycleResponseDTO patch(Long id, EvaluationCycleRequestDTO dto) {
         EvaluationCycle existingEvaluationCycle = evaluationCycleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
 
         // Update fields selectively based on non-null values in evaluationCycleDTO
-        if (evaluationCycleDTO.getName() != null) {
-            existingEvaluationCycle.setName(evaluationCycleDTO.getName());
+        if (dto.getName() != null) {
+            existingEvaluationCycle.setName(dto.getName());
         }
-        if (evaluationCycleDTO.getDescription() != null) {
-            existingEvaluationCycle.setDescription(evaluationCycleDTO.getDescription());
+        if (dto.getDescription() != null) {
+            existingEvaluationCycle.setDescription(dto.getDescription());
         }
-        if (evaluationCycleDTO.getStatus() != null) {
-            existingEvaluationCycle.setStatus(evaluationCycleDTO.getStatus());
+        if (dto.getStatus() != null) {
+            existingEvaluationCycle.setStatus(dto.getStatus());
         }
-        if (evaluationCycleDTO.getStartDate() != null) {
-            existingEvaluationCycle.setStartDate(evaluationCycleDTO.getStartDate());
+        if (dto.getStartDate() != null) {
+            existingEvaluationCycle.setStartDate(dto.getStartDate());
         }
-        if (evaluationCycleDTO.getEndDate() != null) {
-            existingEvaluationCycle.setEndDate(evaluationCycleDTO.getEndDate());
+        if (dto.getEndDate() != null) {
+            existingEvaluationCycle.setEndDate(dto.getEndDate());
         }
 
         EvaluationCycle updatedEvaluationCycle = evaluationCycleRepository.save(existingEvaluationCycle);
-        return EvaluationCycleMapper.toDTO(updatedEvaluationCycle);
+        return EvaluationCycleMapper.entityToResponse(updatedEvaluationCycle);
     }
 }

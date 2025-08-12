@@ -1,8 +1,8 @@
 package com.vtit.intern.controllers;
 
-import com.vtit.intern.dtos.EvaluationCycleDTO;
-import com.vtit.intern.responses.PageResponse;
-import com.vtit.intern.models.EvaluationCycleStatus;
+import com.vtit.intern.dtos.requests.EvaluationCycleRequestDTO;
+import com.vtit.intern.dtos.responses.EvaluationCycleResponseDTO;
+import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.services.impl.EvaluationCycleServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -10,14 +10,11 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/evaluation-cycles")
@@ -32,24 +29,20 @@ public class EvaluationCycleController {
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping
-    public PageResponse<EvaluationCycleDTO> getAllEvaluationCycles(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String description,
-            @RequestParam(required = false) EvaluationCycleStatus status,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page index cannot be negative") int page,
+    public PageResponse<EvaluationCycleResponseDTO> getAllEvaluationCycles(
+            @RequestBody EvaluationCycleRequestDTO dto,
+            @RequestParam(defaultValue = "0")@Min(value = 0, message = "Page index cannot be negative") int page,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc")
             @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
     ) {
-        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+        if (dto.getStartDate() != null && dto.getEndDate() != null && dto.getStartDate().isAfter(dto.getEndDate())) {
             throw new IllegalArgumentException("Start date cannot be after end date");
         }
 
         return evaluationCycleServiceImpl.getAllEvaluationCycles(
-                name, description, status, startDate, endDate,
+                dto.getName(), dto.getDescription(), dto.getStatus(), dto.getStartDate(), dto.getEndDate(),
                 PageRequest.of(page, size,
                         sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
         );
@@ -57,7 +50,7 @@ public class EvaluationCycleController {
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<EvaluationCycleDTO> getEvaluationCycleById(
+    public ResponseEntity<EvaluationCycleResponseDTO> getEvaluationCycleById(
             @PathVariable @Positive(message = "ID must be a positive number") Long id
     ) {
         return ResponseEntity.ok(evaluationCycleServiceImpl.get(id));
@@ -65,7 +58,7 @@ public class EvaluationCycleController {
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE, ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping("/active")
-    public PageResponse<EvaluationCycleDTO> getActiveEvaluationCycles(
+    public PageResponse<EvaluationCycleResponseDTO> getActiveEvaluationCycles(
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page index cannot be negative") int page,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size,
             @RequestParam(defaultValue = "id") String sortBy,
@@ -80,17 +73,17 @@ public class EvaluationCycleController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
-    public ResponseEntity<EvaluationCycleDTO> createEvaluationCycle(@Valid @RequestBody EvaluationCycleDTO evaluationCycleDTO) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(evaluationCycleServiceImpl.create(evaluationCycleDTO));
+    public ResponseEntity<EvaluationCycleResponseDTO> createEvaluationCycle(@Valid @RequestBody EvaluationCycleRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(evaluationCycleServiceImpl.create(dto));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<EvaluationCycleDTO> updateEvaluationCycle(
+    public ResponseEntity<EvaluationCycleResponseDTO> updateEvaluationCycle(
             @PathVariable @Positive(message = "ID must be a positive number") Long id,
-            @RequestBody EvaluationCycleDTO evaluationCycleDTO
+            @RequestBody @Valid EvaluationCycleRequestDTO dto
     ) {
-        return ResponseEntity.ok(evaluationCycleServiceImpl.update(id, evaluationCycleDTO));
+        return ResponseEntity.ok(evaluationCycleServiceImpl.update(id, dto));
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -103,10 +96,10 @@ public class EvaluationCycleController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PatchMapping("/{id}")
-    public ResponseEntity<EvaluationCycleDTO> patchEvaluationCycle(
+    public ResponseEntity<EvaluationCycleResponseDTO> patchEvaluationCycle(
             @PathVariable @Positive(message = "ID must be a positive number") Long id,
-            @RequestBody EvaluationCycleDTO evaluationCycleDTO
+            @RequestBody @Valid EvaluationCycleRequestDTO dto
     ) {
-        return ResponseEntity.ok(evaluationCycleServiceImpl.patch(id, evaluationCycleDTO));
+        return ResponseEntity.ok(evaluationCycleServiceImpl.patch(id, dto));
     }
 }

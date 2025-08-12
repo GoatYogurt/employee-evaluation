@@ -1,25 +1,23 @@
 package com.vtit.intern.controllers;
 
-import com.vtit.intern.dtos.EvaluationDTO;
-import com.vtit.intern.responses.PageResponse;
+import com.vtit.intern.dtos.requests.EvaluationRequestDTO;
+import com.vtit.intern.dtos.responses.EvaluationResponseDTO;
+import com.vtit.intern.dtos.responses.PageResponse;
+import com.vtit.intern.dtos.searches.EvaluationSearchDTO;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.services.impl.EvaluationServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/evaluations")
@@ -33,32 +31,25 @@ public class EvaluationController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
-    public ResponseEntity<EvaluationDTO> evaluate(@Valid @RequestBody EvaluationDTO evaluationDTO) {
-        return ResponseEntity.status(201).body(evaluationServiceImpl.evaluate(evaluationDTO));
+    public ResponseEntity<EvaluationResponseDTO> evaluate(@Valid @RequestBody EvaluationRequestDTO dto) {
+        return ResponseEntity.status(201).body(evaluationServiceImpl.evaluate(dto));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping
-    public PageResponse<EvaluationDTO> getEvaluations(
-            @RequestParam(required = false) @Positive(message = "Employee ID must be positive") Long employeeId,
-            @RequestParam(required = false) @Positive(message = "Criterion ID must be positive") Long criterionId,
-            @RequestParam(required = false) @PositiveOrZero(message = "Minimum score must be 0 or greater") Double minScore,
-            @RequestParam(required = false) @PositiveOrZero(message = "Maximum score must be 0 or greater") Double maxScore,
-            @RequestParam(required = false) String comment,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page index cannot be negative") int page,
+    public PageResponse<EvaluationResponseDTO> getEvaluations(
+            @RequestBody @Validated EvaluationSearchDTO dto,
+            @RequestParam(defaultValue = "0")@Min(value = 0, message = "Page index cannot be negative") int page,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc")
             @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
     ) {
-        System.out.println("Running");
-        if (minScore != null && maxScore != null && minScore > maxScore) {
+        if (dto.getMinScore() != null && dto.getMaxScore() != null && dto.getMinScore() > dto.getMaxScore()) {
             throw new IllegalArgumentException("Minimum score cannot be greater than maximum score");
         }
 
-        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+        if (dto.getStartDate() != null && dto.getEndDate() != null && dto.getStartDate().isAfter(dto.getEndDate())) {
             throw new IllegalArgumentException("Start date cannot be after end date");
         }
 
@@ -68,14 +59,14 @@ public class EvaluationController {
         if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYEE"))) {
             System.out.println("Authenticated as employee: " + auth.getName());
             return evaluationServiceImpl.getEvaluations(
-                    ((Employee) auth.getPrincipal()).getId(), criterionId, minScore, maxScore, comment, startDate, endDate,
+                    ((Employee) auth.getPrincipal()).getId(), dto.getCriterionId(), dto.getMinScore(), dto.getMaxScore(), dto.getComment(), dto.getStartDate(), dto.getEndDate(),
                     PageRequest.of(page, size,
                             sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
             );
         }
 
         return evaluationServiceImpl.getEvaluations(
-                employeeId, criterionId, minScore, maxScore, comment, startDate, endDate,
+                dto.getEmployeeId(), dto.getCriterionId(), dto.getMinScore(), dto.getMaxScore(), dto.getComment(), dto.getStartDate(), dto.getEndDate(),
                 PageRequest.of(page, size,
                         sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
         );
@@ -83,11 +74,11 @@ public class EvaluationController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PutMapping("/{evaluationId}")
-    public ResponseEntity<EvaluationDTO> updateEvaluation(
+    public ResponseEntity<EvaluationResponseDTO> updateEvaluation(
             @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId,
-            @Valid @RequestBody EvaluationDTO evaluationDTO
+            @Valid @RequestBody EvaluationRequestDTO dto
     ) {
-        return ResponseEntity.ok(evaluationServiceImpl.update(evaluationId, evaluationDTO));
+        return ResponseEntity.ok(evaluationServiceImpl.update(evaluationId, dto));
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -101,7 +92,7 @@ public class EvaluationController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PatchMapping("/{evaluationId}/move")
-    public ResponseEntity<EvaluationDTO> moveEvaluationToCycle(
+    public ResponseEntity<EvaluationResponseDTO> moveEvaluationToCycle(
             @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId,
             @RequestParam @Positive(message = "New cycle ID must be positive") Long newCycleId
     ) {
@@ -110,10 +101,10 @@ public class EvaluationController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PatchMapping("/{evaluationId}")
-    public ResponseEntity<EvaluationDTO> patchEvaluation(
+    public ResponseEntity<EvaluationResponseDTO> patchEvaluation(
             @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId,
-            @Valid @RequestBody EvaluationDTO evaluationDTO
+            @Valid @RequestBody EvaluationRequestDTO dto
     ) {
-        return ResponseEntity.ok(evaluationServiceImpl.patch(evaluationId, evaluationDTO));
+        return ResponseEntity.ok(evaluationServiceImpl.patch(evaluationId, dto));
     }
 }

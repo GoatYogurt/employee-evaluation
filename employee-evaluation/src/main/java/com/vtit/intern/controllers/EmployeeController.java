@@ -1,8 +1,9 @@
 package com.vtit.intern.controllers;
 
-import com.vtit.intern.dtos.EmployeeDTO;
-
-import com.vtit.intern.responses.PageResponse;
+import com.vtit.intern.dtos.requests.EmployeeRequestDTO;
+import com.vtit.intern.dtos.responses.EmployeeResponseDTO;
+import com.vtit.intern.dtos.responses.PageResponse;
+import com.vtit.intern.dtos.searches.EmployeeSearchDTO;
 import com.vtit.intern.services.impl.EmployeeServiceImpl;
 
 import jakarta.validation.Valid;
@@ -27,31 +28,30 @@ public class EmployeeController {
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping
-    public PageResponse<EmployeeDTO> getAllEmployees(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String username,
-            @RequestParam(required = false) @Email String email,
-            @RequestParam(required = false) String department,
-            @RequestParam(required = false) String position,
-            @RequestParam(required = false) String role,
-            @RequestParam(required = false) @PositiveOrZero(message = "Minimum salary must be 0 or greater") Double salaryMin,
-            @RequestParam(required = false) @Positive(message = "Maximum salary must be greater than 0") Double salaryMax,
+    public PageResponse<EmployeeResponseDTO> getAllEmployees(
+            @RequestBody(required = false) EmployeeSearchDTO dto,
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page index cannot be negative") int page,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
     ) {
-        if (salaryMin != null && salaryMax != null && salaryMin > salaryMax) {
+        if (dto == null) {
+            return employeeServiceImpl.getAllEmployees(null, null, null, null, null, null, null, null,
+                    PageRequest.of(page, size, Sort.by(sortBy).ascending()));
+        }
+
+        if (dto.getSalaryMin() != null && dto.getSalaryMax() != null && dto.getSalaryMin() > dto.getSalaryMax()) {
             throw new IllegalArgumentException("Minimum salary cannot be greater than maximum salary");
         }
 
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        return employeeServiceImpl.getAllEmployees(name, username, email, department, position, role, salaryMin, salaryMax, PageRequest.of(page, size, sort));
+        return employeeServiceImpl.getAllEmployees(dto.getName(), dto.getUsername(), dto.getEmail(), dto.getDepartment(),
+                dto.getPosition(), dto.getRole(), dto.getSalaryMin(), dto.getSalaryMax(), PageRequest.of(page, size, sort));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<EmployeeDTO> getById(
+    public ResponseEntity<EmployeeResponseDTO> getById(
             @PathVariable @Positive(message = "ID must be a positive number") Long id
     ) {
         return ResponseEntity.ok(employeeServiceImpl.getById(id));
@@ -59,18 +59,18 @@ public class EmployeeController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
-    public ResponseEntity<EmployeeDTO> create(@Valid @RequestBody EmployeeDTO employeeDto) {
+    public ResponseEntity<EmployeeResponseDTO> create(@Valid @RequestBody EmployeeRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(employeeServiceImpl.create(employeeDto));
+                .body(employeeServiceImpl.create(dto));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<EmployeeDTO> update(
+    public ResponseEntity<EmployeeResponseDTO> update(
             @PathVariable @Positive(message = "ID must be a positive number") Long id,
-            @Valid @RequestBody EmployeeDTO employeeDto
+            @Valid @RequestBody EmployeeRequestDTO dto
     ) {
-        return ResponseEntity.ok(employeeServiceImpl.update(id, employeeDto));
+        return ResponseEntity.ok(employeeServiceImpl.update(id, dto));
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -84,10 +84,10 @@ public class EmployeeController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PatchMapping("/{id}")
-    public ResponseEntity<EmployeeDTO> patch(
+    public ResponseEntity<EmployeeResponseDTO> patch(
             @PathVariable @Positive(message = "ID must be a positive number") Long id,
-            @RequestBody EmployeeDTO employeeDto
+            @RequestBody EmployeeRequestDTO dto
     ) {
-        return ResponseEntity.ok(employeeServiceImpl.patch(id, employeeDto));
+        return ResponseEntity.ok(employeeServiceImpl.patch(id, dto));
         }
 }

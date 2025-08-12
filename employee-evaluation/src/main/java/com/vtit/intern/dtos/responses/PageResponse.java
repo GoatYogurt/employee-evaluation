@@ -1,4 +1,4 @@
-package com.vtit.intern.responses;
+package com.vtit.intern.dtos.responses;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

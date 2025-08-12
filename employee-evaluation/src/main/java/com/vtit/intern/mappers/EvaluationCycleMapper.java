@@ -1,36 +1,35 @@
 package com.vtit.intern.mappers;
 
-import com.vtit.intern.dtos.EvaluationCycleDTO;
-import com.vtit.intern.dtos.EvaluationDTO;
+import com.vtit.intern.dtos.requests.EvaluationCycleRequestDTO;
+import com.vtit.intern.dtos.responses.EvaluationCycleResponseDTO;
+import com.vtit.intern.dtos.responses.EvaluationResponseDTO;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.models.EvaluationCycle;
 
 import java.util.stream.Collectors;
 
 public class EvaluationCycleMapper {
-    public static EvaluationCycleDTO toDTO(EvaluationCycle evaluationCycle) {
-        EvaluationCycleDTO evaluationCycleDTO = new EvaluationCycleDTO();
-        evaluationCycleDTO.setId(evaluationCycle.getId());
-        evaluationCycleDTO.setName(evaluationCycle.getName());
-        evaluationCycleDTO.setDescription(evaluationCycle.getDescription());
-        evaluationCycleDTO.setStartDate(evaluationCycle.getStartDate());
-        evaluationCycleDTO.setEndDate(evaluationCycle.getEndDate());
-        evaluationCycleDTO.setStatus(evaluationCycle.getStatus());
+    public static EvaluationCycleResponseDTO entityToResponse(EvaluationCycle evaluationCycle) {
+        EvaluationCycleResponseDTO evaluationCycleResponseDTO = new EvaluationCycleResponseDTO();
+        evaluationCycleResponseDTO.setName(evaluationCycle.getName());
+        evaluationCycleResponseDTO.setDescription(evaluationCycle.getDescription());
+        evaluationCycleResponseDTO.setStartDate(evaluationCycle.getStartDate());
+        evaluationCycleResponseDTO.setEndDate(evaluationCycle.getEndDate());
+        evaluationCycleResponseDTO.setStatus(evaluationCycle.getStatus());
 
-        evaluationCycleDTO.setEmployees(evaluationCycle.getEmployees().stream()
+        evaluationCycleResponseDTO.setEmployees(evaluationCycle.getEmployees().stream()
                 .map(Employee::getId)
                 .collect(Collectors.toSet()));
 
-        evaluationCycleDTO.setManagers(evaluationCycle.getManagers().stream()
+        evaluationCycleResponseDTO.setManagers(evaluationCycle.getManagers().stream()
                 .map(Employee::getId)
                 .collect(Collectors.toSet()));
 
-        evaluationCycleDTO.setEvaluations(
+        evaluationCycleResponseDTO.setEvaluations(
                 evaluationCycle.getEvaluations() == null ? null :
                         evaluationCycle.getEvaluations().stream()
                                 .map(e -> {
-                                    EvaluationDTO eDto = new EvaluationDTO();
-                                    eDto.setId(e.getId());
+                                    EvaluationResponseDTO eDto = new EvaluationResponseDTO();
                                     eDto.setScore(e.getScore());
                                     eDto.setComment(e.getComment());
                                     eDto.setEvaluationDate(e.getEvaluationDate());
@@ -42,19 +41,19 @@ public class EvaluationCycleMapper {
                                 .collect(Collectors.toSet())
         );
 
-        return evaluationCycleDTO;
+        return evaluationCycleResponseDTO;
     }
 
-    public static EvaluationCycle toEntity(EvaluationCycleDTO evaluationCycleDTO) {
+    public static EvaluationCycle requestToEntity(EvaluationCycleRequestDTO dto) {
         EvaluationCycle evaluationCycle = new EvaluationCycle();
-        evaluationCycle.setId(evaluationCycleDTO.getId());
-        evaluationCycle.setName(evaluationCycleDTO.getName());
-        evaluationCycle.setDescription(evaluationCycleDTO.getDescription());
-        evaluationCycle.setStartDate(evaluationCycleDTO.getStartDate());
-        evaluationCycle.setEndDate(evaluationCycleDTO.getEndDate());
-        evaluationCycle.setStatus(evaluationCycleDTO.getStatus());
+        evaluationCycle.setId(dto.getId());
+        evaluationCycle.setName(dto.getName());
+        evaluationCycle.setDescription(dto.getDescription());
+        evaluationCycle.setStartDate(dto.getStartDate());
+        evaluationCycle.setEndDate(dto.getEndDate());
+        evaluationCycle.setStatus(dto.getStatus());
 
-        evaluationCycle.setEmployees(evaluationCycleDTO.getEmployees().stream()
+        evaluationCycle.setEmployees(dto.getEmployees().stream()
                 .map((id) -> {
                     Employee employee = new Employee();
                     employee.setId(id);
@@ -62,7 +61,7 @@ public class EvaluationCycleMapper {
                 })
                 .collect(Collectors.toSet()));
 
-        evaluationCycle.setManagers(evaluationCycleDTO.getManagers().stream()
+        evaluationCycle.setManagers(dto.getManagers().stream()
                 .map((id) -> {
                     Employee employee = new Employee();
                     employee.setId(id);

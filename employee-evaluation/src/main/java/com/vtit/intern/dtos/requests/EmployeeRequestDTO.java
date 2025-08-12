@@ -1,4 +1,4 @@
-package com.vtit.intern.dtos;
+package com.vtit.intern.dtos.requests;
 
 import com.vtit.intern.models.Role;
 import jakarta.validation.constraints.*;
@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class EmployeeDTO {
+public class EmployeeRequestDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id;
 

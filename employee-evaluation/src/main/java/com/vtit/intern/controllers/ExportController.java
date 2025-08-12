@@ -76,15 +76,10 @@ public class ExportController {
         headerCell.setCellValue("Department");
         headerCell.setCellStyle(headerStyle);
 
-//        try (FileOutputStream fileOut = new FileOutputStream("employees.xlsx")) {
-//            workbook.write(fileOut);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
         return workbook;
     }
 
-    @GetMapping
+    @GetMapping("/employees")
     public void exportToExcel(HttpServletResponse response) throws IOException {
         response.setContentType("application/octet-stream");
         String headerKey = "Content-Disposition";

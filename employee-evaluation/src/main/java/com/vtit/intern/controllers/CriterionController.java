@@ -1,13 +1,14 @@
 package com.vtit.intern.controllers;
 
-import com.vtit.intern.dtos.CriterionDTO;
-import com.vtit.intern.responses.PageResponse;
+import com.vtit.intern.dtos.searches.CriterionSearchDTO;
+import com.vtit.intern.dtos.requests.CriterionRequestDTO;
+import com.vtit.intern.dtos.responses.CriterionResponseDTO;
+import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.services.impl.CriterionServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -22,34 +23,33 @@ import org.springframework.web.bind.annotation.*;
 public class CriterionController {
     private final CriterionServiceImpl criteriaServiceImpl;
 
-    public CriterionController(CriterionServiceImpl criteriaService ) {
+    public CriterionController(CriterionServiceImpl criteriaService) {
         this.criteriaServiceImpl = criteriaService;
     }
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping
-    public PageResponse<CriterionDTO> getAllCriteria(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String description,
-            @RequestParam(required = false) @PositiveOrZero(message = "Minimum weight must be 0 or greater") Double minWeight,
-            @RequestParam(required = false) @PositiveOrZero(message = "Maximum weight must be 0 or greater") Double maxWeight,
+    public PageResponse<CriterionResponseDTO> getAllCriteria(
+            @RequestBody (required = false) CriterionSearchDTO criterionSearchDTO,
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page index cannot be negative") int page,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc")
             @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
     ) {
-        if (minWeight != null && maxWeight != null && minWeight > maxWeight) {
+        if (criterionSearchDTO.getMinWeight() != null && criterionSearchDTO.getMaxWeight() != null
+                && criterionSearchDTO.getMinWeight() > criterionSearchDTO.getMaxWeight()) {
             throw new IllegalArgumentException("Minimum weight cannot be greater than maximum weight");
         }
 
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        return criteriaServiceImpl.getAllCriteria(name, description, minWeight, maxWeight, PageRequest.of(page, size, sort));
+        return criteriaServiceImpl.getAllCriteria(criterionSearchDTO.getName(), criterionSearchDTO.getDescription(),
+                criterionSearchDTO.getMinWeight(), criterionSearchDTO.getMaxWeight(), PageRequest.of(page, size, sort));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<CriterionDTO> getById(
+    public ResponseEntity<CriterionResponseDTO> getById(
             @PathVariable @Positive(message = "ID must be a positive number") Long id
     ) {
         return ResponseEntity.ok(criteriaServiceImpl.getById(id));
@@ -57,17 +57,17 @@ public class CriterionController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
-    public ResponseEntity<CriterionDTO> create(@Valid @RequestBody CriterionDTO criterionDto) {
+    public ResponseEntity<CriterionResponseDTO> create(@Valid @RequestBody CriterionRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(criteriaServiceImpl.create(criterionDto));
+                .body(criteriaServiceImpl.create(dto));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<CriterionDTO> update(
+    public ResponseEntity<CriterionResponseDTO> update(
             @PathVariable @Positive(message = "ID must be a positive number") Long id,
-            @Valid @RequestBody CriterionDTO criterionDto) {
-        return ResponseEntity.ok(criteriaServiceImpl.update(id, criterionDto));
+            @Valid @RequestBody CriterionRequestDTO dto) {
+        return ResponseEntity.ok(criteriaServiceImpl.update(id, dto));
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -81,9 +81,9 @@ public class CriterionController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PatchMapping("/{id}")
-    public ResponseEntity<CriterionDTO> patch(
+    public ResponseEntity<CriterionResponseDTO> patch(
             @PathVariable @Positive(message = "ID must be a positive number") Long id,
-            @RequestBody CriterionDTO criterionDto) {
-        return ResponseEntity.ok(criteriaServiceImpl.patch(id, criterionDto));
+            @RequestBody CriterionRequestDTO dto) {
+        return ResponseEntity.ok(criteriaServiceImpl.patch(id, dto));
     }
 }

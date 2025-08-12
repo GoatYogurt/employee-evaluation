@@ -62,7 +62,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<Map<String, String>> handleAuthorizationDenied(AuthorizationDeniedException ex) {
         Map<String, String> body = new HashMap<>();
-        body.put("error", "You don’t have permission to access this resource.");
+        body.put("error", "You don’t have permission to access this resource or make this operation.");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 }

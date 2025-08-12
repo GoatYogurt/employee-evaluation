@@ -64,14 +64,14 @@ public class EmployeeController {
                 .body(employeeServiceImpl.create(dto));
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    @PutMapping("/{id}")
-    public ResponseEntity<EmployeeResponseDTO> update(
-            @PathVariable @Positive(message = "ID must be a positive number") Long id,
-            @Valid @RequestBody EmployeeRequestDTO dto
-    ) {
-        return ResponseEntity.ok(employeeServiceImpl.update(id, dto));
-    }
+//    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
+//    @PutMapping("/{id}")
+//    public ResponseEntity<EmployeeResponseDTO> update(
+//            @PathVariable @Positive(message = "ID must be a positive number") Long id,
+//            @Valid @RequestBody EmployeeRequestDTO dto
+//    ) {
+//        return ResponseEntity.ok(employeeServiceImpl.update(id, dto));
+//    }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping("/{id}")

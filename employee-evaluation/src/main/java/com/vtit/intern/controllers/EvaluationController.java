@@ -38,13 +38,19 @@ public class EvaluationController {
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping
     public PageResponse<EvaluationResponseDTO> getEvaluations(
-            @RequestBody @Validated EvaluationSearchDTO dto,
+            @RequestBody(required = false) EvaluationSearchDTO dto,
             @RequestParam(defaultValue = "0")@Min(value = 0, message = "Page index cannot be negative") int page,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size,
             @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc")
-            @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
+            @RequestParam(defaultValue = "asc") @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
     ) {
+        if (dto == null) {
+            return evaluationServiceImpl.getEvaluations(
+                    null, null, null, null, null, null, null,
+                    PageRequest.of(page, size, sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
+            );
+        }
+
         if (dto.getMinScore() != null && dto.getMaxScore() != null && dto.getMinScore() > dto.getMaxScore()) {
             throw new IllegalArgumentException("Minimum score cannot be greater than maximum score");
         }

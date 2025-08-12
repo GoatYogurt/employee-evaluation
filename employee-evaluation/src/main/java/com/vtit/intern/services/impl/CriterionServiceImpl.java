@@ -18,12 +18,12 @@ import java.util.List;
 @Service
 public class CriterionServiceImpl implements CriterionService {
     @Autowired
-    private final CriterionRepository repository;
+    private final CriterionRepository criterionRepository;
     @Autowired
     private final ModelMapper modelMapper;
 
-    public CriterionServiceImpl(CriterionRepository repository, ModelMapper modelMapper) {
-        this.repository = repository;
+    public CriterionServiceImpl(CriterionRepository criterionRepository, ModelMapper modelMapper) {
+        this.criterionRepository = criterionRepository;
         this.modelMapper = modelMapper;
     }
 
@@ -34,7 +34,7 @@ public class CriterionServiceImpl implements CriterionService {
         Double searchMinWeight = minWeight != null ? minWeight : 0.0;
         Double searchMaxWeight = maxWeight != null ? maxWeight : Double.MAX_VALUE;
 
-        Page<Criterion> criterionPage = repository.searchCriteria(
+        Page<Criterion> criterionPage = criterionRepository.searchCriteria(
                 searchName,
                 searchDescription,
                 searchMinWeight,
@@ -57,7 +57,7 @@ public class CriterionServiceImpl implements CriterionService {
 
     @Override
     public CriterionResponseDTO getById(Long id) {
-        return repository.findById(id)
+        return criterionRepository.findById(id)
                 .map(criterion -> modelMapper.map(criterion, CriterionResponseDTO.class))
                 .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id));
     }
@@ -65,37 +65,37 @@ public class CriterionServiceImpl implements CriterionService {
     @Override
     public CriterionResponseDTO create(CriterionRequestDTO dto) {
         Criterion criterion = modelMapper.map(dto, Criterion.class);
-        Criterion savedCriterion = repository.save(criterion);
+        Criterion savedCriterion = criterionRepository.save(criterion);
         return modelMapper.map(savedCriterion, CriterionResponseDTO.class);
     }
 
-    @Override
-    public CriterionResponseDTO update(Long id, CriterionRequestDTO dto) {
-        if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("Cannot update. Criterion not found with id: " + id);
-        }
-
-        Criterion criterion = modelMapper.map(dto, Criterion.class);
-        criterion.setId(id); // Ensure the ID is set for the update
-        Criterion updatedCriterion = repository.save(criterion);
-        return modelMapper.map(updatedCriterion, CriterionResponseDTO.class);
-    }
+//    @Override
+//    public CriterionResponseDTO update(Long id, CriterionRequestDTO dto) {
+//        if (!criterionRepository.existsById(id)) {
+//            throw new ResourceNotFoundException("Cannot update. Criterion not found with id: " + id);
+//        }
+//
+//        Criterion criterion = modelMapper.map(dto, Criterion.class);
+//        criterion.setId(id); // Ensure the ID is set for the update
+//        Criterion updatedCriterion = criterionRepository.save(criterion);
+//        return modelMapper.map(updatedCriterion, CriterionResponseDTO.class);
+//    }
 
     @Override
     public void delete(Long id) {
-        if (!repository.existsById(id)) {
+        if (!criterionRepository.existsById(id)) {
             throw new ResourceNotFoundException("Cannot delete. Criterion not found with id: " + id);
         }
-        repository.deleteById(id);
+        criterionRepository.deleteById(id);
     }
 
     @Override
     public CriterionResponseDTO patch(Long id, CriterionRequestDTO dto) {
-        if (!repository.existsById(id)) {
+        if (!criterionRepository.existsById(id)) {
             throw new ResourceNotFoundException("Cannot patch. Criterion not found with id: " + id);
         }
 
-        Criterion existingCriterion = repository.findById(id)
+        Criterion existingCriterion = criterionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id));
 
         // update only the fields that are present in the DTO
@@ -109,7 +109,7 @@ public class CriterionServiceImpl implements CriterionService {
             existingCriterion.setWeight(dto.getWeight());
         }
 
-        Criterion updatedCriterion = repository.save(existingCriterion);
+        Criterion updatedCriterion = criterionRepository.save(existingCriterion);
         return modelMapper.map(updatedCriterion, CriterionResponseDTO.class);
     }
 }

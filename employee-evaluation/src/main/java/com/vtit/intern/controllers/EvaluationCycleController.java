@@ -30,13 +30,20 @@ public class EvaluationCycleController {
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping
     public PageResponse<EvaluationCycleResponseDTO> getAllEvaluationCycles(
-            @RequestBody EvaluationCycleRequestDTO dto,
+            @RequestBody(required = false) EvaluationCycleRequestDTO dto,
             @RequestParam(defaultValue = "0")@Min(value = 0, message = "Page index cannot be negative") int page,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc")
             @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
     ) {
+        if (dto == null) {
+            return evaluationCycleServiceImpl.getAllEvaluationCycles(
+                    null, null, null, null, null,
+                    PageRequest.of(page, size, sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
+            );
+        }
+
         if (dto.getStartDate() != null && dto.getEndDate() != null && dto.getStartDate().isAfter(dto.getEndDate())) {
             throw new IllegalArgumentException("Start date cannot be after end date");
         }
@@ -56,7 +63,7 @@ public class EvaluationCycleController {
         return ResponseEntity.ok(evaluationCycleServiceImpl.get(id));
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE, ROLE_MANAGER', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping("/active")
     public PageResponse<EvaluationCycleResponseDTO> getActiveEvaluationCycles(
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page index cannot be negative") int page,

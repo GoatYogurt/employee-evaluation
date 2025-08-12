@@ -62,18 +62,18 @@ public class EmployeeServiceImpl implements EmployeeService {
         return modelMapper.map(savedEmployee, EmployeeResponseDTO.class);
     }
 
-    @Override
-    public EmployeeResponseDTO update(Long id, EmployeeRequestDTO dto) {
-        if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("Cannot update. Employee not found with id: " + id);
-        }
-
-        Employee employee = modelMapper.map(dto, Employee.class);
-        employee.setId(id);
-        Employee updatedEmployee = repository.save(employee);
-        updatedEmployee.setPassword(null); // Clear password before returning
-        return modelMapper.map(updatedEmployee, EmployeeResponseDTO.class);
-    }
+//    @Override
+//    public EmployeeResponseDTO update(Long id, EmployeeRequestDTO dto) {
+//        if (!repository.existsById(id)) {
+//            throw new ResourceNotFoundException("Cannot update. Employee not found with id: " + id);
+//        }
+//
+//        Employee employee = modelMapper.map(dto, Employee.class);
+//        employee.setId(id);
+//        Employee updatedEmployee = repository.save(employee);
+////        updatedEmployee.setPassword(null); // Clear password before returning
+//        return modelMapper.map(updatedEmployee, EmployeeResponseDTO.class);
+//    }
 
     @Override
     public void delete(Long id) {

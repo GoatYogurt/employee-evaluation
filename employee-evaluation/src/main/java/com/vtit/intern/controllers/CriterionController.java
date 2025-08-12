@@ -37,6 +37,10 @@ public class CriterionController {
             @RequestParam(defaultValue = "asc")
             @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
     ) {
+        if (criterionSearchDTO == null) {
+            return criteriaServiceImpl.getAllCriteria(null, null, null, null, PageRequest.of(page, size, Sort.by(sortBy).ascending()));
+        }
+
         if (criterionSearchDTO.getMinWeight() != null && criterionSearchDTO.getMaxWeight() != null
                 && criterionSearchDTO.getMinWeight() > criterionSearchDTO.getMaxWeight()) {
             throw new IllegalArgumentException("Minimum weight cannot be greater than maximum weight");
@@ -62,13 +66,13 @@ public class CriterionController {
                 .body(criteriaServiceImpl.create(dto));
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    @PutMapping("/{id}")
-    public ResponseEntity<CriterionResponseDTO> update(
-            @PathVariable @Positive(message = "ID must be a positive number") Long id,
-            @Valid @RequestBody CriterionRequestDTO dto) {
-        return ResponseEntity.ok(criteriaServiceImpl.update(id, dto));
-    }
+//    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
+//    @PutMapping("/{id}")
+//    public ResponseEntity<CriterionResponseDTO> update(
+//            @PathVariable @Positive(message = "ID must be a positive number") Long id,
+//            @Valid @RequestBody CriterionRequestDTO dto) {
+//        return ResponseEntity.ok(criteriaServiceImpl.update(id, dto));
+//    }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping("/{id}")

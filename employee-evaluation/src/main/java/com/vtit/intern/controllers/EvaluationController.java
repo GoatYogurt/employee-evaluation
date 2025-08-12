@@ -5,7 +5,9 @@ import com.vtit.intern.dtos.responses.EvaluationResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.searches.EvaluationSearchDTO;
 import com.vtit.intern.models.Employee;
+import com.vtit.intern.repositories.EmployeeRepository;
 import com.vtit.intern.services.EvaluationService;
+import com.vtit.intern.services.UserDetailsService;
 import com.vtit.intern.services.impl.EvaluationServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -17,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,9 +28,11 @@ import org.springframework.web.bind.annotation.*;
 @Validated
 public class EvaluationController {
     private final EvaluationService evaluationService;
+    private final EmployeeRepository employeeRepository;
 
-    public EvaluationController(EvaluationService evaluationService) {
+    public EvaluationController(EvaluationService evaluationService, EmployeeRepository employeeRepository) {
         this.evaluationService = evaluationService;
+        this.employeeRepository = employeeRepository;
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
@@ -40,16 +45,31 @@ public class EvaluationController {
     @GetMapping
     public PageResponse<EvaluationResponseDTO> getEvaluations(
             @RequestBody(required = false) EvaluationSearchDTO dto,
-            @RequestParam(defaultValue = "0")@Min(value = 0, message = "Page index cannot be negative") int page,
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page index cannot be negative") int page,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
     ) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
         if (dto == null) {
-            return evaluationService.getEvaluations(
-                    null, null, null, null, null, null, null,
-                    PageRequest.of(page, size, sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
-            );
+            System.out.println("Search DTO is null, returning all evaluations");
+            if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYEE"))) {
+                String username = auth.getName();
+                System.out.println("Authenticated as employee: " + username);
+                Employee employee = employeeRepository.findByUsername(username)
+                        .orElseThrow(() -> new IllegalArgumentException("Employee not found with username: " + username));
+                return evaluationService.getEvaluations(
+                        employee.getId(), null, null, null, null, null, null,
+                        PageRequest.of(page, size,
+                                sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
+                );
+            } else {
+                return evaluationService.getEvaluations(
+                        null, null, null, null, null, null, null,
+                        PageRequest.of(page, size, sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
+                );
+            }
         }
 
         if (dto.getMinScore() != null && dto.getMaxScore() != null && dto.getMinScore() > dto.getMaxScore()) {
@@ -60,22 +80,21 @@ public class EvaluationController {
             throw new IllegalArgumentException("Start date cannot be after end date");
         }
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
         // Check if the authenticated user is an employee
         if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYEE"))) {
-            System.out.println("Authenticated as employee: " + auth.getName());
+            String username = auth.getName();
+            System.out.println("Authenticated as employee: " + username);
+            Employee employee = employeeRepository.findByUsername(username)
+                    .orElseThrow(() -> new IllegalArgumentException("Employee not found with username: " + username));
             return evaluationService.getEvaluations(
-                    ((Employee) auth.getPrincipal()).getId(), dto.getCriterionId(), dto.getMinScore(), dto.getMaxScore(), dto.getComment(), dto.getStartDate(), dto.getEndDate(),
-                    PageRequest.of(page, size,
-                            sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
+                    employee.getId(), dto.getCriterionId(), dto.getMinScore(), dto.getMaxScore(), dto.getComment(), dto.getStartDate(), dto.getEndDate(),
+                    PageRequest.of(page, size, sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
             );
         }
 
         return evaluationService.getEvaluations(
                 dto.getEmployeeId(), dto.getCriterionId(), dto.getMinScore(), dto.getMaxScore(), dto.getComment(), dto.getStartDate(), dto.getEndDate(),
-                PageRequest.of(page, size,
-                        sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
+                PageRequest.of(page, size, sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending())
         );
     }
 

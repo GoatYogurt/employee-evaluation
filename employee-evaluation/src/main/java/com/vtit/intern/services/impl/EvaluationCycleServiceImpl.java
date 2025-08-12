@@ -41,14 +41,14 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
         return EvaluationCycleMapper.entityToResponse(evaluationCycle);
     }
 
-    @Override
-    public EvaluationCycleResponseDTO update(Long id, EvaluationCycleRequestDTO dto) {
-        EvaluationCycle existingEvaluationCycle = evaluationCycleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
-
-        EvaluationCycle updatedEvaluationCycle = evaluationCycleRepository.save(existingEvaluationCycle);
-        return EvaluationCycleMapper.entityToResponse(updatedEvaluationCycle);
-    }
+//    @Override
+//    public EvaluationCycleResponseDTO update(Long id, EvaluationCycleRequestDTO dto) {
+//        EvaluationCycle existingEvaluationCycle = evaluationCycleRepository.findById(id)
+//                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
+//
+//        EvaluationCycle updatedEvaluationCycle = evaluationCycleRepository.save(existingEvaluationCycle);
+//        return EvaluationCycleMapper.entityToResponse(updatedEvaluationCycle);
+//    }
 
     @Override
     public void delete(Long id) {

@@ -109,7 +109,7 @@ public class EvaluationController {
     @PatchMapping("/{evaluationId}")
     public ResponseEntity<EvaluationResponseDTO> patchEvaluation(
             @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId,
-            @Valid @RequestBody EvaluationRequestDTO dto
+            @RequestBody EvaluationRequestDTO dto
     ) {
         return ResponseEntity.ok(evaluationServiceImpl.patch(evaluationId, dto));
     }

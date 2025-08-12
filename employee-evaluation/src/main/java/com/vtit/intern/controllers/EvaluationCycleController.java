@@ -84,14 +84,14 @@ public class EvaluationCycleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(evaluationCycleServiceImpl.create(dto));
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    @PutMapping("/{id}")
-    public ResponseEntity<EvaluationCycleResponseDTO> updateEvaluationCycle(
-            @PathVariable @Positive(message = "ID must be a positive number") Long id,
-            @RequestBody @Valid EvaluationCycleRequestDTO dto
-    ) {
-        return ResponseEntity.ok(evaluationCycleServiceImpl.update(id, dto));
-    }
+//    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
+//    @PutMapping("/{id}")
+//    public ResponseEntity<EvaluationCycleResponseDTO> updateEvaluationCycle(
+//            @PathVariable @Positive(message = "ID must be a positive number") Long id,
+//            @RequestBody @Valid EvaluationCycleRequestDTO dto
+//    ) {
+//        return ResponseEntity.ok(evaluationCycleServiceImpl.update(id, dto));
+//    }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
@@ -105,7 +105,7 @@ public class EvaluationCycleController {
     @PatchMapping("/{id}")
     public ResponseEntity<EvaluationCycleResponseDTO> patchEvaluationCycle(
             @PathVariable @Positive(message = "ID must be a positive number") Long id,
-            @RequestBody @Valid EvaluationCycleRequestDTO dto
+            @RequestBody EvaluationCycleRequestDTO dto
     ) {
         return ResponseEntity.ok(evaluationCycleServiceImpl.patch(id, dto));
     }

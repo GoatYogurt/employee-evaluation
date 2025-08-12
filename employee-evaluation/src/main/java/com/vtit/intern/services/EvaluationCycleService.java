@@ -11,7 +11,7 @@ import java.time.LocalDate;
 public interface EvaluationCycleService {
     EvaluationCycleResponseDTO create(EvaluationCycleRequestDTO evaluationCycleRequestDTO);
     EvaluationCycleResponseDTO get(Long id);
-    EvaluationCycleResponseDTO update(Long id, EvaluationCycleRequestDTO dto);
+//    EvaluationCycleResponseDTO update(Long id, EvaluationCycleRequestDTO dto);
     void delete(Long id);
     PageResponse<EvaluationCycleResponseDTO> getAllEvaluationCycles(String name, String description, EvaluationCycleStatus status, LocalDate startDate, LocalDate endDate, Pageable pageable);
     PageResponse<EvaluationCycleResponseDTO> getActiveEvaluationCycles(Pageable pageable);

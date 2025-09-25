@@ -16,7 +16,7 @@ function CriterionView() {
     fetch(`http://localhost:8080/api/criteria/${id}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Basic ${base64}`,
+        'Authorization': 'Bearer ' + localStorage.getItem('accessToken'),
         'Content-Type': 'application/json',
       },
     })

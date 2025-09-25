@@ -4,20 +4,17 @@ import { Link } from 'react-router-dom';
 
 const EmployeeTable = () => {
 	const [employees, setEmployees] = useState([]);
-	const username = 'admin';
-	const password = '123456';
-	const base64 = btoa(`${username}:${password}`);
 
 	useEffect(() => {
 		fetch('http://localhost:8080/api/employees', {
 			method: 'GET',
 			headers: {
-				'Authorization': `Basic ${base64}`,
+				'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
 				'Content-Type': 'application/json',
 			},
 		})
 			.then((res) => res.json())
-			.then((data) => setEmployees(data))
+			.then((data) => setEmployees(data.content))
 			.catch((err) => console.error('Failed to fetch employees:', err));
 	}, []);
 
@@ -28,7 +25,7 @@ const EmployeeTable = () => {
 		fetch(`http://localhost:8080/api/employees/${id}`, {
 			method: 'DELETE',
 			headers: {
-				'Authorization': `Basic ${base64}`,
+				'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
 				'Content-Type': 'application/json',
 			},
 		})
@@ -48,7 +45,7 @@ const EmployeeTable = () => {
 			<table className="employee-table">
 				<thead>
 					<tr>
-						<th>ID</th>
+						<th>Username</th>
 						<th>Name</th>
 						<th>Department</th>
 						<th>Position</th>
@@ -60,8 +57,8 @@ const EmployeeTable = () => {
 				<tbody>
 					{employees.length > 0 ? (
 						employees.map((emp) => (
-							<tr key={emp.id}>
-								<td>{emp.id}</td>
+							<tr key={emp.username}>
+								<td>{emp.username}</td>
 								<td>{emp.name}</td>
 								<td>{emp.department}</td>
 								<td>{emp.position}</td>

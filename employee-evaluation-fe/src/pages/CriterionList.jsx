@@ -12,11 +12,11 @@ function CriterionList() {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Basic ' + btoa('admin:123456')
+                'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
             },
         })
             .then((res) => res.json())
-            .then((data) => setCriteria(data))
+            .then((data) => setCriteria(data.content))
             .catch((err) => console.error('Failed to fetch criteria:', err));
     }, []);
 
@@ -28,7 +28,7 @@ function CriterionList() {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Basic ' + btoa('admin:123456')
+                'Authorization': 'Bearer ' + localStorage.getItem('accessToken'),
             },
         })
             .then((res) => {

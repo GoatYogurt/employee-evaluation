@@ -22,21 +22,21 @@ function EmployeeView() {
 
     useEffect(() => {
         fetch(`http://localhost:8080/api/employees/${id}`, {
-            headers: { 'Authorization': `Basic ${base64}` },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('accessToken') },
         })
             .then(res => res.json())
             .then(data => setEmployee(data))
             .catch(err => console.error('Failed to fetch employee:', err));
 
         fetch(`http://localhost:8080/api/evaluations/employee/${id}`, {
-            headers: { 'Authorization': `Basic ${base64}` },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('accessToken') },
         })
             .then(res => res.json())
             .then(data => setEvaluations(data))
             .catch(err => console.error('Failed to fetch evaluations:', err));
 
         fetch(`http://localhost:8080/api/criteria`, {
-            headers: { 'Authorization': `Basic ${base64}` },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('accessToken') },
         })
             .then(res => res.json())
             .then(data => setCriteriaList(data))
@@ -53,7 +53,7 @@ function EmployeeView() {
         fetch(`http://localhost:8080/api/employees/${id}`, {
             method: 'PUT',
             headers: {
-                'Authorization': `Basic ${base64}`,
+                'Authorization': 'Bearer ' + localStorage.getItem('accessToken'),
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(employee),
@@ -87,7 +87,7 @@ function EmployeeView() {
         fetch(`http://localhost:8080/api/evaluations`, {
             method: 'POST',
             headers: {
-                'Authorization': `Basic ${base64}`,
+                'Authorization': 'Bearer ' + localStorage.getItem('accessToken'),
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload),
@@ -114,7 +114,7 @@ function EmployeeView() {
         fetch(`http://localhost:8080/api/evaluations/${evaluationId}`, {
             method: 'DELETE',
             headers: {
-                'Authorization': `Basic ${base64}`,
+                'Authorization': 'Bearer ' + localStorage.getItem('accessToken'),
                 'Content-Type': 'application/json',
             },
         })

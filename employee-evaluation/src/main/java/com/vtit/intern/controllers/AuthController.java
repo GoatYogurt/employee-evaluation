@@ -1,6 +1,5 @@
 package com.vtit.intern.controllers;
 
-import com.vtit.intern.dtos.*;
 import com.vtit.intern.dtos.requests.EmployeeRequestDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;

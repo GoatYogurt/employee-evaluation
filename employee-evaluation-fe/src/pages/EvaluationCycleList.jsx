@@ -13,7 +13,7 @@ const EvaluationCycleList = () => {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Basic ' + btoa('admin:123456'),
+                'Authorization': 'Bearer ' + localStorage.getItem('accessToken'),
             }
         })
             .then(response => {
@@ -23,7 +23,7 @@ const EvaluationCycleList = () => {
                 return response.json();
             })
             .then(data => {
-                setCycles(data);
+                setCycles(data.content);
                 setLoading(false);
             })
             .catch(err => {
@@ -37,7 +37,7 @@ const EvaluationCycleList = () => {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Basic ' + btoa('admin:123456'),
+                'Authorization': 'Bearer ' + localStorage.getItem('accessToken'),
             }
         })
             .then(response => {

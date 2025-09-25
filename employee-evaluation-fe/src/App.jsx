@@ -1,8 +1,4 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
-import EmployeeTable from './components/EmployeeTable'
 import Home from './pages/Home'
 import EmployeeView from './pages/EmployeeView'
 import Navigation from './components/Navigation'
@@ -13,7 +9,7 @@ import EmployeeList from './pages/EmployeeList'
 import CriterionAdd from './pages/CriterionAdd'
 import CriterionView from './pages/CriterionView'
 import EvaluationCycleList from './pages/EvaluationCycleList'
-
+import Login from './pages/Login'
 
 function App() {
   return (
@@ -22,6 +18,7 @@ function App() {
       <Routes>
         <Route path='/' element={<Home />} />
 
+        <Route path='/login' element={<Login />} />
         <Route path='/employee-list' element={<EmployeeList />} />
         <Route path='/employee-view/:id' element={<EmployeeView />} />
         <Route path="/employee-add" element={<EmployeeAdd />} />

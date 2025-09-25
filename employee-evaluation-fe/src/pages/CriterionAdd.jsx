@@ -17,7 +17,7 @@ function CriterionAdd() {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': 'Basic ' + btoa('admin:123456')
+        'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
       },
       body: JSON.stringify(newCriterion),
     })

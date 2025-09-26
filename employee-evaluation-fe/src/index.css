@@ -16,11 +16,11 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color:black;
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: #F70732;
 }
 
 body {
@@ -50,7 +50,7 @@ button {
 
 button:hover {
   background-color: #333;
-  border-color: #646cff;
+  border-color: #F70732;
 }
 
 button:focus,
@@ -60,7 +60,7 @@ button:focus-visible {
 
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
+    color: #F70732;
     background-color: #ffffff;
   }
   a:hover {
@@ -72,15 +72,7 @@ button:focus-visible {
 }
 
 /* Global Form Styling */
-form {
-  max-width: 600px;
-  margin: 2rem auto;
-  padding: 1.5rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background-color: #1ab64e;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
+
 
 form label {
   display: block;
@@ -109,7 +101,7 @@ form input[type="number"] {
 }
 
 form button {
-  background-color: #007bff;
+  background-color: #F70732;
   color: white;
   padding: 0.6rem 1.2rem;
   border: none;
@@ -125,7 +117,7 @@ form button:hover {
 
 /* navigation styling */
 .navbar {
-  background-color: #007BFF;
+  background-color: #F70732;
   padding: 12px 24px;
   display: flex;
   gap: 20px;
@@ -165,3 +157,315 @@ form button:hover {
 .employee-table th {
   background-color: #551c1c;
 }
+
+
+
+
+/***************************************** login page styling **********************************************************/
+body {  
+  background-color: #CCCCCC;
+  font-family: Arial, sans-serif;
+}
+
+.main-text{
+  text-align: center;
+  color: black;
+}
+
+.login-form {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08);
+  max-width: 400px;
+  margin: 60px auto;
+  padding: 40px 32px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.login-form h2 {
+  color: #1A2233;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 18px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.login-form input[type="text"],
+.login-form input[type="password"] {
+  border: 1px solid #242424;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  background: #F6F7FB;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+}
+
+.login-form input[type="text"]:focus,
+.login-form input[type="password"]:focus {
+  border-color: #007BFF;
+  outline: none;
+  background: #fff;
+}
+
+.login-form button[type="submit"] {
+  background-color: #FF3366;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  transition: background 0.2s;
+}
+
+.login-form button[type="submit"]:hover {
+  background: #d92c5c;
+}
+
+.login-form button[type="button"] {
+  background: #fff;
+  color: #FF3366;
+  border: 1px solid #FF3366;
+  border-radius: 8px;
+  padding: 12px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.login-form button[type="button"]:hover {
+  background: #FF3366;
+  color: #fff;
+}
+
+.login-form .error {
+  color: #FF3366;
+  background: #FFF0F3;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-size: 0.98rem;
+  text-align: center;
+}
+
+.login-form a {
+  color: #007BFF;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.login-form a:hover {
+  color: #FF3366;
+  text-decoration: underline;
+}
+
+.login-form p {
+  margin: 0;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.login-form .forgot-link {
+  margin-top: 10px;
+  color: #007BFF;
+  cursor: pointer;
+}
+
+.login-form .forgot-link:hover {
+  color: #FF3366;
+}
+
+.login-form .change-link {
+  margin-top: 5px;
+  color: #007BFF;
+  cursor: pointer;
+}
+
+.login-form .change-link:hover {
+  color: #FF3366;
+}
+
+.login-button {
+  width: 6em;
+  height: 2.5em;
+}
+
+/***************************************** register page styling **********************************************************/
+.register-page {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08);
+  max-width: 400px;
+  padding: 20px;
+  padding-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  text-align: center;
+}
+
+.register-page h2 {
+  color: black;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 0px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.register-page form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.register-page p {
+  margin: 0;
+  font-size: 1rem;
+  text-align: center;
+  color: black;
+}
+
+.register-page h2 {
+  color: black;
+  font-size: 1.5rem;
+  font-weight: 600;
+
+}
+
+
+.register-form input[type="text"],
+.register-form input[type="password"] {
+  border: 1px solid #242424;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  background: #F6F7FB;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+}
+
+.register-form input[type="text"]:focus,
+.register-form input[type="password"]:focus {
+  border-color: #007BFF;
+  outline: none;
+  background: #fff;
+}
+
+.register-form select {
+  border: 1px solid #242424;
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: #F6F7FB;
+  margin-bottom: 0px;
+  transition: border-color 0.2s;
+}
+
+
+.register-function {
+  padding: 12px;
+  margin: 0;
+}
+
+.register-button {
+  margin: 12px;
+}
+
+.register-function a {
+  margin-top: 10px;
+  color: #007BFF;
+  cursor: pointer;
+  width: 200px;
+  text-align: center;
+  transition: all 0.01s;
+}
+
+.register-function a:hover {
+  color: #FF3366;
+  text-decoration: underline;
+}
+
+
+/***************************************** change-pass page styling **********************************************************/
+
+.change-password-page {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08);
+  max-width: 400px;
+  padding: 10px 20px 10px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  text-align: center;
+}
+
+
+.change-password-page h2{
+  color: black;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 10px;
+  margin-bottom: 30px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.change-pass-form input[type="password"] {
+  border-color: black;
+  outline: none;
+  background: #fff;
+  background-color: #fff;
+}
+
+.change-pass-form input[type="password"]:focus {
+  border-color: #007BFF;
+  outline: none;
+  background: #fff;
+}
+
+.change-pass-function button[type="submit"] {
+  background-color: #FF3366;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 0;
+  margin: 0px;
+  width:  180px;
+  margin-bottom: 4px;
+  transition: background 0.2s;
+}
+
+.change-pass-function button[type="submit"]:hover {
+  background: #d92c5c;
+}
+
+
+
+.change-pass-function p{
+  margin-top: 10px;
+  color: #007BFF;
+  cursor: pointer;
+  width: 200px;
+  margin-left: 100px;
+  margin-bottom: 10px;
+  text-align: center;
+  transition: all 0.01s;
+}
+
+.change-pass-function p:hover {
+  color: #FF3366;
+  text-decoration: underline;
+}
+
+
+

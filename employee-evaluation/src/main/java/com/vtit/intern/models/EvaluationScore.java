@@ -2,9 +2,9 @@ package com.vtit.intern.models;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Setter;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -12,38 +12,26 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
-@Table(name = "evaluation")
+@Table(name = "evaluation_score")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class Evaluation {
+public class EvaluationScore {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne @JoinColumn(name = "employee_id", nullable = false)
-    private Employee employee;
+    @ManyToOne @JoinColumn(name = "criterion_id", nullable = false)
+    private Criterion criterion;
 
-    @ManyToOne @JoinColumn(name = "evaluation_cycle_id", nullable = false)
-    private EvaluationCycle evaluationCycle;
+    @ManyToOne @JoinColumn(name = "evaluation_id", nullable = false)
+    private Evaluation evaluation;
 
-    @ManyToOne @JoinColumn(name = "project_id", nullable = false)
-    private Project project;
-
-    private double totalScore;
-    private String completionLevel;
-    private String kiRanking;
-    private String managerFeedback;
-    private String customerFeedback;
-    private String note;
-
-    private boolean isDeleted = false;
+    private double score;
 
     @CreatedBy
     private String createdBy;
@@ -56,8 +44,5 @@ public class Evaluation {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
-    @OneToMany(mappedBy = "evaluation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<EvaluationScore> scores = new HashSet<>();
 }
 

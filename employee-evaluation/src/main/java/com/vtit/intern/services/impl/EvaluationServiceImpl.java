@@ -8,7 +8,7 @@ import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.models.Evaluation;
 import com.vtit.intern.models.EvaluationCycle;
-import com.vtit.intern.models.EvaluationCycleStatus;
+import com.vtit.intern.enums.EvaluationCycleStatus;
 import com.vtit.intern.repositories.CriterionRepository;
 import com.vtit.intern.repositories.EmployeeRepository;
 import com.vtit.intern.repositories.EvaluationCycleRepository;
@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class EvaluationServiceImpl implements EvaluationService {
@@ -66,13 +65,13 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         e.setEmployee(employeeRepository.findById(dto.getEmployeeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + dto.getEmployeeId())));
-        e.setCriterion(criterionRepository.findById(dto.getCriterionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + dto.getCriterionId())));
-        e.setScore(dto.getScore());
-        e.setComment(dto.getComment());
-        e.setEvaluationDate(dto.getEvaluationDate());
-
-        evaluationCycle.addEvaluation(e);
+//        e.setCriterion(criterionRepository.findById(dto.getCriterionId())
+//                .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + dto.getCriterionId())));
+//        e.setScore(dto.getScore());
+//        e.setComment(dto.getComment());
+//        e.setEvaluationDate(dto.getEvaluationDate());
+//
+//        evaluationCycle.addEvaluation(e);
         evaluationCycleRepository.save(evaluationCycle);
 
 //        Evaluation savedEvaluation = evaluationRepository.save(e);
@@ -92,9 +91,9 @@ public class EvaluationServiceImpl implements EvaluationService {
             throw new IllegalStateException("Cannot update evaluation in a completed or closed evaluation cycle.");
         }
 
-        existingEvaluation.setScore(dto.getScore());
-        existingEvaluation.setComment(dto.getComment());
-        existingEvaluation.setEvaluationDate(dto.getEvaluationDate());
+//        existingEvaluation.setScore(dto.getScore());
+//        existingEvaluation.setComment(dto.getComment());
+//        existingEvaluation.setEvaluationDate(dto.getEvaluationDate());
 
         Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
         return modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class);
@@ -112,7 +111,7 @@ public class EvaluationServiceImpl implements EvaluationService {
         }
 
         EvaluationCycle evaluationCycle = existingEvaluation.getEvaluationCycle();
-        evaluationCycle.removeEvaluation(existingEvaluation);
+//        evaluationCycle.removeEvaluation(existingEvaluation);
 
         evaluationCycleRepository.save(evaluationCycle);
     }
@@ -140,10 +139,10 @@ public class EvaluationServiceImpl implements EvaluationService {
         }
 
         // remove from old cycle
-        oldCycle.removeEvaluation(existingEvaluation);
+//        oldCycle.removeEvaluation(existingEvaluation);
 
         // add to new cycle
-        newCycle.addEvaluation(existingEvaluation);
+//        newCycle.addEvaluation(existingEvaluation);
         existingEvaluation.setEvaluationCycle(newCycle);
 
         Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
@@ -164,15 +163,15 @@ public class EvaluationServiceImpl implements EvaluationService {
             throw new IllegalStateException("Cannot patch evaluation in a completed or closed evaluation cycle.");
         }
 
-        if (dto.getScore() != null) {
-            existingEvaluation.setScore(dto.getScore());
-        }
-        if (dto.getComment() != null) {
-            existingEvaluation.setComment(dto.getComment());
-        }
-        if (dto.getEvaluationDate() != null) {
-            existingEvaluation.setEvaluationDate(dto.getEvaluationDate());
-        }
+//        if (dto.getScore() != null) {
+//            existingEvaluation.setScore(dto.getScore());
+//        }
+//        if (dto.getComment() != null) {
+//            existingEvaluation.setComment(dto.getComment());
+//        }
+//        if (dto.getEvaluationDate() != null) {
+//            existingEvaluation.setEvaluationDate(dto.getEvaluationDate());
+//        }
 
         Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
         return modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class);
@@ -256,7 +255,7 @@ public class EvaluationServiceImpl implements EvaluationService {
             String comment, LocalDate startDate, LocalDate endDate, Pageable pageable) {
 
         Page<Evaluation> evaluationPage = evaluationRepository.searchEvaluations(
-                employeeId, criterionId, minScore, maxScore, comment, startDate, endDate, pageable);
+                employeeId, pageable);
 
         List<EvaluationResponseDTO> content = evaluationPage.stream()
                 .map(evaluation -> modelMapper.map(evaluation, EvaluationResponseDTO.class))

@@ -15,23 +15,17 @@ import java.util.Optional;
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("SELECT e FROM Employee e WHERE " +
-            "(:name IS NULL OR LOWER(e.name) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +
+            "(:fullName IS NULL OR LOWER(e.fullName) LIKE LOWER(CONCAT('%', :fullName, '%'))) AND " +
             "(:department IS NULL OR LOWER(e.department) LIKE LOWER(CONCAT('%', :department, '%'))) AND " +
-            "(:position IS NULL OR LOWER(e.position) LIKE LOWER(CONCAT('%', :position, '%'))) AND " +
             "(:role IS NULL OR LOWER(e.role) LIKE LOWER(CONCAT('%', :role, '%'))) AND " +
-            "(:salaryMin IS NULL OR e.salary >= :salaryMin) AND " +
-            "(:salaryMax IS NULL OR e.salary <= :salaryMax)"
-    + " AND (:username IS NULL OR LOWER(e.username) LIKE LOWER(CONCAT('%', :username, '%'))) AND " +
+    "(:username IS NULL OR LOWER(e.username) LIKE LOWER(CONCAT('%', :username, '%'))) AND " +
             "(:email IS NULL OR LOWER(e.email) LIKE LOWER(CONCAT('%', :email, '%')))")
     Page<Employee> searchEmployees(
-            @Param("name") String name,
+            @Param("fullName") String fullName,
             @Param("username") String username,
             @Param("email") String email,
             @Param("department") String department,
-            @Param("position") String position,
             @Param("role") String role,
-            @Param("salaryMin") Double salaryMin,
-            @Param("salaryMax") Double salaryMax,
             Pageable pageable);
 
     boolean existsByUsername(String username);

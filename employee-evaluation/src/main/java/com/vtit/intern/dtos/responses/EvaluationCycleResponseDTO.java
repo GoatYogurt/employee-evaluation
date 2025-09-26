@@ -1,6 +1,6 @@
 package com.vtit.intern.dtos.responses;
 
-import com.vtit.intern.models.EvaluationCycleStatus;
+import com.vtit.intern.enums.EvaluationCycleStatus;
 import lombok.*;
 
 import java.time.LocalDate;

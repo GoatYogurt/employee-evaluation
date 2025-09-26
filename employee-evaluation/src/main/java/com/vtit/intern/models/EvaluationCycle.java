@@ -1,19 +1,26 @@
 package com.vtit.intern.models;
 
+import com.vtit.intern.enums.EvaluationCycleStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity
+@Table(name = "evaluation_cycle")
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class EvaluationCycle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,43 +28,26 @@ public class EvaluationCycle {
 
     private String name;
     private String description;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private boolean isDeleted = false;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
 
     @Enumerated(EnumType.STRING)
     private EvaluationCycleStatus status;
 
-    @OneToMany(mappedBy = "evaluationCycle", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Evaluation> evaluations;
+    @CreatedBy
+    private String createdBy;
 
-    @ManyToMany
-    @JoinTable(name = "evaluation_cycle_employee",
-            joinColumns = @JoinColumn(name = "evaluation_cycle_id"),
-            inverseJoinColumns = @JoinColumn(name = "employee_id"))
-    private Set<Employee> employees = new HashSet<>();
+    @CreatedDate
+    private LocalDateTime createdAt;
 
-    @ManyToMany
-    @JoinTable(name = "evaluation_cycle_manager",
-            joinColumns = @JoinColumn(name = "evaluation_cycle_id"),
-            inverseJoinColumns = @JoinColumn(name = "manager_id"))
-    private Set<Employee> managers = new HashSet<>();
+    @LastModifiedBy
+    private String updatedBy;
 
-    public void addEvaluation(Evaluation evaluation) {
-        if (evaluations == null) {
-            evaluations = new ArrayList<>();
-        }
-        if (!evaluations.contains(evaluation)) {
-            evaluations.add(evaluation);
-            evaluation.setEvaluationCycle(this);
-            System.out.println("Added evaluation: " + evaluation.getComment() + " to cycle: " + this.id);
-            System.out.println("Current evaluations in cycle: " + evaluations.size());
-        }
-    }
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
 
-    public void removeEvaluation(Evaluation evaluation) {
-        if (evaluations != null && evaluations.remove(evaluation)) {
-            evaluation.setEvaluationCycle(null);
-            System.out.println("Removed evaluation: " + evaluation.getComment() + " from cycle: " + this.id);
-        }
-    }
+    @ManyToMany(mappedBy = "evaluationCycles")
+    private Set<Project> projects = new HashSet<>();
 }
+

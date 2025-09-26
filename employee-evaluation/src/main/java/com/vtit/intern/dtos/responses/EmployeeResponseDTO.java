@@ -1,6 +1,6 @@
 package com.vtit.intern.dtos.responses;
 
-import com.vtit.intern.models.Role;
+import com.vtit.intern.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -28,10 +28,7 @@ public class JwtUtil {
         claims.put("employeeId", employee.getId());
         claims.put("email", employee.getEmail());
         claims.put("department", employee.getDepartment());
-        claims.put("name", employee.getName());
-        claims.put("position", employee.getPosition());
-        claims.put("salary", employee.getSalary());
-
+        claims.put("name", employee.getFullName());
 
         return Jwts.builder()
                 .claims(claims)

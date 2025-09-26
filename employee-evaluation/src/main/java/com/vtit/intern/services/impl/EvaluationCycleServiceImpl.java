@@ -12,7 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import com.vtit.intern.models.EvaluationCycleStatus;
+import com.vtit.intern.enums.EvaluationCycleStatus;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -128,10 +128,10 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
             existingEvaluationCycle.setStatus(dto.getStatus());
         }
         if (dto.getStartDate() != null) {
-            existingEvaluationCycle.setStartDate(dto.getStartDate());
+            existingEvaluationCycle.setStartDate(dto.getStartDate().atStartOfDay());
         }
         if (dto.getEndDate() != null) {
-            existingEvaluationCycle.setEndDate(dto.getEndDate());
+            existingEvaluationCycle.setEndDate(dto.getEndDate().atStartOfDay());
         }
 
         EvaluationCycle updatedEvaluationCycle = evaluationCycleRepository.save(existingEvaluationCycle);

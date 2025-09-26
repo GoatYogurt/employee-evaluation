@@ -2,9 +2,9 @@ package com.vtit.intern.models;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Setter;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -16,33 +16,19 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "evaluation")
+@Table(name="criterion_group")
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class Evaluation {
+public class CriterionGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne @JoinColumn(name = "employee_id", nullable = false)
-    private Employee employee;
-
-    @ManyToOne @JoinColumn(name = "evaluation_cycle_id", nullable = false)
-    private EvaluationCycle evaluationCycle;
-
-    @ManyToOne @JoinColumn(name = "project_id", nullable = false)
-    private Project project;
-
-    private double totalScore;
-    private String completionLevel;
-    private String kiRanking;
-    private String managerFeedback;
-    private String customerFeedback;
-    private String note;
-
+    private String name;
+    private String description;
     private boolean isDeleted = false;
 
     @CreatedBy
@@ -57,7 +43,6 @@ public class Evaluation {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "evaluation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<EvaluationScore> scores = new HashSet<>();
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Criterion> criteria = new HashSet<>();
 }
-

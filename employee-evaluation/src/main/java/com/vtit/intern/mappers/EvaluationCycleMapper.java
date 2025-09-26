@@ -13,33 +13,9 @@ public class EvaluationCycleMapper {
         EvaluationCycleResponseDTO evaluationCycleResponseDTO = new EvaluationCycleResponseDTO();
         evaluationCycleResponseDTO.setName(evaluationCycle.getName());
         evaluationCycleResponseDTO.setDescription(evaluationCycle.getDescription());
-        evaluationCycleResponseDTO.setStartDate(evaluationCycle.getStartDate());
-        evaluationCycleResponseDTO.setEndDate(evaluationCycle.getEndDate());
+        evaluationCycleResponseDTO.setStartDate(evaluationCycle.getStartDate().toLocalDate());
+        evaluationCycleResponseDTO.setEndDate(evaluationCycle.getEndDate().toLocalDate());
         evaluationCycleResponseDTO.setStatus(evaluationCycle.getStatus());
-
-        evaluationCycleResponseDTO.setEmployees(evaluationCycle.getEmployees().stream()
-                .map(Employee::getId)
-                .collect(Collectors.toSet()));
-
-        evaluationCycleResponseDTO.setManagers(evaluationCycle.getManagers().stream()
-                .map(Employee::getId)
-                .collect(Collectors.toSet()));
-
-        evaluationCycleResponseDTO.setEvaluations(
-                evaluationCycle.getEvaluations() == null ? null :
-                        evaluationCycle.getEvaluations().stream()
-                                .map(e -> {
-                                    EvaluationResponseDTO eDto = new EvaluationResponseDTO();
-                                    eDto.setScore(e.getScore());
-                                    eDto.setComment(e.getComment());
-                                    eDto.setEvaluationDate(e.getEvaluationDate());
-                                    eDto.setEmployeeId(e.getEmployee() != null ? e.getEmployee().getId() : null);
-                                    eDto.setCriterionId(e.getCriterion() != null ? e.getCriterion().getId() : null);
-                                    eDto.setEvaluationCycleId(evaluationCycle.getId());
-                                    return eDto;
-                                })
-                                .collect(Collectors.toSet())
-        );
 
         return evaluationCycleResponseDTO;
     }
@@ -49,25 +25,9 @@ public class EvaluationCycleMapper {
         evaluationCycle.setId(dto.getId());
         evaluationCycle.setName(dto.getName());
         evaluationCycle.setDescription(dto.getDescription());
-        evaluationCycle.setStartDate(dto.getStartDate());
-        evaluationCycle.setEndDate(dto.getEndDate());
+        evaluationCycle.setStartDate(dto.getStartDate().atStartOfDay());
+        evaluationCycle.setEndDate(dto.getEndDate().atStartOfDay());
         evaluationCycle.setStatus(dto.getStatus());
-
-        evaluationCycle.setEmployees(dto.getEmployees().stream()
-                .map((id) -> {
-                    Employee employee = new Employee();
-                    employee.setId(id);
-                    return employee;
-                })
-                .collect(Collectors.toSet()));
-
-        evaluationCycle.setManagers(dto.getManagers().stream()
-                .map((id) -> {
-                    Employee employee = new Employee();
-                    employee.setId(id);
-                    return employee;
-                })
-                .collect(Collectors.toSet()));
 
         return evaluationCycle;
     }

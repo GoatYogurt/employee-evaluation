@@ -4,6 +4,7 @@ import com.vtit.intern.dtos.requests.EmployeeRequestDTO;
 import com.vtit.intern.dtos.responses.EmployeeResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.searches.EmployeeSearchDTO;
+import com.vtit.intern.enums.Role;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.repositories.EmployeeRepository;
@@ -88,7 +89,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     public PageResponse<EmployeeResponseDTO> getAllEmployees(String name, String username, String email, String department, String position, String role, Double salaryMin, Double salaryMax, Pageable pageable) {
         String searchName = name != null ? name.trim() : "";
         String searchDepartment = department != null ? department.trim() : "";
-        String searchPosition = position != null ? position.trim() : "";
         String searchRole = role != null ? role.trim() : "";
         Double searchSalaryMin = salaryMin != null ? salaryMin : 0.0;
         Double searchSalaryMax = salaryMax != null ? salaryMax : Double.MAX_VALUE;
@@ -97,7 +97,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
 
         Page<Employee> employeePage = repository
-                .searchEmployees(searchName, searchUsername, searchEmail, searchDepartment, searchPosition, searchRole, searchSalaryMin, searchSalaryMax, pageable);
+                .searchEmployees(searchName, searchUsername, searchEmail, searchDepartment, searchRole, pageable);
 
         List<EmployeeResponseDTO> content = employeePage.getContent().stream()
                 .peek(e -> {
@@ -121,20 +121,14 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee existingEmployee = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
 
-        if (dto.getName() != null) {
-            existingEmployee.setName(dto.getName());
+        if (dto.getFullName() != null) {
+            existingEmployee.setFullName(dto.getFullName());
         }
         if (dto.getDepartment() != null) {
             existingEmployee.setDepartment(dto.getDepartment());
         }
-        if (dto.getPosition() != null) {
-            existingEmployee.setPosition(dto.getPosition());
-        }
         if (dto.getRole() != null) {
-            existingEmployee.setRole(dto.getRole());
-        }
-        if (dto.getSalary() != null) {
-            existingEmployee.setSalary(dto.getSalary());
+            existingEmployee.setRole(Role.valueOf(dto.getRole()));
         }
         if (dto.getEmail() != null) {
             existingEmployee.setEmail(dto.getEmail());

@@ -65,6 +65,7 @@ public class CriterionServiceImpl implements CriterionService {
     @Override
     public CriterionResponseDTO create(CriterionRequestDTO dto) {
         Criterion criterion = modelMapper.map(dto, Criterion.class);
+        criterion.setCreatedAt(java.time.LocalDateTime.now());
         Criterion savedCriterion = criterionRepository.save(criterion);
         return modelMapper.map(savedCriterion, CriterionResponseDTO.class);
     }

@@ -1,10 +1,12 @@
 package com.vtit.intern.controllers;
 
+import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.dtos.searches.CriterionSearchDTO;
 import com.vtit.intern.dtos.requests.CriterionRequestDTO;
 import com.vtit.intern.dtos.responses.CriterionResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.services.CriterionService;
+import jakarta.validation.ReportAsSingleViolation;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -31,7 +33,7 @@ public class CriterionController {
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping
-    public PageResponse<CriterionResponseDTO> getAllCriteria(
+    public ResponseEntity<ResponseDTO<PageResponse<CriterionResponseDTO>>> getAllCriteria(
             @RequestBody (required = false) CriterionSearchDTO criterionSearchDTO,
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page index cannot be negative") int page,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size,
@@ -55,17 +57,16 @@ public class CriterionController {
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<CriterionResponseDTO> getById(
+    public ResponseEntity<ResponseDTO<CriterionResponseDTO>> getById(
             @PathVariable @Positive(message = "ID must be a positive number") Long id
     ) {
-        return ResponseEntity.ok(criteriaService.getById(id));
+        return criteriaService.getById(id);
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
-    public ResponseEntity<CriterionResponseDTO> create(@Valid @RequestBody CriterionRequestDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(criteriaService.create(dto));
+    public ResponseEntity<ResponseDTO<CriterionResponseDTO>> create(@Valid @RequestBody CriterionRequestDTO dto) {
+        return criteriaService.create(dto);
     }
 
 //    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
@@ -87,9 +88,9 @@ public class CriterionController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PatchMapping("/{id}")
-    public ResponseEntity<CriterionResponseDTO> patch(
+    public ResponseEntity<ResponseDTO<CriterionResponseDTO>> patch(
             @PathVariable @Positive(message = "ID must be a positive number") Long id,
             @RequestBody CriterionRequestDTO dto) {
-        return ResponseEntity.ok(criteriaService.patch(id, dto));
+        return criteriaService.patch(id, dto);
     }
 }

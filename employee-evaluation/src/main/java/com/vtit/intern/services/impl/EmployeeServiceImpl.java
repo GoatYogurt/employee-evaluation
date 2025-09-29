@@ -3,16 +3,20 @@ package com.vtit.intern.services.impl;
 import com.vtit.intern.dtos.requests.EmployeeRequestDTO;
 import com.vtit.intern.dtos.responses.EmployeeResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
+import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.dtos.searches.EmployeeSearchDTO;
 import com.vtit.intern.enums.Role;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.repositories.EmployeeRepository;
 import com.vtit.intern.services.EmployeeService;
+import com.vtit.intern.utils.ResponseUtil;
 import org.springframework.data.domain.Page;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -34,14 +38,14 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public EmployeeResponseDTO getById(Long id) {
-        return repository.findById(id)
+    public ResponseEntity<ResponseDTO<EmployeeResponseDTO>> getById(Long id) {
+        return ResponseEntity.ok(ResponseUtil.success(repository.findById(id)
                 .map(employee -> modelMapper.map(employee, EmployeeResponseDTO.class))
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id))));
     }
 
     @Override
-    public EmployeeResponseDTO create(EmployeeRequestDTO dto) {
+    public ResponseEntity<ResponseDTO<EmployeeResponseDTO>> create(EmployeeRequestDTO dto) {
         if (repository.existsByUsername(dto.getUsername())) {
             throw new ResourceNotFoundException("Cannot create. Employee with username " + dto.getUsername() + " already exists.");
         }
@@ -60,7 +64,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setPassword(passwordEncoder.encode(employee.getPassword()));
 
         Employee savedEmployee = repository.save(employee);
-        return modelMapper.map(savedEmployee, EmployeeResponseDTO.class);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseUtil.created(modelMapper.map(savedEmployee, EmployeeResponseDTO.class)));
     }
 
     @Override
@@ -73,24 +77,21 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public PageResponse<EmployeeResponseDTO> getAllEmployees(EmployeeSearchDTO dto, Pageable pageable) {
+    public ResponseEntity<ResponseDTO<PageResponse<EmployeeResponseDTO>>> getAllEmployees(EmployeeSearchDTO dto, Pageable pageable) {
         if (dto == null) {
             Page<Employee> employeePage = repository.findAll(pageable);
             List<EmployeeResponseDTO> content = employeePage.getContent().stream()
-                    .peek(e -> {
-                        e.setPassword(null); // Clear password before returning
-                    })
                     .map(e -> modelMapper.map(e, EmployeeResponseDTO.class))
                     .toList();
 
-            return new PageResponse<>(
+            return ResponseEntity.ok(ResponseUtil.success(new PageResponse<>(
                     content,
                     employeePage.getNumber(),
                     employeePage.getSize(),
                     employeePage.getTotalElements(),
                     employeePage.getTotalPages(),
                     employeePage.isLast()
-            );
+            )));
         }
 
         String searchFullName = dto.getFullName() != null ? dto.getFullName().trim() : "";
@@ -112,18 +113,18 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .map(e -> modelMapper.map(e, EmployeeResponseDTO.class))
                 .toList();
 
-        return new PageResponse<>(
+        return ResponseEntity.ok(ResponseUtil.success(new PageResponse<>(
                 content,
                 employeePage.getNumber(),
                 employeePage.getSize(),
                 employeePage.getTotalElements(),
                 employeePage.getTotalPages(),
                 employeePage.isLast()
-        );
+        )));
     }
 
     @Override
-    public EmployeeResponseDTO patch(Long id, EmployeeRequestDTO dto) {
+    public ResponseEntity<ResponseDTO<EmployeeResponseDTO>> patch(Long id, EmployeeRequestDTO dto) {
         Employee existingEmployee = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
 
@@ -145,7 +146,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Employee updatedEmployee = repository.save(existingEmployee);
         updatedEmployee.setPassword(null); // Clear password before returning
-        return modelMapper.map(updatedEmployee, EmployeeResponseDTO.class);
+        return ResponseEntity.ok(ResponseUtil.success(modelMapper.map(updatedEmployee, EmployeeResponseDTO.class)));
     }
 
     @Override

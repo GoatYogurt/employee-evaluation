@@ -12,5 +12,5 @@ public class CriterionResponseDTO {
     private String name;
     private String description;
     private Double weight;
-    private CriterionGroup group;
+    private Long groupId;
 }

@@ -3,13 +3,17 @@ package com.vtit.intern.services.impl;
 import com.vtit.intern.dtos.requests.CriterionRequestDTO;
 import com.vtit.intern.dtos.responses.CriterionResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
+import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.models.Criterion;
 import com.vtit.intern.repositories.CriterionRepository;
 import com.vtit.intern.services.CriterionService;
+import com.vtit.intern.utils.ResponseUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 
@@ -28,7 +32,7 @@ public class CriterionServiceImpl implements CriterionService {
     }
 
     @Override
-    public PageResponse<CriterionResponseDTO> getAllCriteria(String name, String description, Double minWeight, Double maxWeight, Pageable pageable) {
+    public ResponseEntity<ResponseDTO<PageResponse<CriterionResponseDTO>>> getAllCriteria(String name, String description, Double minWeight, Double maxWeight, Pageable pageable) {
         String searchName = name != null ? name.trim() : null;
         String searchDescription = description != null ? description.trim() : null;
         Double searchMinWeight = minWeight != null ? minWeight : 0.0;
@@ -45,29 +49,29 @@ public class CriterionServiceImpl implements CriterionService {
                 .map(criterion -> modelMapper.map(criterion, CriterionResponseDTO.class))
                 .toList();
 
-        return new PageResponse<>(
+        return ResponseEntity.ok(ResponseUtil.success(new PageResponse<>(
                 content,
                 criterionPage.getNumber(),
                 criterionPage.getSize(),
                 criterionPage.getTotalElements(),
                 criterionPage.getTotalPages(),
                 criterionPage.isLast()
-        );
+        )));
     }
 
     @Override
-    public CriterionResponseDTO getById(Long id) {
-        return criterionRepository.findById(id)
+    public ResponseEntity<ResponseDTO<CriterionResponseDTO>> getById(Long id) {
+        return ResponseEntity.ok(ResponseUtil.success(criterionRepository.findById(id)
                 .map(criterion -> modelMapper.map(criterion, CriterionResponseDTO.class))
-                .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id))));
     }
 
     @Override
-    public CriterionResponseDTO create(CriterionRequestDTO dto) {
+    public ResponseEntity<ResponseDTO<CriterionResponseDTO>> create(CriterionRequestDTO dto) {
         Criterion criterion = modelMapper.map(dto, Criterion.class);
         criterion.setCreatedAt(java.time.LocalDateTime.now());
         Criterion savedCriterion = criterionRepository.save(criterion);
-        return modelMapper.map(savedCriterion, CriterionResponseDTO.class);
+        return ResponseEntity.ok(ResponseUtil.created(modelMapper.map(savedCriterion, CriterionResponseDTO.class)));
     }
 
 //    @Override
@@ -91,7 +95,7 @@ public class CriterionServiceImpl implements CriterionService {
     }
 
     @Override
-    public CriterionResponseDTO patch(Long id, CriterionRequestDTO dto) {
+    public ResponseEntity<ResponseDTO<CriterionResponseDTO>> patch(Long id, CriterionRequestDTO dto) {
         if (!criterionRepository.existsById(id)) {
             throw new ResourceNotFoundException("Cannot patch. Criterion not found with id: " + id);
         }
@@ -111,6 +115,6 @@ public class CriterionServiceImpl implements CriterionService {
         }
 
         Criterion updatedCriterion = criterionRepository.save(existingCriterion);
-        return modelMapper.map(updatedCriterion, CriterionResponseDTO.class);
+        return ResponseEntity.ok(ResponseUtil.success(modelMapper.map(updatedCriterion, CriterionResponseDTO.class)));
     }
 }

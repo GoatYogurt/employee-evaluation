@@ -54,7 +54,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             throw new ResourceNotFoundException("Cannot create. Employee with email " + dto.getEmail() + " already exists.");
         }
 
-        if (repository.existByStaffCode(dto.getStaffCode())) {
+        if (repository.existsByStaffCode(dto.getStaffCode())) {
             throw new ResourceNotFoundException("Cannot create. Employee with staff code " + dto.getStaffCode() + " already exists.");
         }
 

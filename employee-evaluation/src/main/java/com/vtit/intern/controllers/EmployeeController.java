@@ -56,7 +56,7 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.getById(id));
     }
 
-//    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<EmployeeResponseDTO> create(@Valid @RequestBody EmployeeRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)

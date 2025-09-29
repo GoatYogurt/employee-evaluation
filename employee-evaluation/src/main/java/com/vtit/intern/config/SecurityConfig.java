@@ -1,6 +1,6 @@
 package com.vtit.intern.config;
 
-import com.vtit.intern.services.UserDetailsService;
+import com.vtit.intern.services.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import com.vtit.intern.filters.JwtAuthFilter;
@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -28,11 +29,11 @@ public class SecurityConfig {
     @Autowired
     private final JwtAuthFilter jwtAuthFilter;
     @Autowired
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService customUserDetailsService;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserDetailsService userDetailsService) {
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter, CustomUserDetailsService customUserDetailsService) {
         this.jwtAuthFilter = jwtAuthFilter;
-        this.userDetailsService = userDetailsService;
+        this.customUserDetailsService = customUserDetailsService;
     }
 
     @Bean
@@ -54,7 +55,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(customUserDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }

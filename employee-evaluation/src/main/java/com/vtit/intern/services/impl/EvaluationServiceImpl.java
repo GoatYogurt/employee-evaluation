@@ -3,6 +3,7 @@ package com.vtit.intern.services.impl;
 import com.vtit.intern.dtos.requests.EvaluationRequestDTO;
 import com.vtit.intern.dtos.responses.EvaluationResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
+import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.dtos.searches.EvaluationSearchDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;
@@ -14,13 +15,17 @@ import com.vtit.intern.repositories.EmployeeRepository;
 import com.vtit.intern.repositories.EvaluationCycleRepository;
 import com.vtit.intern.repositories.EvaluationRepository;
 import com.vtit.intern.services.EvaluationService;
+import com.vtit.intern.utils.ResponseUtil;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -49,7 +54,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
-    public EvaluationResponseDTO evaluate(EvaluationRequestDTO dto) {
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> evaluate(EvaluationRequestDTO dto) {
         // find the evaluation cycle by ID
         Long evaluationCycleId = dto.getEvaluationCycleId();
         EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(evaluationCycleId)
@@ -75,11 +80,11 @@ public class EvaluationServiceImpl implements EvaluationService {
         evaluationCycleRepository.save(evaluationCycle);
 
 //        Evaluation savedEvaluation = evaluationRepository.save(e);
-        return modelMapper.map(e, EvaluationResponseDTO.class);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseUtil.success(modelMapper.map(e, EvaluationResponseDTO.class)));
     }
 
     @Override
-    public EvaluationResponseDTO update(Long evaluationId, EvaluationRequestDTO dto) {
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> update(Long evaluationId, EvaluationRequestDTO dto) {
 
         Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
@@ -96,7 +101,7 @@ public class EvaluationServiceImpl implements EvaluationService {
 //        existingEvaluation.setEvaluationDate(dto.getEvaluationDate());
 
         Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
-        return modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class);
+        return ResponseEntity.ok(ResponseUtil.success(modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class)));
     }
 
     @Override
@@ -118,7 +123,7 @@ public class EvaluationServiceImpl implements EvaluationService {
 
     @Override
     @Transactional
-    public EvaluationResponseDTO moveEvaluationToCycle(Long evaluationId, Long newCycleId) {
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> moveEvaluationToCycle(Long evaluationId, Long newCycleId) {
         Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
 
@@ -149,11 +154,11 @@ public class EvaluationServiceImpl implements EvaluationService {
         evaluationCycleRepository.save(oldCycle);
         evaluationCycleRepository.save(newCycle);
 
-        return modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class);
+        return ResponseEntity.ok(ResponseUtil.success(modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class)));
     }
 
     @Override
-    public EvaluationResponseDTO patch(Long evaluationId, EvaluationRequestDTO dto) {
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> patch(Long evaluationId, EvaluationRequestDTO dto) {
         Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
 
@@ -174,11 +179,11 @@ public class EvaluationServiceImpl implements EvaluationService {
 //        }
 
         Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
-        return modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class);
+        return ResponseEntity.ok(ResponseUtil.success(modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class)));
     }
 
     @Override
-    public PageResponse<EvaluationResponseDTO> getEvaluations(
+    public ResponseEntity<ResponseDTO<PageResponse<EvaluationResponseDTO>>> getEvaluations(
             EvaluationSearchDTO dto, Pageable pageable, Authentication auth) {
 
         // Validate score range
@@ -221,10 +226,10 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         // Perform the search
         if (dto == null) {
-            return searchAndMap(employeeId, null, null, null, null, null, null, pageable);
+            return ResponseEntity.ok(ResponseUtil.success(searchAndMap(employeeId, null, null, null, null, null, null, pageable)));
         }
 
-        return searchAndMap(
+        return ResponseEntity.ok(ResponseUtil.success(searchAndMap(
                 employeeId,
                 dto.getCriterionId(),
                 dto.getMinScore(),
@@ -233,7 +238,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                 dto.getStartDate(),
                 dto.getEndDate(),
                 pageable
-        );
+        )));
     }
 
     private boolean isEmployee(Authentication auth) {

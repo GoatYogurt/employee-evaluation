@@ -14,18 +14,24 @@ import java.util.Optional;
 
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
-    @Query("SELECT e FROM Employee e WHERE " +
-            "(:fullName IS NULL OR LOWER(e.fullName) LIKE LOWER(CONCAT('%', :fullName, '%'))) AND " +
-            "(:department IS NULL OR LOWER(e.department) LIKE LOWER(CONCAT('%', :department, '%'))) AND " +
-            "(:role IS NULL OR LOWER(e.role) LIKE LOWER(CONCAT('%', :role, '%'))) AND " +
-    "(:username IS NULL OR LOWER(e.username) LIKE LOWER(CONCAT('%', :username, '%'))) AND " +
-            "(:email IS NULL OR LOWER(e.email) LIKE LOWER(CONCAT('%', :email, '%')))")
+    @Query("""
+    SELECT e FROM Employee e WHERE
+        (:fullName IS NULL OR LOWER(e.fullName) LIKE LOWER(CONCAT('%', :fullName, '%')))
+    AND (:department IS NULL OR LOWER(e.department) LIKE LOWER(CONCAT('%', :department, '%')))
+    AND (:role IS NULL OR LOWER(e.role) LIKE LOWER(CONCAT('%', :role, '%')))
+    AND (:username IS NULL OR LOWER(e.username) LIKE LOWER(CONCAT('%', :username, '%')))
+    AND (:email IS NULL OR LOWER(e.email) LIKE LOWER(CONCAT('%', :email, '%')))
+    AND (:level IS NULL OR LOWER(e.level) LIKE LOWER(CONCAT('%', :level, '%')))
+    AND (:staffCode IS NULL OR e.staffCode = :staffCode)
+""")
     Page<Employee> searchEmployees(
             @Param("fullName") String fullName,
             @Param("username") String username,
             @Param("email") String email,
             @Param("department") String department,
             @Param("role") String role,
+            @Param("level") String level,
+            @Param("staffCode") Integer staffCode,
             Pageable pageable);
 
     boolean existsByUsername(String username);

@@ -36,10 +36,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public EmployeeResponseDTO getById(Long id) {
         return repository.findById(id)
-                .map(employee -> {
-                    employee.setPassword(null); // Clear password before returning
-                    return employee;
-                })
                 .map(employee -> modelMapper.map(employee, EmployeeResponseDTO.class))
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
     }
@@ -64,22 +60,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setPassword(passwordEncoder.encode(employee.getPassword()));
 
         Employee savedEmployee = repository.save(employee);
-        savedEmployee.setPassword(null); // Clear password before returning
         return modelMapper.map(savedEmployee, EmployeeResponseDTO.class);
     }
-
-//    @Override
-//    public EmployeeResponseDTO update(Long id, EmployeeRequestDTO dto) {
-//        if (!repository.existsById(id)) {
-//            throw new ResourceNotFoundException("Cannot update. Employee not found with id: " + id);
-//        }
-//
-//        Employee employee = modelMapper.map(dto, Employee.class);
-//        employee.setId(id);
-//        Employee updatedEmployee = repository.save(employee);
-////        updatedEmployee.setPassword(null); // Clear password before returning
-//        return modelMapper.map(updatedEmployee, EmployeeResponseDTO.class);
-//    }
 
     @Override
     public void delete(Long id) {
@@ -91,16 +73,18 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public PageResponse<EmployeeResponseDTO> getAllEmployees(String name, String username, String email, String department, String position, String role, Pageable pageable) {
-        String searchName = name != null ? name.trim() : "";
-        String searchDepartment = department != null ? department.trim() : "";
-        String searchRole = role != null ? role.trim() : "";
-        String searchUsername = username != null ? username.trim() : "";
-        String searchEmail = email != null ? email.trim() : "";
+    public PageResponse<EmployeeResponseDTO> getAllEmployees(EmployeeSearchDTO dto, Pageable pageable) {
+        String searchFullName = dto.getFullName() != null ? dto.getFullName().trim() : "";
+        String searchDepartment = dto.getDepartment() != null ? dto.getDepartment().trim() : "";
+        String searchRole = dto.getRole() != null ? dto.getRole().trim() : "";
+        String searchUsername = dto.getUsername() != null ? dto.getUsername().trim() : "";
+        String searchEmail = dto.getEmail() != null ? dto.getEmail().trim() : "";
+        Integer searchStaffCode = null;
 
+        String searchLevel = dto.getLevel() != null ? dto.getLevel().trim() : "";
 
         Page<Employee> employeePage = repository
-                .searchEmployees(searchName, searchUsername, searchEmail, searchDepartment, searchRole, pageable);
+                .searchEmployees(searchFullName, searchUsername, searchEmail, searchDepartment, searchRole, searchLevel, searchStaffCode, pageable);
 
         List<EmployeeResponseDTO> content = employeePage.getContent().stream()
                 .peek(e -> {

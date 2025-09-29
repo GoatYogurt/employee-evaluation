@@ -39,13 +39,11 @@ public class EmployeeController {
             @RequestParam(defaultValue = "asc") @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
     ) {
         if (dto == null) {
-            return employeeService.getAllEmployees(null, null, null, null, null, null,
-                    PageRequest.of(page, size, Sort.by(sortBy).ascending()));
+            return employeeService.getAllEmployees(null, PageRequest.of(page, size, Sort.by(sortBy).ascending()));
         }
 
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        return employeeService.getAllEmployees(dto.getName(), dto.getUsername(), dto.getEmail(), dto.getDepartment(),
-                dto.getPosition(), dto.getRole(), PageRequest.of(page, size, sort));
+        return employeeService.getAllEmployees(dto, PageRequest.of(page, size, sort));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")

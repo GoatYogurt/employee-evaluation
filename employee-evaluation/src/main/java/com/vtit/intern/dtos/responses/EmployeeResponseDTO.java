@@ -12,8 +12,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class EmployeeResponseDTO {
     private String fullName;
+    private Integer staffCode;
     private String username;
     private String email;
     private String department;
-    private Role role;
+    private String role;
+    private String level;
 }

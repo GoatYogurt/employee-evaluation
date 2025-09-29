@@ -3,6 +3,7 @@ package com.vtit.intern.services;
 import com.vtit.intern.dtos.requests.EmployeeRequestDTO;
 import com.vtit.intern.dtos.responses.EmployeeResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
+import com.vtit.intern.dtos.searches.EmployeeSearchDTO;
 import org.springframework.data.domain.Pageable;
 
 public interface EmployeeService {
@@ -11,7 +12,7 @@ public interface EmployeeService {
 //    EmployeeResponseDTO update(Long id, EmployeeRequestDTO dto);
     void delete(Long id);
 
-    PageResponse<EmployeeResponseDTO> getAllEmployees(String name, String username, String email, String department, String position, String role, Pageable pageable);
+    PageResponse<EmployeeResponseDTO> getAllEmployees(EmployeeSearchDTO dto, Pageable pageable);
 
     EmployeeResponseDTO patch(Long id, EmployeeRequestDTO dto);
     void changePassword(String username, String oldPassword, String newPassword);

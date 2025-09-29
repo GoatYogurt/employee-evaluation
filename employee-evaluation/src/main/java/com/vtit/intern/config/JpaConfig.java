@@ -9,8 +9,6 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import javax.swing.text.html.Option;
-import java.util.Objects;
 import java.util.Optional;
 
 @Configuration

@@ -49,8 +49,13 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (repository.existsByUsername(dto.getUsername())) {
             throw new ResourceNotFoundException("Cannot create. Employee with username " + dto.getUsername() + " already exists.");
         }
+
         if (repository.existsByEmail(dto.getEmail())) {
             throw new ResourceNotFoundException("Cannot create. Employee with email " + dto.getEmail() + " already exists.");
+        }
+
+        if (repository.existByStaffCode(dto.getStaffCode())) {
+            throw new ResourceNotFoundException("Cannot create. Employee with staff code " + dto.getStaffCode() + " already exists.");
         }
 
         Employee employee = modelMapper.map(dto, Employee.class);
@@ -86,12 +91,10 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public PageResponse<EmployeeResponseDTO> getAllEmployees(String name, String username, String email, String department, String position, String role, Double salaryMin, Double salaryMax, Pageable pageable) {
+    public PageResponse<EmployeeResponseDTO> getAllEmployees(String name, String username, String email, String department, String position, String role, Pageable pageable) {
         String searchName = name != null ? name.trim() : "";
         String searchDepartment = department != null ? department.trim() : "";
         String searchRole = role != null ? role.trim() : "";
-        Double searchSalaryMin = salaryMin != null ? salaryMin : 0.0;
-        Double searchSalaryMax = salaryMax != null ? salaryMax : Double.MAX_VALUE;
         String searchUsername = username != null ? username.trim() : "";
         String searchEmail = email != null ? email.trim() : "";
 

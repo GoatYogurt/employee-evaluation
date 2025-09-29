@@ -11,11 +11,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmployeeResponseDTO {
-    private String name;
+    private String fullName;
     private String username;
     private String email;
-    private String position;
     private String department;
-    private Double salary;
     private Role role;
 }

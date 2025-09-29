@@ -11,7 +11,7 @@ public interface EmployeeService {
 //    EmployeeResponseDTO update(Long id, EmployeeRequestDTO dto);
     void delete(Long id);
 
-    PageResponse<EmployeeResponseDTO> getAllEmployees(String name, String username, String email, String department, String position, String role, Double salaryMin, Double salaryMax, Pageable pageable);
+    PageResponse<EmployeeResponseDTO> getAllEmployees(String name, String username, String email, String department, String position, String role, Pageable pageable);
 
     EmployeeResponseDTO patch(Long id, EmployeeRequestDTO dto);
     void changePassword(String username, String oldPassword, String newPassword);

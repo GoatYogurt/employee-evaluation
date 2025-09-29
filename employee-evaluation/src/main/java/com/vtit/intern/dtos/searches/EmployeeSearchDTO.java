@@ -16,6 +16,4 @@ public class EmployeeSearchDTO {
     private String department;
     private String position;
     private String role;
-    private Double salaryMin;
-    private Double salaryMax;
 }

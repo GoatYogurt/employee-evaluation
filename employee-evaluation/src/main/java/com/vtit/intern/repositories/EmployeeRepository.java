@@ -30,6 +30,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+    boolean existByStaffCode(Integer staffCode);
     Optional<Employee> findByUsername(String username);
     List<Employee> findAll();
 }

@@ -10,11 +10,13 @@ import com.vtit.intern.dtos.requests.RefreshTokenRequestDTO;
 import com.vtit.intern.dtos.responses.AuthResponseDTO;
 import com.vtit.intern.services.impl.EmployeeServiceImpl;
 import com.vtit.intern.utils.JwtUtil;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,7 +56,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public AuthResponseDTO register(@RequestBody EmployeeRequestDTO dto) {
+    public AuthResponseDTO register(@RequestBody @Valid EmployeeRequestDTO dto) {
         employeeServiceImpl.create(dto);
         Employee employee = employeeRepository.findByUsername(dto.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found with username: " + dto.getUsername()));

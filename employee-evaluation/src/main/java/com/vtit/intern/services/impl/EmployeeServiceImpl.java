@@ -74,6 +74,25 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public PageResponse<EmployeeResponseDTO> getAllEmployees(EmployeeSearchDTO dto, Pageable pageable) {
+        if (dto == null) {
+            Page<Employee> employeePage = repository.findAll(pageable);
+            List<EmployeeResponseDTO> content = employeePage.getContent().stream()
+                    .peek(e -> {
+                        e.setPassword(null); // Clear password before returning
+                    })
+                    .map(e -> modelMapper.map(e, EmployeeResponseDTO.class))
+                    .toList();
+
+            return new PageResponse<>(
+                    content,
+                    employeePage.getNumber(),
+                    employeePage.getSize(),
+                    employeePage.getTotalElements(),
+                    employeePage.getTotalPages(),
+                    employeePage.isLast()
+            );
+        }
+
         String searchFullName = dto.getFullName() != null ? dto.getFullName().trim() : "";
         String searchDepartment = dto.getDepartment() != null ? dto.getDepartment().trim() : "";
         String searchRole = dto.getRole() != null ? dto.getRole().trim() : "";

@@ -1,6 +1,6 @@
 package com.vtit.intern.dtos.searches;
 
-import com.vtit.intern.models.EvaluationCycleStatus;
+import com.vtit.intern.enums.EvaluationCycleStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

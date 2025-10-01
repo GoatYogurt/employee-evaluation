@@ -3,12 +3,10 @@ package com.vtit.intern.controllers;
 import com.vtit.intern.dtos.requests.EvaluationRequestDTO;
 import com.vtit.intern.dtos.responses.EvaluationResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
+import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.dtos.searches.EvaluationSearchDTO;
-import com.vtit.intern.models.Employee;
 import com.vtit.intern.repositories.EmployeeRepository;
 import com.vtit.intern.services.EvaluationService;
-import com.vtit.intern.services.UserDetailsService;
-import com.vtit.intern.services.impl.EvaluationServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -17,9 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,13 +33,13 @@ public class EvaluationController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
-    public ResponseEntity<EvaluationResponseDTO> evaluate(@Valid @RequestBody EvaluationRequestDTO dto) {
-        return ResponseEntity.status(201).body(evaluationService.evaluate(dto));
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> evaluate(@Valid @RequestBody EvaluationRequestDTO dto) {
+        return evaluationService.evaluate(dto);
     }
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping
-    public PageResponse<EvaluationResponseDTO> getEvaluations(
+    public ResponseEntity<ResponseDTO<PageResponse<EvaluationResponseDTO>>> getEvaluations(
             @RequestBody(required = false) EvaluationSearchDTO dto,
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page index cannot be negative") int page,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size,
@@ -57,11 +53,11 @@ public class EvaluationController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PutMapping("/{evaluationId}")
-    public ResponseEntity<EvaluationResponseDTO> updateEvaluation(
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> updateEvaluation(
             @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId,
             @Valid @RequestBody EvaluationRequestDTO dto
     ) {
-        return ResponseEntity.ok(evaluationService.update(evaluationId, dto));
+        return evaluationService.update(evaluationId, dto);
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -75,19 +71,19 @@ public class EvaluationController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PatchMapping("/{evaluationId}/move")
-    public ResponseEntity<EvaluationResponseDTO> moveEvaluationToCycle(
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> moveEvaluationToCycle(
             @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId,
             @RequestParam @Positive(message = "New cycle ID must be positive") Long newCycleId
     ) {
-        return ResponseEntity.ok(evaluationService.moveEvaluationToCycle(evaluationId, newCycleId));
+        return evaluationService.moveEvaluationToCycle(evaluationId, newCycleId);
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PatchMapping("/{evaluationId}")
-    public ResponseEntity<EvaluationResponseDTO> patchEvaluation(
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> patchEvaluation(
             @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId,
             @RequestBody EvaluationRequestDTO dto
     ) {
-        return ResponseEntity.ok(evaluationService.patch(evaluationId, dto));
+        return evaluationService.patch(evaluationId, dto);
     }
 }

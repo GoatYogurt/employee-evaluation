@@ -1,7 +1,7 @@
 package com.vtit.intern.dtos.requests;
 
 import com.vtit.intern.dtos.responses.EvaluationResponseDTO;
-import com.vtit.intern.models.EvaluationCycleStatus;
+import com.vtit.intern.enums.EvaluationCycleStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;

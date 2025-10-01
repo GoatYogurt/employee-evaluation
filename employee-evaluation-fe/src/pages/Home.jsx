@@ -1,7 +1,7 @@
 import '../index.css';
 
 function Home() {
-    return <h1>Welcome to Employee Evaluation System</h1>
+    return <h1>Employee Evaluation System</h1>
 }
 
 export default Home;

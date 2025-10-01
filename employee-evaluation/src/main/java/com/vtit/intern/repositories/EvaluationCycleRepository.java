@@ -1,7 +1,7 @@
 package com.vtit.intern.repositories;
 
 import com.vtit.intern.models.EvaluationCycle;
-import com.vtit.intern.models.EvaluationCycleStatus;
+import com.vtit.intern.enums.EvaluationCycleStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

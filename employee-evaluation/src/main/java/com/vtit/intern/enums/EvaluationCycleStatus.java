@@ -1,4 +1,4 @@
-package com.vtit.intern.models;
+package com.vtit.intern.enums;
 
 public enum EvaluationCycleStatus {
     NOT_STARTED,

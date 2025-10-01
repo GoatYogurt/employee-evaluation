@@ -10,12 +10,11 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class EmployeeSearchDTO {
-    private String name;
+    private String fullName;
     private String username;
     private String email;
     private String department;
-    private String position;
     private String role;
-    private Double salaryMin;
-    private Double salaryMax;
+    private String level;
+    private Integer staffCode;
 }

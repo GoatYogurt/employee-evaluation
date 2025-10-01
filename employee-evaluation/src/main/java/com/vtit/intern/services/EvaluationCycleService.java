@@ -3,7 +3,7 @@ package com.vtit.intern.services;
 import com.vtit.intern.dtos.requests.EvaluationCycleRequestDTO;
 import com.vtit.intern.dtos.responses.EvaluationCycleResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
-import com.vtit.intern.models.EvaluationCycleStatus;
+import com.vtit.intern.enums.EvaluationCycleStatus;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;

@@ -22,4 +22,7 @@ public class CriterionRequestDTO {
     @DecimalMin(value = "0.0", inclusive = true, message = "Weight must be greater than 0")
     @DecimalMax(value = "1.0", inclusive = true, message = "Weight must be less than or equal to 1")
     private Double weight;
+
+    @NotNull(message = "Group ID cannot be null")
+    private Long groupId;
 }

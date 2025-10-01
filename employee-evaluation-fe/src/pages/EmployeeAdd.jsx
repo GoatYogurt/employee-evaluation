@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './dashboard.css';
 
 function EmployeeAdd() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ function EmployeeAdd() {
   };
 
   return (
-    <div>
+    <div className='employ-table'>
       <h2>Add New Employee</h2>
       <form onSubmit={handleSubmit}>
         <label>Name: <input name="name" value={employee.name} onChange={handleChange} /></label><br/>

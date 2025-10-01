@@ -1,9 +1,9 @@
 package com.vtit.intern.dtos.requests;
 
-import com.vtit.intern.models.Role;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.vtit.intern.enums.Role;
 
 @Getter
 @Setter
@@ -13,9 +13,12 @@ public class EmployeeRequestDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id;
 
-    @NotBlank(message = "Name is required")
-    @Size(max = 100, message = "Name must not exceed 100 characters")
-    private String name;
+    @NotBlank(message = "Full name is required")
+    @Size(max = 100, message = "Full name must not exceed 100 characters")
+    private String fullName;
+
+    @NotNull(message = "Staff code is required")
+    private Integer staffCode;
 
     @NotBlank(message = "Username is required")
     @Size(max = 75, message = "Username must not exceed 50 characters")
@@ -29,17 +32,13 @@ public class EmployeeRequestDTO {
     @NotBlank(message = "Password is required")
     private String password;
 
-    @NotBlank(message = "Position is required")
-    @Size(max = 75, message = "Position must not exceed 75 characters")
-    private String position;
-
     @NotBlank(message = "Department is required")
-    @Size(max = 75, message = "Department must not exceed 75 characters")
+    @Size(max = 150, message = "Department must not exceed 150 characters")
     private String department;
 
-    @PositiveOrZero(message = "Salary must be zero or positive")
-    private Double salary;
-
     @NotNull(message = "Role is required")
-    private Role role;
+    private String role;
+
+    @NotNull(message = "Level is required")
+    private String level;
 }

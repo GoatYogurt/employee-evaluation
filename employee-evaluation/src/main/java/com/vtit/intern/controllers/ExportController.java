@@ -29,11 +29,9 @@ public class ExportController {
 
         Row header = sheet.createRow(0);
         header.createCell(0).setCellValue("ID");
-        header.createCell(1).setCellValue("Name");
+        header.createCell(1).setCellValue("Fullname");
         header.createCell(2).setCellValue("Department");
-        header.createCell(3).setCellValue("Position");
         header.createCell(4).setCellValue("Role");
-        header.createCell(5).setCellValue("Salary");
         header.createCell(6).setCellValue("Username");
         header.createCell(7).setCellValue("Email");
 
@@ -43,11 +41,9 @@ public class ExportController {
         for (Employee employee: employees) {
             Row row = sheet.createRow(rowNum++);
             row.createCell(0).setCellValue(employee.getId());
-            row.createCell(1).setCellValue(employee.getName());
+            row.createCell(1).setCellValue(employee.getFullName());
             row.createCell(2).setCellValue(employee.getDepartment());
-            row.createCell(3).setCellValue(employee.getPosition());
             row.createCell(4).setCellValue(employee.getRole().name());
-            row.createCell(5).setCellValue(employee.getSalary());
             row.createCell(6).setCellValue(employee.getUsername());
             row.createCell(7).setCellValue(employee.getEmail());
         }

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
+import '../index.css';
 
 const LoginForm = () => {
   const [username, setUsername] = useState("");
@@ -11,9 +12,9 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    try {
+    try { 
       await authService.login(username, password);
-      navigate("/home"); 
+      navigate("/employee-list"); 
     } catch (err) {
       setError("Invalid username or password");
     }
@@ -21,29 +22,32 @@ const LoginForm = () => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <h2>LOGIN</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <input 
-      type="text" 
-      placeholder="Username" 
-      style={{color: "black"}}
-      value={username} 
-      onChange={(e) => setUsername(e.target.value)} 
-      required />
+      <div className="">
+        <h2>Đăng Nhập</h2>
+        {error && <p style={{ color: "red" }}>{error}</p>}
+        <input 
+        type="text" 
+        placeholder="Username" 
+        style={{color: "black"}}
+        value={username} 
+        onChange={(e) => setUsername(e.target.value)} 
+        required />
 
-      <input 
-      type="password" 
-      placeholder="Password" 
-      style={{color: "black"}}
-      value={password} 
-      onChange={(e) => setPassword(e.target.value)} 
-      required />
+        <input 
+        type="password" 
+        placeholder="Mật khẩu" 
+        style={{color: "black"}}
+        value={password} 
+        onChange={(e) => setPassword(e.target.value)} 
+        onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
+        required />
 
-      <button type="submit">Login</button>
+        <button type="submit">Đăng Nhập</button>
 
-      <p>
-        Don't have an account? <button type="button" onClick={() => navigate("/register")}>Register</button>
-      </p>
+        <p className="dont-have">
+          Chưa có mật khẩu? <span type="button" onClick={() => navigate("/register")}>Đăng ký</span>
+        </p>
+      </div>
     </form>
   );
 };

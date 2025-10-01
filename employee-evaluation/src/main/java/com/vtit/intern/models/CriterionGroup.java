@@ -45,4 +45,5 @@ public class CriterionGroup {
 
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Criterion> criteria = new HashSet<>();
+
 }

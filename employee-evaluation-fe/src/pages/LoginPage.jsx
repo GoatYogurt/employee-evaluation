@@ -7,7 +7,7 @@ const LoginPage = () => {
   <section>
     <div className="login-page">
       <div className="main-text">
-        <h1>viettel</h1>
+        <h1>VIETTEL</h1>
         <h3>Employee Evaluation System</h3>
       </div>
 

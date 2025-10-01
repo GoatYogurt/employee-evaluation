@@ -1,0 +1,406 @@
+/* Dashboard Layout */
+.dashboard {
+  display: flex;
+  height: 100vh;
+  background-color: #E0D7D5;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 80px;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  position: fixed;
+  margin: 10px;
+  height: 92vh;
+  width: 60px;
+  z-index: 1000;
+  border-radius: 10px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  
+}
+
+.nav-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: black;
+  font-size: 18px;
+  background-color: #fff;
+}
+
+.nav-icon:hover {
+  background-color: #fff;
+  color: #ecf0f1;
+  transform: scale(1.2); /* phóng to nhẹ */
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.4); /* đổ bóng */
+  color: red;
+}
+
+.nav-icon.active {
+  color: red;
+  border: 2px solid red;  /* viền đỏ ngoài cùng */
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+}
+
+.nav-icon.logo {
+  background-color: #fff;
+  color: white;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  width: 10px;
+  height: 10px;
+  color: red;
+  border: 2px solid red;  /* viền đỏ ngoài cùng */
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+}
+
+
+.user-info {
+  margin-top: auto;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 168px;
+}
+
+.user-avatar {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background-color: red;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+}
+
+.brand-logo {
+  font-size: 12px;
+  color: red;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+/* Main Content */
+.main-content {
+  margin-left: 80px;
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* Header */
+.content-header {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background-color: #3498db;
+  color: white;
+}
+
+
+.btn-success {
+  background-color: #27ae60;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #229954;
+}
+
+.btn-warning {
+  background-color: #fff;
+  color: #000;
+
+}
+
+.btn-warning:hover {
+  background-color: #fff;
+  color: red;
+  border: 1px solid red;  /* viền đỏ ngoài cùng */
+  box-shadow: 0 0 6px rgba(255, 0, 0, 0.4);
+}
+
+/******************************************************** Excel-like Table *****************************************************************/
+.excel-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  overflow: hidden;
+  color: black;
+}
+
+.table-header {
+  background-color: #fff;
+  color: black;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.table-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.search-box {
+  padding: 8px 12px;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.excel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.excel-table th {
+  background-color: #f8f9fa;
+  padding: 12px 8px;
+  text-align: left;
+  border: 1px solid #dee2e6;
+  font-weight: bold;
+  color: #212529;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.excel-table td {
+  padding: 10px 8px;
+  border: 1px solid #dee2e6;
+  vertical-align: middle;
+  background-color: white;
+  color: #212529;
+}
+
+.excel-table tr:nth-child(even) td {
+  background-color: #f8f9fa;
+}
+
+.excel-table tr:hover td {
+  background-color: #e9ecef;
+}
+
+.btn-primary {
+  background-color: #fff;
+  border: 2px solid red;  /* viền đỏ ngoài cùng */
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+  color: red;
+}
+
+.btn-primary:hover {
+  background-color: #fff;
+}
+
+
+/* Action buttons */
+.action-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.btn-sm {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 3px;
+}
+
+.btn-edit {
+  background-color: #fff;
+  color: #000;
+  border: 1px solid #aea9a9;
+}
+
+.btn-delete {
+  background-color: #fff;
+  color: #000;
+  border: 1px solid #aea9a9;
+}
+
+.btn-view {
+  background-color: #fff;
+  color: #000;
+  border: 1px solid #aea9a9;
+}
+
+.btn-edit:hover {
+  background-color: #fff;
+  border: 1px solid red;  /* viền đỏ ngoài cùng */
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+  color: red;
+}
+
+.btn-delete:hover {
+  background-color: #fff;
+  border: 1px solid red;  /* viền đỏ ngoài cùng */
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+  color: red;
+}
+
+.btn-view:hover {
+  background-color: #fff;
+  border: 1px solid red;  /* viền đỏ ngoài cùng */
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+  color: red;
+}
+
+
+/* Input fields in table */
+.table-input {
+  width: 100%;
+  border: 1px solid #dee2e6;
+  background: white;
+  padding: 4px;
+  font-size: 14px;
+  color: #212529;
+}
+
+.table-input:focus {
+  outline: 2px solid #3498db;
+  background: white;
+  border-color: #3498db;
+}
+
+/* Pagination */
+.pagination-container {
+  padding: 15px 20px;
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: #212529;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.pagination-btn {
+  padding: 6px 10px;
+  border: 1px solid #dee2e6;
+  background: white;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 12px;
+  color: #212529;
+}
+
+.pagination-btn:hover {
+  background-color: #e9ecef;
+}
+
+.pagination-btn.active {
+  background-color: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+.pagination-btn:disabled {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 60px;
+  }
+  
+  .main-content {
+    margin-left: 60px;
+  }
+  
+  .nav-icon {
+    width: 35px;
+    height: 35px;
+    font-size: 16px;
+  }
+  
+  .content-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/******************************************************** Add-emplpyee- Table *****************************************************************/
+.employ-table {
+  margin-left: 40px;
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  background-color: #fff;
+  border-radius: 8px;
+}

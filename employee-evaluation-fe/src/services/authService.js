@@ -9,8 +9,8 @@ const login = async (username, password) => {
   return res.data;
 };
 
-const register = async ({ name, username, email, password, position, department, role }) => {
-  const res = await axiosClient.post("/auth/register", { name, username, email, password, position, department, role });
+const register = async ({ fullName, staffCode, username, email, password, department, role, level }) => {
+  const res = await axiosClient.post("/auth/register", { fullName, staffCode, username, email, password, department, role, level});
   if (res.data.accessToken) localStorage.setItem("token", res.data.accessToken);
   if (res.data.refreshToken) localStorage.setItem("refreshToken", res.data.refreshToken);
   if (res.data.username) localStorage.setItem("username", res.data.username);

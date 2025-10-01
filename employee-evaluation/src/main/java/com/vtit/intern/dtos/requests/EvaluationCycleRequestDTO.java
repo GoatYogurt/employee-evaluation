@@ -1,5 +1,6 @@
 package com.vtit.intern.dtos.requests;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.vtit.intern.dtos.responses.EvaluationResponseDTO;
 import com.vtit.intern.enums.EvaluationCycleStatus;
 import jakarta.validation.Valid;
@@ -29,21 +30,13 @@ public class EvaluationCycleRequestDTO {
     private String description;
 
     @NotNull(message = "Start date cannot be null")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy", timezone = "Asia/Ho_Chi_Minh")
     private LocalDate startDate;
 
     @NotNull(message = "End date cannot be null")
-    @FutureOrPresent(message = "End date must be today or in the future")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy", timezone = "Asia/Ho_Chi_Minh")
     private LocalDate endDate;
 
     @NotNull(message = "Status cannot be null")
     private EvaluationCycleStatus status;
-
-    @Valid
-    private Set<EvaluationResponseDTO> evaluations;
-
-    @NotNull(message = "Employees cannot be null")
-    @Size(min = 1, message = "At least one employee must be selected")
-    private Set<Long> employees;
-
-    private Set<Long> managers;
 }

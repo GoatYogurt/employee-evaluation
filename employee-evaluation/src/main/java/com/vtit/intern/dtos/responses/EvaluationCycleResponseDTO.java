@@ -16,7 +16,4 @@ public class EvaluationCycleResponseDTO {
     private LocalDate startDate;
     private LocalDate endDate;
     private EvaluationCycleStatus status;
-    private Set<EvaluationResponseDTO> evaluations;
-    private Set<Long> employees;
-    private Set<Long> managers;
 }

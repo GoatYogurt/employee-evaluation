@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 public interface ProjectRepository extends JpaRepository<Project, Long> {
     @Query("SELECT p FROM Project p " +
             "WHERE (:code IS NULL OR LOWER(p.code) LIKE LOWER(CONCAT('%', :code, '%'))) " +
-            "AND (:managerName IS NULL OR LOWER(p.manager.name) LIKE LOWER(CONCAT('%', :managerName, '%'))) " +
+            "AND (:managerName IS NULL OR LOWER(p.manager.fullName) LIKE LOWER(CONCAT('%', :managerName, '%'))) " +
             "AND (:isOdc IS NULL OR p.isOdc = :isOdc) " +
             "AND p.isDeleted = false")
     Page<Project> searchProjects(

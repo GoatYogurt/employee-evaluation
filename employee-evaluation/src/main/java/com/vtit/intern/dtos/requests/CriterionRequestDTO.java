@@ -25,4 +25,6 @@ public class CriterionRequestDTO {
 
     @NotNull(message = "Group ID cannot be null")
     private Long groupId;
+
+    private Boolean isDeleted = false;
 }

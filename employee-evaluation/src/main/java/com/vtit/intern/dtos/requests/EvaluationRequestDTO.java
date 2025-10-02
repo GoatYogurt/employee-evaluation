@@ -20,7 +20,10 @@ public class EvaluationRequestDTO {
     private Long projectId;
 
     private String managerFeedback;
+
     private String customerFeedback;
+
     private String note;
+
     private boolean isDeleted = false;
 }

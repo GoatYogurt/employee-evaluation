@@ -39,4 +39,6 @@ public class EvaluationCycleRequestDTO {
 
     @NotNull(message = "Status cannot be null")
     private EvaluationCycleStatus status;
+
+    private Boolean isDeleted = false;
 }

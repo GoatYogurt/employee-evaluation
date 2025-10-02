@@ -5,6 +5,7 @@ import com.vtit.intern.dtos.responses.CriterionResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.models.Criterion;
+import com.vtit.intern.models.CriterionGroup;
 import com.vtit.intern.repositories.CriterionRepository;
 import com.vtit.intern.services.CriterionService;
 import com.vtit.intern.utils.ResponseUtil;
@@ -86,12 +87,13 @@ public class CriterionServiceImpl implements CriterionService {
 //        return modelMapper.map(updatedCriterion, CriterionResponseDTO.class);
 //    }
 
+
     @Override
     public void delete(Long id) {
-        if (!criterionRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Cannot delete. Criterion not found with id: " + id);
-        }
-        criterionRepository.deleteById(id);
+        Criterion existing = criterionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id));
+        existing.setDeleted(true);        // xóa mềm
+        criterionRepository.save(existing);
     }
 
     @Override

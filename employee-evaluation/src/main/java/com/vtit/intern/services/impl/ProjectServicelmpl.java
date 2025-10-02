@@ -6,6 +6,7 @@ import com.vtit.intern.dtos.responses.ProjectResponeDTO;
 import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.dtos.searches.ProjectSearchDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
+import com.vtit.intern.models.CriterionGroup;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.models.Project;
 import com.vtit.intern.repositories.EmployeeRepository;
@@ -105,12 +106,11 @@ public class ProjectServicelmpl implements ProjectService {
         return ResponseEntity.ok(ResponseUtil.success(toDTO(updated)));
     }
 
-    @Override
     public void delete(Long id) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
-        project.setDeleted(true);
-        projectRepository.save(project);
+        Project existing = projectRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
+        existing.setDeleted(true);        // xóa mềm
+        projectRepository.save(existing);
     }
 
     private ProjectResponeDTO toDTO(Project project) {

@@ -7,6 +7,7 @@ import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.dtos.searches.EmployeeSearchDTO;
 import com.vtit.intern.enums.Role;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
+import com.vtit.intern.models.CriterionGroup;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.repositories.EmployeeRepository;
 import com.vtit.intern.services.EmployeeService;
@@ -69,11 +70,10 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public void delete(Long id) {
-        if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("Cannot delete. Employee not found with id: " + id);
-        }
-
-        repository.deleteById(id);
+        Employee existing = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+        existing.setDeleted(true);        // xóa mềm
+        repository.save(existing);
     }
 
     @Override

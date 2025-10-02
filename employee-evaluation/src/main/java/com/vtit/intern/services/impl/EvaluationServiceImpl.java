@@ -27,6 +27,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -118,10 +119,8 @@ public class EvaluationServiceImpl implements EvaluationService {
             throw new IllegalStateException("Cannot delete evaluation in a completed or closed evaluation cycle.");
         }
 
-        EvaluationCycle evaluationCycle = existingEvaluation.getEvaluationCycle();
-//        evaluationCycle.removeEvaluation(existingEvaluation);
-
-        evaluationCycleRepository.save(evaluationCycle);
+        existingEvaluation.setDeleted(true);
+        evaluationRepository.save(existingEvaluation);
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.vtit.intern.dtos.responses.EvaluationCycleResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.mappers.EvaluationCycleMapper;
+import com.vtit.intern.models.CriterionGroup;
 import com.vtit.intern.models.EvaluationCycle;
 import com.vtit.intern.repositories.EvaluationCycleRepository;
 import com.vtit.intern.services.EvaluationCycleService;
@@ -52,9 +53,10 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
 
     @Override
     public void delete(Long id) {
-        EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(id)
+        EvaluationCycle existing = evaluationCycleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
-        evaluationCycleRepository.delete(evaluationCycle);
+        existing.setDeleted(true);        // xóa mềm
+        evaluationCycleRepository.save(existing);
     }
 
     @Override

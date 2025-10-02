@@ -26,6 +26,7 @@ public class Project {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String code;
 
     @ManyToOne
@@ -33,6 +34,7 @@ public class Project {
     private Employee manager;
 
     private boolean isOdc;
+
     private boolean isDeleted = false;
 
     @CreatedBy

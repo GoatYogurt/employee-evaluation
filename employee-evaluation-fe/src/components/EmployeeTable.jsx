@@ -19,39 +19,43 @@ const EmployeeTable = () => {
     fetchEmployees();
   }, []);
 
-  // Fetch employees từ API
   const fetchEmployees = async () => {
-    try {
-      const res = await fetch("http://localhost:8080/api/employees", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      });
+  try {
+    const res = await fetch("http://localhost:8080/api/employees", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("API ERROR:", res.status, errorText);
-        return;
-      }
-
-      const data = await res.json();
-      const normalized = (data.content || []).map((emp) => ({
-        id: emp.id,
-        staff_code: emp.staffCode,
-        full_name: emp.fullName,
-        email: emp.email,
-        department: emp.department,
-        role: emp.role,
-        level: emp.level,
-      }));
-
-      setEmployees(normalized);
-    } catch (error) {
-      console.error("Failed to fetch employees:", error);
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("API ERROR:", res.status, errorText);
+      return;
     }
-  };
+
+    const response = await res.json();
+    console.log("API RESPONSE:", response);
+
+    // BE trả về
+    const employees = response.data?.content || [];
+
+    const normalized = employees.map((emp, index) => ({
+      id: emp.id, 
+      staff_code: emp.staffCode,
+      full_name: emp.fullName,
+      email: emp.email,
+      department: emp.department,
+      role: emp.role,
+      level: emp.level,
+    }));
+
+    setEmployees(normalized);
+  } catch (error) {
+    console.error("Failed to fetch employees:", error);
+  }
+};
 
   // Lọc theo fullname
   const filteredEmployees = employees.filter((emp) =>
@@ -70,10 +74,12 @@ const EmployeeTable = () => {
     setShowEditModal(true);
   };
 
+
+  // cập nhật nhân viên
   const handleEditConfirm = async () => {
     try {
       const res = await fetch(
-        `http://localhost:8080/api/employees/${selectedEmployee.id}/update`,
+        `http://localhost:8080/api/employees/${selectedEmployee.id}`,
         {
           method: "PATCH",
           headers: {
@@ -98,7 +104,8 @@ const EmployeeTable = () => {
         return;
       }
 
-      const updatedEmp = await res.json();
+      const result = await res.json();
+      const updatedEmp = result.data;
 
       // cập nhật lại danh sách
       setEmployees((prev) =>
@@ -125,7 +132,7 @@ const EmployeeTable = () => {
     }
   };
 
-  // Xử lý xóa
+  // xóa nhân viên
   const handleDelete = async (id) => {
     try {
       const res = await fetch(`http://localhost:8080/api/employees/${id}`, {

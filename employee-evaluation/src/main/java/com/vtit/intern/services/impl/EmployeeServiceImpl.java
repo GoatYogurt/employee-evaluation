@@ -137,11 +137,17 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (dto.getRole() != null) {
             existingEmployee.setRole(Role.valueOf(dto.getRole()));
         }
+        if (dto.getLevel() != null) {
+            existingEmployee.setRole(Role.valueOf(dto.getLevel()));
+        }
         if (dto.getEmail() != null) {
             existingEmployee.setEmail(dto.getEmail());
         }
         if (dto.getUsername() != null) {
             existingEmployee.setUsername(dto.getUsername());
+        }
+        if (dto.getStaffCode() != null) {
+            existingEmployee.setStaffCode(dto.getStaffCode());
         }
 
         Employee updatedEmployee = repository.save(existingEmployee);

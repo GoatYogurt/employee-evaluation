@@ -7,10 +7,11 @@ import java.util.Set;
 
 @Getter
 @Setter
-public class ProjectResponeDTO {
+public class ProjectResponseDTO {
     private Long id;
     private String code;
     private Boolean isOdc;
     private String managerName;
-    private Set<String> employeeNames;
+    private Set<EmployeeResponseDTO> employees;
+    private Set<Long> evaluationCycleIds;
 }

@@ -16,4 +16,5 @@ public class EvaluationCycleResponseDTO {
     private LocalDate startDate;
     private LocalDate endDate;
     private EvaluationCycleStatus status;
+    private Set<Long> projectIds;
 }

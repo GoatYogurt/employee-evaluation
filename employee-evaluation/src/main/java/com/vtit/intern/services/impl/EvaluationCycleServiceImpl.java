@@ -4,9 +4,8 @@ import com.vtit.intern.dtos.requests.EvaluationCycleRequestDTO;
 import com.vtit.intern.dtos.responses.EvaluationCycleResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
-import com.vtit.intern.mappers.EvaluationCycleMapper;
-import com.vtit.intern.models.CriterionGroup;
 import com.vtit.intern.models.EvaluationCycle;
+import com.vtit.intern.models.Project;
 import com.vtit.intern.repositories.EvaluationCycleRepository;
 import com.vtit.intern.services.EvaluationCycleService;
 import org.springframework.data.domain.Page;
@@ -30,16 +29,16 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
 
     @Override
     public EvaluationCycleResponseDTO create(EvaluationCycleRequestDTO dto) {
-        EvaluationCycle evaluationCycle = EvaluationCycleMapper.requestToEntity(dto);
+        EvaluationCycle evaluationCycle = requestToEntity(dto);
         EvaluationCycle savedEvaluationCycle = evaluationCycleRepository.save(evaluationCycle);
-        return EvaluationCycleMapper.entityToResponse(savedEvaluationCycle);
+        return entityToResponse(savedEvaluationCycle);
     }
 
     @Override
     public EvaluationCycleResponseDTO get(Long id) {
         EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
-        return EvaluationCycleMapper.entityToResponse(evaluationCycle);
+        return entityToResponse(evaluationCycle);
     }
 
 //    @Override
@@ -77,7 +76,7 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
         );
 
         List<EvaluationCycleResponseDTO> content = evaluationCyclePage.getContent().stream()
-                .map(EvaluationCycleMapper::entityToResponse)
+                .map(this::entityToResponse)
                 .collect(Collectors.toList());
 
         return new PageResponse<>(
@@ -102,7 +101,7 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
         );
 
         List<EvaluationCycleResponseDTO> content = evaluationCyclePage.getContent().stream()
-                .map(EvaluationCycleMapper::entityToResponse)
+                .map(this::entityToResponse)
                 .collect(Collectors.toList());
 
         return new PageResponse<>(
@@ -137,6 +136,30 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
         }
 
         EvaluationCycle updatedEvaluationCycle = evaluationCycleRepository.save(existingEvaluationCycle);
-        return EvaluationCycleMapper.entityToResponse(updatedEvaluationCycle);
+        return entityToResponse(updatedEvaluationCycle);
+    }
+
+    private EvaluationCycleResponseDTO entityToResponse(EvaluationCycle evaluationCycle) {
+        EvaluationCycleResponseDTO evaluationCycleResponseDTO = new EvaluationCycleResponseDTO();
+        evaluationCycleResponseDTO.setName(evaluationCycle.getName());
+        evaluationCycleResponseDTO.setDescription(evaluationCycle.getDescription());
+        evaluationCycleResponseDTO.setStartDate(evaluationCycle.getStartDate().toLocalDate());
+        evaluationCycleResponseDTO.setEndDate(evaluationCycle.getEndDate().toLocalDate());
+        evaluationCycleResponseDTO.setStatus(evaluationCycle.getStatus());
+        evaluationCycleResponseDTO.setProjectIds(evaluationCycle.getProjects().stream().map(Project::getId).collect(Collectors.toSet()));
+
+        return evaluationCycleResponseDTO;
+    }
+
+    private static EvaluationCycle requestToEntity(EvaluationCycleRequestDTO dto) {
+        EvaluationCycle evaluationCycle = new EvaluationCycle();
+        evaluationCycle.setId(dto.getId());
+        evaluationCycle.setName(dto.getName());
+        evaluationCycle.setDescription(dto.getDescription());
+        evaluationCycle.setStartDate(dto.getStartDate().atStartOfDay());
+        evaluationCycle.setEndDate(dto.getEndDate().atStartOfDay());
+        evaluationCycle.setStatus(dto.getStatus());
+
+        return evaluationCycle;
     }
 }

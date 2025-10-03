@@ -76,61 +76,62 @@ const EmployeeTable = () => {
 
 
   // cập nhật nhân viên
-  const handleEditConfirm = async () => {
-    try {
-      const res = await fetch(
-        `http://localhost:8080/api/employees/${selectedEmployee.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            staffCode: selectedEmployee.staff_code,
-            fullName: selectedEmployee.full_name,
-            email: selectedEmployee.email,
-            department: selectedEmployee.department,
-            role: selectedEmployee.role,
-            level: selectedEmployee.level,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        const errMsg = await res.text();
-        console.error("Update failed:", errMsg);
-        alert("Sửa nhân viên thất bại!");
-        return;
+const handleEditConfirm = async () => {
+  try {
+    const res = await fetch(
+      `http://localhost:8080/api/employees/${selectedEmployee.id}`, // ✅ dùng id từ selectedEmployee
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          staffCode: selectedEmployee.staff_code,
+          fullName: selectedEmployee.full_name,
+          email: selectedEmployee.email,
+          department: selectedEmployee.department,
+          role: selectedEmployee.role,
+          level: selectedEmployee.level,
+        }),
       }
+    );
 
-      const result = await res.json();
-      const updatedEmp = result.data;
-
-      // cập nhật lại danh sách
-      setEmployees((prev) =>
-        prev.map((emp) =>
-          emp.id === updatedEmp.id
-            ? {
-                id: updatedEmp.id,
-                staff_code: updatedEmp.staffCode,
-                full_name: updatedEmp.fullName,
-                email: updatedEmp.email,
-                department: updatedEmp.department,
-                role: updatedEmp.role,
-                level: updatedEmp.level,
-              }
-            : emp
-        )
-      );
-
-      alert("Sửa nhân viên thành công!");
-      setShowEditModal(false);
-    } catch (err) {
-      console.error(err);
-      alert("Có lỗi khi sửa nhân viên!");
+    if (!res.ok) {
+      const errMsg = await res.text();
+      console.error("Update failed:", errMsg);
+      alert("Sửa nhân viên thất bại!");
+      return;
     }
-  };
+
+    const result = await res.json();
+    const updatedEmp = result.data; // BE trả về trong field "data"
+
+    // ✅ cập nhật lại danh sách
+    setEmployees((prev) =>
+      prev.map((emp) =>
+        emp.id === updatedEmp.id
+          ? {
+              id: updatedEmp.id,
+              staff_code: updatedEmp.staffCode,
+              full_name: updatedEmp.fullName,
+              email: updatedEmp.email,
+              department: updatedEmp.department,
+              role: updatedEmp.role,
+              level: updatedEmp.level,
+            }
+          : emp
+      )
+    );
+
+    alert("Sửa nhân viên thành công!");
+    setShowEditModal(false);
+  } catch (err) {
+    console.error(err);
+    alert("Có lỗi khi sửa nhân viên!");
+  }
+};
+
 
   // xóa nhân viên
   const handleDelete = async (id) => {

@@ -8,7 +8,6 @@ const EmployeeTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
-  // popup state
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -19,43 +18,42 @@ const EmployeeTable = () => {
     fetchEmployees();
   }, []);
 
+  // Fetch employees
   const fetchEmployees = async () => {
-  try {
-    const res = await fetch("http://localhost:8080/api/employees", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-        "Content-Type": "application/json",
-      },
-    });
+    try {
+      const res = await fetch("http://localhost:8080/api/employees", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("API ERROR:", res.status, errorText);
-      return;
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("API ERROR:", res.status, errorText);
+        return;
+      }
+
+      const response = await res.json();
+      console.log("API RESPONSE:", response);
+      const employees = response.data?.content || [];
+
+      const normalized = employees.map((emp) => ({
+        id: emp.id,
+        staff_code: emp.staffCode,
+        full_name: emp.fullName,
+        email: emp.email,
+        department: emp.department,
+        role: emp.role,
+        level: emp.level,
+      }));
+
+      setEmployees(normalized);
+    } catch (error) {
+      console.error("Failed to fetch employees:", error);
     }
-
-    const response = await res.json();
-    console.log("API RESPONSE:", response);
-
-    // BE trả về
-    const employees = response.data?.content || [];
-
-    const normalized = employees.map((emp, index) => ({
-      id: emp.id, 
-      staff_code: emp.staffCode,
-      full_name: emp.fullName,
-      email: emp.email,
-      department: emp.department,
-      role: emp.role,
-      level: emp.level,
-    }));
-
-    setEmployees(normalized);
-  } catch (error) {
-    console.error("Failed to fetch employees:", error);
-  }
-};
+  };
 
   // Lọc theo fullname
   const filteredEmployees = employees.filter((emp) =>
@@ -74,66 +72,62 @@ const EmployeeTable = () => {
     setShowEditModal(true);
   };
 
+  const handleEditConfirm = async () => {
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/employees/${selectedEmployee.id}`, // 👈 dùng id từ BE
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            staffCode: selectedEmployee.staff_code,
+            fullName: selectedEmployee.full_name,
+            email: selectedEmployee.email,
+            department: selectedEmployee.department,
+            role: selectedEmployee.role,
+            level: selectedEmployee.level,
+          }),
+        }
+      );
 
-  // cập nhật nhân viên
-const handleEditConfirm = async () => {
-  try {
-    const res = await fetch(
-      `http://localhost:8080/api/employees/${selectedEmployee.id}`, // ✅ dùng id từ selectedEmployee
-      {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          staffCode: selectedEmployee.staff_code,
-          fullName: selectedEmployee.full_name,
-          email: selectedEmployee.email,
-          department: selectedEmployee.department,
-          role: selectedEmployee.role,
-          level: selectedEmployee.level,
-        }),
+      if (!res.ok) {
+        const errMsg = await res.text();
+        console.error("Update failed:", errMsg);
+        alert("Sửa nhân viên thất bại!");
+        return;
       }
-    );
 
-    if (!res.ok) {
-      const errMsg = await res.text();
-      console.error("Update failed:", errMsg);
-      alert("Sửa nhân viên thất bại!");
-      return;
+      const result = await res.json();
+      const updatedEmp = result.data;
+
+      setEmployees((prev) =>
+        prev.map((emp) =>
+          emp.id === updatedEmp.id
+            ? {
+                id: updatedEmp.id,
+                staff_code: updatedEmp.staffCode,
+                full_name: updatedEmp.fullName,
+                email: updatedEmp.email,
+                department: updatedEmp.department,
+                role: updatedEmp.role,
+                level: updatedEmp.level,
+              }
+            : emp
+        )
+      );
+
+      alert("Sửa nhân viên thành công!");
+      setShowEditModal(false);
+    } catch (err) {
+      console.error(err);
+      alert("Có lỗi khi sửa nhân viên!");
     }
+  };
 
-    const result = await res.json();
-    const updatedEmp = result.data; // BE trả về trong field "data"
-
-    // ✅ cập nhật lại danh sách
-    setEmployees((prev) =>
-      prev.map((emp) =>
-        emp.id === updatedEmp.id
-          ? {
-              id: updatedEmp.id,
-              staff_code: updatedEmp.staffCode,
-              full_name: updatedEmp.fullName,
-              email: updatedEmp.email,
-              department: updatedEmp.department,
-              role: updatedEmp.role,
-              level: updatedEmp.level,
-            }
-          : emp
-      )
-    );
-
-    alert("Sửa nhân viên thành công!");
-    setShowEditModal(false);
-  } catch (err) {
-    console.error(err);
-    alert("Có lỗi khi sửa nhân viên!");
-  }
-};
-
-
-  // xóa nhân viên
+  // Xử lý xóa
   const handleDelete = async (id) => {
     try {
       const res = await fetch(`http://localhost:8080/api/employees/${id}`, {

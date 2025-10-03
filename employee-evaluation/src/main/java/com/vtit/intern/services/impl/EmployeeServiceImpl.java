@@ -5,6 +5,7 @@ import com.vtit.intern.dtos.responses.EmployeeResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.dtos.searches.EmployeeSearchDTO;
+import com.vtit.intern.enums.Level;
 import com.vtit.intern.enums.Role;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.CriterionGroup;
@@ -138,7 +139,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             existingEmployee.setRole(Role.valueOf(dto.getRole()));
         }
         if (dto.getLevel() != null) {
-            existingEmployee.setRole(Role.valueOf(dto.getLevel()));
+            existingEmployee.setLevel(Level.valueOf(dto.getLevel()));
         }
         if (dto.getEmail() != null) {
             existingEmployee.setEmail(dto.getEmail());

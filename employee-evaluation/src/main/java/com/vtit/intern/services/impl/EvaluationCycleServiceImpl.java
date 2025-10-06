@@ -147,6 +147,10 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
         evaluationCycleResponseDTO.setEndDate(evaluationCycle.getEndDate().toLocalDate());
         evaluationCycleResponseDTO.setStatus(evaluationCycle.getStatus());
         evaluationCycleResponseDTO.setProjectIds(evaluationCycle.getProjects().stream().map(Project::getId).collect(Collectors.toSet()));
+        evaluationCycleResponseDTO.setCreatedAt(evaluationCycle.getCreatedAt());
+        evaluationCycleResponseDTO.setUpdatedAt(evaluationCycle.getUpdatedAt());
+        evaluationCycleResponseDTO.setCreatedBy(evaluationCycle.getCreatedBy());
+        evaluationCycleResponseDTO.setUpdatedBy(evaluationCycle.getUpdatedBy());
 
         return evaluationCycleResponseDTO;
     }

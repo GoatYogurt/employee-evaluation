@@ -8,9 +8,10 @@ import com.vtit.intern.dtos.searches.EmployeeSearchDTO;
 import com.vtit.intern.enums.Level;
 import com.vtit.intern.enums.Role;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
-import com.vtit.intern.models.CriterionGroup;
 import com.vtit.intern.models.Employee;
+import com.vtit.intern.models.Project;
 import com.vtit.intern.repositories.EmployeeRepository;
+import com.vtit.intern.repositories.ProjectRepository;
 import com.vtit.intern.services.EmployeeService;
 import com.vtit.intern.utils.ResponseUtil;
 import org.springframework.data.domain.Page;
@@ -27,36 +28,39 @@ import java.util.List;
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
     @Autowired
-    private final EmployeeRepository repository;
+    private final EmployeeRepository employeeRepository;
     @Autowired
     private final ModelMapper modelMapper;
     @Autowired
     private final PasswordEncoder passwordEncoder;
+    @Autowired
+    private final ProjectRepository projectRepository;
 
-    public EmployeeServiceImpl(EmployeeRepository repository, ModelMapper modelMapper, PasswordEncoder passwordEncoder) {
-        this.repository = repository;
+    public EmployeeServiceImpl(EmployeeRepository employeeRepository, ProjectRepository projectRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder) {
+        this.employeeRepository = employeeRepository;
+        this.projectRepository = projectRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public ResponseEntity<ResponseDTO<EmployeeResponseDTO>> getById(Long id) {
-        return ResponseEntity.ok(ResponseUtil.success(repository.findById(id)
+        return ResponseEntity.ok(ResponseUtil.success(employeeRepository.findById(id)
                 .map(employee -> modelMapper.map(employee, EmployeeResponseDTO.class))
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id))));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<EmployeeResponseDTO>> create(EmployeeRequestDTO dto) {
-        if (repository.existsByUsername(dto.getUsername())) {
+        if (employeeRepository.existsByUsername(dto.getUsername())) {
             throw new ResourceNotFoundException("Cannot create. Employee with username " + dto.getUsername() + " already exists.");
         }
 
-        if (repository.existsByEmail(dto.getEmail())) {
+        if (employeeRepository.existsByEmail(dto.getEmail())) {
             throw new ResourceNotFoundException("Cannot create. Employee with email " + dto.getEmail() + " already exists.");
         }
 
-        if (repository.existsByStaffCode(dto.getStaffCode())) {
+        if (employeeRepository.existsByStaffCode(dto.getStaffCode())) {
             throw new ResourceNotFoundException("Cannot create. Employee with staff code " + dto.getStaffCode() + " already exists.");
         }
 
@@ -65,22 +69,24 @@ public class EmployeeServiceImpl implements EmployeeService {
         // encode the password before saving
         employee.setPassword(passwordEncoder.encode(employee.getPassword()));
 
-        Employee savedEmployee = repository.save(employee);
+        Employee savedEmployee = employeeRepository.save(employee);
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseUtil.created(modelMapper.map(savedEmployee, EmployeeResponseDTO.class)));
     }
 
     @Override
     public void delete(Long id) {
-        Employee existing = repository.findById(id)
+        Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
-        existing.setDeleted(true);        // xóa mềm
-        repository.save(existing);
+        employee.setDeleted(true);
+        Page<Project> projects = projectRepository.findByIdIn(employee.getProjects().stream().map(Project::getId).toList(), null);
+        projects.forEach(project -> project.getEmployees().remove(employee));
+        employeeRepository.save(employee);
     }
 
     @Override
     public ResponseEntity<ResponseDTO<PageResponse<EmployeeResponseDTO>>> getAllEmployees(EmployeeSearchDTO dto, Pageable pageable) {
         if (dto == null) {
-            Page<Employee> employeePage = repository.findAll(pageable);
+            Page<Employee> employeePage = employeeRepository.findAll(pageable);
             List<EmployeeResponseDTO> content = employeePage.getContent().stream()
                     .map(e -> modelMapper.map(e, EmployeeResponseDTO.class))
                     .toList();
@@ -104,7 +110,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         String searchLevel = dto.getLevel() != null ? dto.getLevel().trim() : "";
 
-        Page<Employee> employeePage = repository
+        Page<Employee> employeePage = employeeRepository
                 .searchEmployees(searchFullName, searchUsername, searchEmail, searchDepartment, searchRole, searchLevel, searchStaffCode, pageable);
 
         List<EmployeeResponseDTO> content = employeePage.getContent().stream()
@@ -126,7 +132,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public ResponseEntity<ResponseDTO<EmployeeResponseDTO>> patch(Long id, EmployeeRequestDTO dto) {
-        Employee existingEmployee = repository.findById(id)
+        Employee existingEmployee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
 
         if (dto.getFullName() != null) {
@@ -151,14 +157,14 @@ public class EmployeeServiceImpl implements EmployeeService {
             existingEmployee.setStaffCode(dto.getStaffCode());
         }
 
-        Employee updatedEmployee = repository.save(existingEmployee);
+        Employee updatedEmployee = employeeRepository.save(existingEmployee);
         updatedEmployee.setPassword(null); // Clear password before returning
         return ResponseEntity.ok(ResponseUtil.success(modelMapper.map(updatedEmployee, EmployeeResponseDTO.class)));
     }
 
     @Override
     public void changePassword(String username, String oldPassword, String newPassword) {
-        Employee employee = repository.findByUsername(username).
+        Employee employee = employeeRepository.findByUsername(username).
                 orElseThrow(() -> new ResourceNotFoundException("Employee not found with username: " + username));
 
         if (newPassword == null || newPassword.isEmpty()) {
@@ -170,6 +176,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         employee.setPassword(passwordEncoder.encode(newPassword));
-        repository.save(employee);
+        employeeRepository.save(employee);
     }
 }

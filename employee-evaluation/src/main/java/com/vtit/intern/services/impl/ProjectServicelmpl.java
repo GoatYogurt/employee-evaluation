@@ -118,13 +118,14 @@ public class ProjectServicelmpl implements ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
 
+        // Remove project from associated evaluation cycles
         for (EvaluationCycle cycle: project.getEvaluationCycles()) {
             cycle.getProjects().remove(project);
         }
-
         evaluationCycleRepository.saveAll(project.getEvaluationCycles());
 
-        project.setDeleted(true);        // xóa mềm
+        project.getEmployees().clear();
+        project.setDeleted(true);
         projectRepository.save(project);
     }
 

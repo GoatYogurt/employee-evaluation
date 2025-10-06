@@ -46,9 +46,6 @@ public class EvaluationCycle {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-//    @ManyToMany(mappedBy = "evaluationCycles", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-//    private Set<Project> projects = new HashSet<>();
-
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "evaluation_cycle_project",

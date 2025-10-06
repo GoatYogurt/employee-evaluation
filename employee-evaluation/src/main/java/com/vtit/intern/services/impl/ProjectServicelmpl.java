@@ -12,6 +12,7 @@ import com.vtit.intern.models.Employee;
 import com.vtit.intern.models.EvaluationCycle;
 import com.vtit.intern.models.Project;
 import com.vtit.intern.repositories.EmployeeRepository;
+import com.vtit.intern.repositories.EvaluationCycleRepository;
 import com.vtit.intern.repositories.ProjectRepository;
 import com.vtit.intern.services.ProjectService;
 import com.vtit.intern.utils.ResponseUtil;
@@ -32,11 +33,14 @@ public class ProjectServicelmpl implements ProjectService {
     @Autowired
     private final EmployeeRepository employeeRepository;
     @Autowired
+    private final EvaluationCycleRepository evaluationCycleRepository;
+    @Autowired
     private final ModelMapper modelMapper;
 
-    public ProjectServicelmpl(ProjectRepository projectRepository, EmployeeRepository employeeRepository, ModelMapper modelMapper) {
+    public ProjectServicelmpl(ProjectRepository projectRepository, EmployeeRepository employeeRepository, EvaluationCycleRepository evaluationCycleRepository, ModelMapper modelMapper) {
         this.projectRepository = projectRepository;
         this.employeeRepository = employeeRepository;
+        this.evaluationCycleRepository = evaluationCycleRepository;
         this.modelMapper = modelMapper;
     }
 
@@ -111,10 +115,17 @@ public class ProjectServicelmpl implements ProjectService {
     }
 
     public void delete(Long id) {
-        Project existing = projectRepository.findById(id)
+        Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
-        existing.setDeleted(true);        // xóa mềm
-        projectRepository.save(existing);
+
+        for (EvaluationCycle cycle: project.getEvaluationCycles()) {
+            cycle.getProjects().remove(project);
+        }
+
+        evaluationCycleRepository.saveAll(project.getEvaluationCycles());
+
+        project.setDeleted(true);        // xóa mềm
+        projectRepository.save(project);
     }
 
     public ProjectResponseDTO toResponseDTO(Project project) {

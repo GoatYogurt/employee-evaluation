@@ -46,7 +46,17 @@ public class EvaluationCycle {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @ManyToMany(mappedBy = "evaluationCycles")
+//    @ManyToMany(mappedBy = "evaluationCycles", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+//    private Set<Project> projects = new HashSet<>();
+
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "evaluation_cycle_project",
+            joinColumns = @JoinColumn(name = "evaluation_cycle_id"),
+            inverseJoinColumns = @JoinColumn(name = "project_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"evaluation_cycle_id", "project_id"})
+    )
     private Set<Project> projects = new HashSet<>();
 }
+
 

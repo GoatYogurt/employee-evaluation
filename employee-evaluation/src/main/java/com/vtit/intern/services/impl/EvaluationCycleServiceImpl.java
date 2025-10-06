@@ -59,10 +59,11 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
 
     @Override
     public void delete(Long id) {
-        EvaluationCycle existing = evaluationCycleRepository.findById(id)
+        EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
-        existing.setDeleted(true);        // xóa mềm
-        evaluationCycleRepository.save(existing);
+        evaluationCycle.setDeleted(true);        // xóa mềm
+        evaluationCycle.getProjects().clear();
+        evaluationCycleRepository.save(evaluationCycle);
     }
 
     @Override

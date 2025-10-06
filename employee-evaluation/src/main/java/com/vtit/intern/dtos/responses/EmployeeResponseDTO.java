@@ -6,11 +6,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmployeeResponseDTO {
+    private Long id;
     private String fullName;
     private Integer staffCode;
     private String username;
@@ -18,4 +22,9 @@ public class EmployeeResponseDTO {
     private String department;
     private String role;
     private String level;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private String createdBy;
+    private String updatedBy;
 }

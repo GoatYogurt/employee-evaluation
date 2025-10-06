@@ -41,4 +41,6 @@ public class EmployeeRequestDTO {
 
     @NotNull(message = "Level is required")
     private String level;
+
+    private Boolean isDeleted = false;
 }

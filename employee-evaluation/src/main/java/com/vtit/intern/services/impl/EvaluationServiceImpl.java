@@ -10,10 +10,8 @@ import com.vtit.intern.models.Employee;
 import com.vtit.intern.models.Evaluation;
 import com.vtit.intern.models.EvaluationCycle;
 import com.vtit.intern.enums.EvaluationCycleStatus;
-import com.vtit.intern.repositories.CriterionRepository;
-import com.vtit.intern.repositories.EmployeeRepository;
-import com.vtit.intern.repositories.EvaluationCycleRepository;
-import com.vtit.intern.repositories.EvaluationRepository;
+import com.vtit.intern.models.Project;
+import com.vtit.intern.repositories.*;
 import com.vtit.intern.services.EvaluationService;
 import com.vtit.intern.utils.ResponseUtil;
 import jakarta.transaction.Transactional;
@@ -29,6 +27,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -42,19 +41,22 @@ public class EvaluationServiceImpl implements EvaluationService {
     @Autowired
     private final EvaluationCycleRepository evaluationCycleRepository;
     @Autowired
+    private final ProjectRepository projectRepository;
+    @Autowired
     private final ModelMapper modelMapper;
 
     public EvaluationServiceImpl(EvaluationRepository evaluationRepository, EmployeeRepository employeeRepository,
-                                 CriterionRepository criterionRepository, EvaluationCycleRepository evaluationCycleRepository, ModelMapper modelMapper) {
+                                 CriterionRepository criterionRepository, EvaluationCycleRepository evaluationCycleRepository, ModelMapper modelMapper, ProjectRepository projectRepository) {
         this.evaluationRepository = evaluationRepository;
         this.employeeRepository = employeeRepository;
         this.criterionRepository = criterionRepository;
         this.modelMapper = modelMapper;
         this.evaluationCycleRepository = evaluationCycleRepository;
+        this.projectRepository = projectRepository;
     }
 
     @Override
-    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> evaluate(EvaluationRequestDTO dto) {
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> create(EvaluationRequestDTO dto) {
         // find the evaluation cycle by ID
         Long evaluationCycleId = dto.getEvaluationCycleId();
         EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(evaluationCycleId)
@@ -66,21 +68,23 @@ public class EvaluationServiceImpl implements EvaluationService {
             throw new IllegalStateException("Cannot add evaluation to a completed or closed evaluation cycle.");
         }
 
-        Evaluation e = new Evaluation();
+        Project project = projectRepository.findById(dto.getProjectId())
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + dto.getProjectId()));
 
+        Evaluation e = new Evaluation();
         e.setEmployee(employeeRepository.findById(dto.getEmployeeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + dto.getEmployeeId())));
-//        e.setCriterion(criterionRepository.findById(dto.getCriterionId())
-//                .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + dto.getCriterionId())));
-//        e.setScore(dto.getScore());
-//        e.setComment(dto.getComment());
-//        e.setEvaluationDate(dto.getEvaluationDate());
-//
-//        evaluationCycle.addEvaluation(e);
-        evaluationCycleRepository.save(evaluationCycle);
+        e.setEvaluationCycle(evaluationCycle);
+        e.setProject(project);
+        e.setTotalScore(0.0);
+        e.setCompletionLevel(null);
+        e.setKiRanking(null);
+        e.setManagerFeedback(dto.getManagerFeedback() == null ? "" : dto.getManagerFeedback());
+        e.setCustomerFeedback(dto.getCustomerFeedback() == null ? "" : dto.getCustomerFeedback());
+        e.setNote(dto.getNote() == null ? "" : dto.getNote());
 
-//        Evaluation savedEvaluation = evaluationRepository.save(e);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseUtil.success(modelMapper.map(e, EvaluationResponseDTO.class)));
+        Evaluation savedEvaluation = evaluationRepository.save(e);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseUtil.success(modelMapper.map(savedEvaluation, EvaluationResponseDTO.class)));
     }
 
     @Override
@@ -115,10 +119,8 @@ public class EvaluationServiceImpl implements EvaluationService {
             throw new IllegalStateException("Cannot delete evaluation in a completed or closed evaluation cycle.");
         }
 
-        EvaluationCycle evaluationCycle = existingEvaluation.getEvaluationCycle();
-//        evaluationCycle.removeEvaluation(existingEvaluation);
-
-        evaluationCycleRepository.save(evaluationCycle);
+        existingEvaluation.setDeleted(true);
+        evaluationRepository.save(existingEvaluation);
     }
 
     @Override

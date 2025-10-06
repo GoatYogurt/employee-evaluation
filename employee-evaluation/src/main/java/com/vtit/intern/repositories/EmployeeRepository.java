@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
@@ -39,4 +40,5 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     boolean existsByStaffCode(Integer staffCode);
     Optional<Employee> findByUsername(String username);
     List<Employee> findAll();
+    Set<Employee> findByIdIn(Set<Long> ids);
 }

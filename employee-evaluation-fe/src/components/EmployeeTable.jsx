@@ -8,7 +8,6 @@ const EmployeeTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
-  // popup state
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -19,7 +18,7 @@ const EmployeeTable = () => {
     fetchEmployees();
   }, []);
 
-  // Fetch employees từ API
+  // Fetch employees
   const fetchEmployees = async () => {
     try {
       const res = await fetch("http://localhost:8080/api/employees", {
@@ -36,8 +35,11 @@ const EmployeeTable = () => {
         return;
       }
 
-      const data = await res.json();
-      const normalized = (data.content || []).map((emp) => ({
+      const response = await res.json();
+      console.log("API RESPONSE:", response);
+      const employees = response.data?.content || [];
+
+      const normalized = employees.map((emp) => ({
         id: emp.id,
         staff_code: emp.staffCode,
         full_name: emp.fullName,
@@ -73,7 +75,7 @@ const EmployeeTable = () => {
   const handleEditConfirm = async () => {
     try {
       const res = await fetch(
-        `http://localhost:8080/api/employees/${selectedEmployee.id}/update`,
+        `http://localhost:8080/api/employees/${selectedEmployee.id}`, // 👈 dùng id từ BE
         {
           method: "PATCH",
           headers: {
@@ -98,9 +100,9 @@ const EmployeeTable = () => {
         return;
       }
 
-      const updatedEmp = await res.json();
+      const result = await res.json();
+      const updatedEmp = result.data;
 
-      // cập nhật lại danh sách
       setEmployees((prev) =>
         prev.map((emp) =>
           emp.id === updatedEmp.id

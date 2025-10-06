@@ -3,6 +3,7 @@ package com.vtit.intern.services;
 import com.vtit.intern.dtos.requests.EvaluationCycleRequestDTO;
 import com.vtit.intern.dtos.responses.EvaluationCycleResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
+import com.vtit.intern.dtos.responses.ProjectResponseDTO;
 import com.vtit.intern.enums.EvaluationCycleStatus;
 import org.springframework.data.domain.Pageable;
 
@@ -15,5 +16,6 @@ public interface EvaluationCycleService {
     void delete(Long id);
     PageResponse<EvaluationCycleResponseDTO> getAllEvaluationCycles(String name, String description, EvaluationCycleStatus status, LocalDate startDate, LocalDate endDate, Pageable pageable);
     PageResponse<EvaluationCycleResponseDTO> getActiveEvaluationCycles(Pageable pageable);
+    PageResponse<ProjectResponseDTO> getProjectsByEvaluationCycleId(Long evaluationCycleId, Pageable pageable);
     EvaluationCycleResponseDTO patch(Long id, EvaluationCycleRequestDTO evaluationCycleRequestDTO);
 }

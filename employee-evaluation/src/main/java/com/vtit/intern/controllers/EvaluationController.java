@@ -33,8 +33,8 @@ public class EvaluationController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
-    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> evaluate(@Valid @RequestBody EvaluationRequestDTO dto) {
-        return evaluationService.evaluate(dto);
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> create(@Valid @RequestBody EvaluationRequestDTO dto) {
+        return evaluationService.create(dto);
     }
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")

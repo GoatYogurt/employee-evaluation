@@ -6,6 +6,9 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 public class CriterionResponseDTO {
@@ -13,4 +16,9 @@ public class CriterionResponseDTO {
     private String description;
     private Double weight;
     private Long groupId;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private String createdBy;
+    private String updatedBy;
 }

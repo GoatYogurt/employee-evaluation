@@ -4,6 +4,7 @@ import com.vtit.intern.enums.EvaluationCycleStatus;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Getter
@@ -17,4 +18,9 @@ public class EvaluationCycleResponseDTO {
     private LocalDate endDate;
     private EvaluationCycleStatus status;
     private Set<Long> projectIds;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private String createdBy;
+    private String updatedBy;
 }

@@ -3,10 +3,12 @@ package com.vtit.intern.services.impl;
 import com.vtit.intern.dtos.requests.EvaluationCycleRequestDTO;
 import com.vtit.intern.dtos.responses.EvaluationCycleResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
+import com.vtit.intern.dtos.responses.ProjectResponseDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.EvaluationCycle;
 import com.vtit.intern.models.Project;
 import com.vtit.intern.repositories.EvaluationCycleRepository;
+import com.vtit.intern.repositories.ProjectRepository;
 import com.vtit.intern.services.EvaluationCycleService;
 import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +18,7 @@ import com.vtit.intern.enums.EvaluationCycleStatus;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,8 +26,12 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
     @Autowired
     private final EvaluationCycleRepository evaluationCycleRepository;
 
-    private EvaluationCycleServiceImpl(EvaluationCycleRepository evaluationCycleRepository) {
+    @Autowired
+    private final ProjectRepository projectRepository;
+
+    private EvaluationCycleServiceImpl(EvaluationCycleRepository evaluationCycleRepository, ProjectRepository projectRepository) {
         this.evaluationCycleRepository = evaluationCycleRepository;
+        this.projectRepository = projectRepository;
     }
 
     @Override
@@ -113,6 +120,45 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
                 evaluationCyclePage.isLast()
         );
     }
+
+    @Override
+    public PageResponse<ProjectResponseDTO> getProjectsByEvaluationCycleId(Long evaluationCycleId, Pageable pageable) {
+        Optional<EvaluationCycle> evaluationCycle = evaluationCycleRepository.findById(evaluationCycleId);
+
+        if (evaluationCycle.isEmpty()) {
+            throw new ResourceNotFoundException("Evaluation Cycle not found with id: " + evaluationCycleId);
+        } else {
+            Page<Project> projectPage = projectRepository.findByIdIn(
+                    evaluationCycle.get().getProjects().stream().map(Project::getId).collect(Collectors.toSet()),
+                    pageable
+            );
+
+            List<ProjectResponseDTO> content = projectPage.getContent().stream()
+                    .map(project -> {
+                        ProjectResponseDTO dto = new ProjectResponseDTO();
+                        dto.setId(project.getId());
+                        dto.setCode(project.getCode());
+                        dto.setIsOdc(project.isOdc());
+                        dto.setManagerName(project.getManager() != null ? project.getManager().getFullName() : null);
+                        dto.setCreatedAt(project.getCreatedAt());
+                        dto.setUpdatedAt(project.getUpdatedAt());
+                        dto.setCreatedBy(project.getCreatedBy());
+                        dto.setUpdatedBy(project.getUpdatedBy());
+                        return dto;
+                    })
+                    .toList();
+
+            return new PageResponse<>(
+                    content,
+                    projectPage.getNumber(),
+                    projectPage.getSize(),
+                    projectPage.getTotalElements(),
+                    projectPage.getTotalPages(),
+                    projectPage.isLast()
+            );
+        }
+    }
+
     @Override
     public EvaluationCycleResponseDTO patch(Long id, EvaluationCycleRequestDTO dto) {
         EvaluationCycle existingEvaluationCycle = evaluationCycleRepository.findById(id)

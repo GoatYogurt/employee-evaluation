@@ -23,6 +23,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+
 @Service
 public class ProjectServicelmpl implements ProjectService {
     @Autowired
@@ -52,6 +54,9 @@ public class ProjectServicelmpl implements ProjectService {
         project.setManager(manager);
         project.setOdc(dto.getIsOdc());
         project.setDeleted(false);
+
+        Set<Employee> employees = employeeRepository.findByIdIn(dto.getEmployeeIds());
+        project.getEmployees().addAll(employees);
 
         Project saved = projectRepository.save(project);
         return ResponseEntity.status(HttpStatus.CREATED)

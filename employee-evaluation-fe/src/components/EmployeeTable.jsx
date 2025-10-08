@@ -37,6 +37,7 @@ const EmployeeTable = () => {
 
       const response = await res.json();
       console.log("API RESPONSE:", response);
+
       const employees = response.data?.content || [];
 
       const normalized = employees.map((emp) => ({
@@ -82,6 +83,7 @@ const EmployeeTable = () => {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             staffCode: selectedEmployee.staff_code,
             fullName: selectedEmployee.full_name,
@@ -90,6 +92,7 @@ const EmployeeTable = () => {
             role: selectedEmployee.role,
             level: selectedEmployee.level,
           }),
+          
         }
       );
 
@@ -376,6 +379,7 @@ const EmployeeTable = () => {
                 <option value="MKT">MKT</option>
               </select>
             </div>
+
             {/* Level select */}
             <div className="form-group">
               <label>Cấp bậc (Level)</label>

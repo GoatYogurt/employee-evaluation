@@ -5,14 +5,16 @@ import Home from './pages/Home';
 import EmployeeView from './pages/EmployeeView';
 import Dashboard from './pages/Dashboard';
 import EmployeeAdd from './pages/EmployeeAdd';
-import CriterionList from './pages/CriterionList';
 import EmployeeList from './pages/EmployeeList';
-import CriterionAdd from './pages/CriterionAdd';
-import CriterionView from './pages/CriterionView';
 import EvaluationCycleList from './pages/EvaluationCycleList';
 import RegisterPage from "./pages/RegisterPage";
-import ChangePasswordPage from "./pages/ChangepasswordPage";
-// import ProjectList from "./pages/ProjectList";
+import ChangePasswordPage from "./pages/ChangepasswordPage";  
+import CriterionList from "./pages/CriterionList";
+import CriterionView from "./pages/CriterionView";
+import CriterionAdd from "./pages/CriterionAdd";
+import CriterionGroupList from "./pages/CriterionGroupList";
+import CriterionGroupAdd from "./pages/CriterionGroupAdd";
+import CriterionGroupView from "./pages/CriterionGroupView";
 
 function AppLayout() {
   const location = useLocation();
@@ -36,10 +38,12 @@ function AppLayout() {
         <Route path="/employee-add" element={<Dashboard><EmployeeAdd /></Dashboard>} />
 
         <Route path='/criterion-list' element={<Dashboard><CriterionList /></Dashboard>} />
-        <Route path="/criterion-view/:id" element={<Dashboard><CriterionView /></Dashboard>} />
+        <Route path='/criterion-view/:id' element={<Dashboard><CriterionView /></Dashboard>} />
         <Route path="/criterion-add" element={<Dashboard><CriterionAdd /></Dashboard>} />
 
-        {/* <Route path='/project-list' element={<Dashboard><ProjectList /></Dashboard>} /> */}
+        <Route path='/criterion-group-list' element={<Dashboard><CriterionGroupList /></Dashboard>} />
+        <Route path='/criterion-group-view/:id' element={<Dashboard><CriterionGroupView /></Dashboard>} />
+        <Route path="/criterion-group-add" element={<Dashboard><CriterionGroupAdd /></Dashboard>} />
 
         <Route path="/evaluation-cycle-list" element={<Dashboard><EvaluationCycleList /></Dashboard>} />
       </Routes>

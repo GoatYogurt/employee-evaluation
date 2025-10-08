@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 
 @Repository
@@ -28,4 +29,6 @@ public interface EvaluationCycleRepository extends JpaRepository<EvaluationCycle
             @Param("endDate") LocalDate endDate,
             Pageable pageable
     );
+
+    Set<EvaluationCycle> findByIdIn(Set<Long> ids);
 }

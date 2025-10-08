@@ -15,6 +15,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CriterionGroupResponseDTO {
+    private Long id;
     private String name;
     private String description;
     private Set<CriterionResponseDTO> criteria;

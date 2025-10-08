@@ -50,13 +50,13 @@ public class CriterionGroupController {
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<CriterionGroupResponseDTO> create(@Valid @RequestBody CriterionGroupRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(groupService.create(dto));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    @PatchMapping("/update/{id}")
+    @PatchMapping("{id}")
     public ResponseEntity<CriterionGroupResponseDTO> patch(
             @PathVariable @Positive(message = "ID must be positive") Long id,
             @RequestBody CriterionGroupRequestDTO dto
@@ -65,7 +65,7 @@ public class CriterionGroupController {
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("{id}")
     public ResponseEntity<Void> delete(@PathVariable @Positive(message = "ID must be positive") Long id) {
         groupService.delete(id);
         return ResponseEntity.noContent().build();

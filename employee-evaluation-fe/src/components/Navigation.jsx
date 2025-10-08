@@ -16,9 +16,9 @@ function Navigation() {
   const navItems = [
     { path: "/home", icon: "fa-home", label: "Trang chủ" },
     { path: "/employee-list", icon: "fa-users", label: "Nhân viên" },
-    { path: "/criterion-list", icon: "fa-list-check", label: "Tiêu chí" },
+    { path: "/criterion-group-list", icon: "fa-layer-group", label: "Nhóm tiêu chí" },
+    { path: "/project-list", icon: "fa-solid fa-diagram-project", label: "Dự án" },
     { path: "/evaluation-cycle-list", icon: "fa-chart-bar", label: "Đánh giá" },
-    { path: "/evaluation-cycle-list", icon: "fa-solid fa-diagram-project", label: "Dự án" },
   ];
 
   const isActive = (path) => {

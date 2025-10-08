@@ -61,7 +61,7 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
     public void delete(Long id) {
         EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
-        evaluationCycle.setDeleted(true);        // xóa mềm
+        evaluationCycle.setDeleted(true);
         evaluationCycle.getProjects().clear();
         evaluationCycleRepository.save(evaluationCycle);
     }
@@ -202,7 +202,7 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
         return evaluationCycleResponseDTO;
     }
 
-    private static EvaluationCycle requestToEntity(EvaluationCycleRequestDTO dto) {
+    private EvaluationCycle requestToEntity(EvaluationCycleRequestDTO dto) {
         EvaluationCycle evaluationCycle = new EvaluationCycle();
         evaluationCycle.setId(dto.getId());
         evaluationCycle.setName(dto.getName());
@@ -213,4 +213,48 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
 
         return evaluationCycle;
     }
+
+    // total score to KI ranking
+    private String scoreToRanking(Double totalScore) {
+        if (totalScore.isNaN())
+            return "N/A";
+
+        if (totalScore < 0 || totalScore > 5) {
+            throw new IllegalArgumentException("Total score must be between 0 and 5");
+        }
+
+        if (totalScore >= 4.5) {
+            return "A+";
+        } else if (totalScore >= 3.5) {
+            return "A";
+        } else if (totalScore >= 2.5) {
+            return "B";
+        } else if (totalScore >= 2) {
+            return "C";
+        } else {
+            return "D";
+        }
+    }
+
+    private String scoreToCompletionLevel(Double totalScore) {
+        if (totalScore.isNaN())
+            return "N/A";
+
+        if (totalScore < 0 || totalScore > 5) {
+            throw new IllegalArgumentException("Total score must be between 0 and 5");
+        }
+
+        if (totalScore >= 4.5) {
+            return "Vượt xa yêu cầu";
+        } else if (totalScore >= 3.5) {
+            return "Vượt yêu cầu";
+        } else if (totalScore >= 2.5) {
+            return "Đạt yêu cầu";
+        } else if (totalScore >= 2) {
+            return "Gần đạt yêu cầu";
+        } else {
+            return "Không đạt yêu cầu";
+        }
+    }
 }
+

@@ -7,7 +7,6 @@ import com.vtit.intern.dtos.responses.ProjectResponseDTO;
 import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.dtos.searches.ProjectSearchDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
-import com.vtit.intern.models.CriterionGroup;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.models.EvaluationCycle;
 import com.vtit.intern.models.Project;
@@ -27,7 +26,7 @@ import org.springframework.stereotype.Service;
 import java.util.Set;
 
 @Service
-public class ProjectServicelmpl implements ProjectService {
+public class ProjectServiceImpl implements ProjectService {
     @Autowired
     private final ProjectRepository projectRepository;
     @Autowired
@@ -37,7 +36,7 @@ public class ProjectServicelmpl implements ProjectService {
     @Autowired
     private final ModelMapper modelMapper;
 
-    public ProjectServicelmpl(ProjectRepository projectRepository, EmployeeRepository employeeRepository, EvaluationCycleRepository evaluationCycleRepository, ModelMapper modelMapper) {
+    public ProjectServiceImpl(ProjectRepository projectRepository, EmployeeRepository employeeRepository, EvaluationCycleRepository evaluationCycleRepository, ModelMapper modelMapper) {
         this.projectRepository = projectRepository;
         this.employeeRepository = employeeRepository;
         this.evaluationCycleRepository = evaluationCycleRepository;
@@ -61,6 +60,11 @@ public class ProjectServicelmpl implements ProjectService {
 
         Set<Employee> employees = employeeRepository.findByIdIn(dto.getEmployeeIds());
         project.getEmployees().addAll(employees);
+
+        Set<EvaluationCycle> evaluationCycles = evaluationCycleRepository.findByIdIn(dto.getEvaluationCycleIds());
+        for (EvaluationCycle cycle : evaluationCycles) {
+            cycle.getProjects().add(project);
+        }
 
         Project saved = projectRepository.save(project);
         return ResponseEntity.status(HttpStatus.CREATED)

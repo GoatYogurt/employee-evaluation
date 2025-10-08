@@ -2,7 +2,7 @@ package com.vtit.intern.controllers;
 
 import com.vtit.intern.dtos.requests.ProjectRequestDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
-import com.vtit.intern.dtos.responses.ProjectResponeDTO;
+import com.vtit.intern.dtos.responses.ProjectResponseDTO;
 import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.dtos.searches.ProjectSearchDTO;
 import com.vtit.intern.services.ProjectService;
@@ -24,7 +24,7 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @GetMapping
-    public ResponseEntity<ResponseDTO<PageResponse<ProjectResponeDTO>>> getAll(
+    public ResponseEntity<ResponseDTO<PageResponse<ProjectResponseDTO>>> getAll(
             @RequestBody(required = false) ProjectSearchDTO dto,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size,
@@ -38,18 +38,18 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseDTO<ProjectResponeDTO>> getById(
+    public ResponseEntity<ResponseDTO<ProjectResponseDTO>> getById(
             @PathVariable @Positive Long id) {
         return projectService.getById(id);
     }
 
     @PostMapping
-    public ResponseEntity<ResponseDTO<ProjectResponeDTO>> create(@Valid @RequestBody ProjectRequestDTO dto) {
+    public ResponseEntity<ResponseDTO<ProjectResponseDTO>> create(@Valid @RequestBody ProjectRequestDTO dto) {
         return projectService.create(dto);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ResponseDTO<ProjectResponeDTO>> patch(
+    public ResponseEntity<ResponseDTO<ProjectResponseDTO>> patch(
             @PathVariable @Positive Long id,
             @RequestBody ProjectRequestDTO dto) {
         return projectService.patch(id, dto);

@@ -12,7 +12,7 @@ import org.springframework.security.core.Authentication;
 import java.time.LocalDate;
 
 public interface EvaluationService {
-    ResponseEntity<ResponseDTO<EvaluationResponseDTO>> evaluate(EvaluationRequestDTO dto);
+    ResponseEntity<ResponseDTO<EvaluationResponseDTO>> create(EvaluationRequestDTO dto);
     ResponseEntity<ResponseDTO<PageResponse<EvaluationResponseDTO>>> getEvaluations(EvaluationSearchDTO dto, Pageable pageable, Authentication auth);
     ResponseEntity<ResponseDTO<EvaluationResponseDTO>> update(Long evaluationId, EvaluationRequestDTO dto);
     void delete(Long evaluationId);

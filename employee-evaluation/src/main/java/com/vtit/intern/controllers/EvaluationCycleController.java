@@ -78,6 +78,20 @@ public class EvaluationCycleController {
         );
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
+    @GetMapping("/{id}/projects")
+    public PageResponse<?> getProjectsByEvaluationCycleId(
+            @PathVariable @Positive(message = "ID must be a positive number") Long id,
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page index cannot be negative") int page,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc")
+            @Pattern(regexp = "asc|desc", message = "Sort direction must be 'asc' or 'desc'") String sortDir
+    ) {
+        return evaluationCycleService.getProjectsByEvaluationCycleId(id, PageRequest.of(page, size,
+                sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending()));
+    }
+
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<EvaluationCycleResponseDTO> create(@Valid @RequestBody EvaluationCycleRequestDTO dto) {

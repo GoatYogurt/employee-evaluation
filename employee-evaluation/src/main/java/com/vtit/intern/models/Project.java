@@ -50,7 +50,7 @@ public class Project {
     private LocalDateTime updatedAt;
 
     // Many-to-Many with Employee
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "project_employee",
             joinColumns = @JoinColumn(name = "project_id"),
@@ -59,13 +59,6 @@ public class Project {
     )
     private Set<Employee> employees = new HashSet<>();
 
-    // Many-to-Many with EvaluationCycle
-    @ManyToMany
-    @JoinTable(
-            name = "evaluation_cycle_project",
-            joinColumns = @JoinColumn(name = "project_id"),
-            inverseJoinColumns = @JoinColumn(name = "evaluation_cycle_id"),
-            uniqueConstraints = @UniqueConstraint(columnNames = {"project_id", "evaluation_cycle_id"})
-    )
+    @ManyToMany(mappedBy = "projects", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private Set<EvaluationCycle> evaluationCycles = new HashSet<>();
 }

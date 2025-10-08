@@ -25,4 +25,6 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             @Param("isOdc") Boolean isOdc,
             Pageable pageable
     );
+
+    Page<Project> findByIdIn(Iterable<Long> ids, Pageable pageable);
 }

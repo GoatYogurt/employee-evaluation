@@ -56,7 +56,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
-    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> evaluate(EvaluationRequestDTO dto) {
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> create(EvaluationRequestDTO dto) {
         // find the evaluation cycle by ID
         Long evaluationCycleId = dto.getEvaluationCycleId();
         EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(evaluationCycleId)

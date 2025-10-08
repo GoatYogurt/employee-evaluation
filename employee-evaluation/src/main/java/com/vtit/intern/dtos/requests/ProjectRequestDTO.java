@@ -30,5 +30,5 @@ public class ProjectRequestDTO {
     private Boolean isOdc;
 
     private Boolean isDeleted = false;
-
+    private Set<Long> employeeIds;
 }

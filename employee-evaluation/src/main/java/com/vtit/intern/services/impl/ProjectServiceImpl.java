@@ -1,14 +1,18 @@
 package com.vtit.intern.services.impl;
 
 import com.vtit.intern.dtos.requests.ProjectRequestDTO;
+import com.vtit.intern.dtos.responses.EmployeeResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
-import com.vtit.intern.dtos.responses.ProjectResponeDTO;
+import com.vtit.intern.dtos.responses.ProjectResponseDTO;
 import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.dtos.searches.ProjectSearchDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
+import com.vtit.intern.models.CriterionGroup;
 import com.vtit.intern.models.Employee;
+import com.vtit.intern.models.EvaluationCycle;
 import com.vtit.intern.models.Project;
 import com.vtit.intern.repositories.EmployeeRepository;
+import com.vtit.intern.repositories.EvaluationCycleRepository;
 import com.vtit.intern.repositories.ProjectRepository;
 import com.vtit.intern.services.ProjectService;
 import com.vtit.intern.utils.ResponseUtil;
@@ -20,25 +24,28 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.stream.Collectors;
+import java.util.Set;
 
 @Service
-public class ProjectServiceImpl implements ProjectService {
+public class ProjectServicelmpl implements ProjectService {
     @Autowired
     private final ProjectRepository projectRepository;
     @Autowired
     private final EmployeeRepository employeeRepository;
     @Autowired
+    private final EvaluationCycleRepository evaluationCycleRepository;
+    @Autowired
     private final ModelMapper modelMapper;
 
-    public ProjectServiceImpl(ProjectRepository projectRepository, EmployeeRepository employeeRepository, ModelMapper modelMapper) {
+    public ProjectServicelmpl(ProjectRepository projectRepository, EmployeeRepository employeeRepository, EvaluationCycleRepository evaluationCycleRepository, ModelMapper modelMapper) {
         this.projectRepository = projectRepository;
         this.employeeRepository = employeeRepository;
+        this.evaluationCycleRepository = evaluationCycleRepository;
         this.modelMapper = modelMapper;
     }
 
     @Override
-    public ResponseEntity<ResponseDTO<ProjectResponeDTO>> create(ProjectRequestDTO dto) {
+    public ResponseEntity<ResponseDTO<ProjectResponseDTO>> create(ProjectRequestDTO dto) {
         if (projectRepository.existsByCode(dto.getCode())) {
             throw new ResourceNotFoundException("Project with code " + dto.getCode() + " already exists.");
         }
@@ -52,20 +59,23 @@ public class ProjectServiceImpl implements ProjectService {
         project.setOdc(dto.getIsOdc());
         project.setDeleted(false);
 
+        Set<Employee> employees = employeeRepository.findByIdIn(dto.getEmployeeIds());
+        project.getEmployees().addAll(employees);
+
         Project saved = projectRepository.save(project);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ResponseUtil.created(toDTO(saved)));
+                .body(ResponseUtil.created(toResponseDTO(saved)));
     }
 
     @Override
-    public ResponseEntity<ResponseDTO<ProjectResponeDTO>> getById(Long id) {
+    public ResponseEntity<ResponseDTO<ProjectResponseDTO>> getById(Long id) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
-        return ResponseEntity.ok(ResponseUtil.success(toDTO(project)));
+        return ResponseEntity.ok(ResponseUtil.success(toResponseDTO(project)));
     }
 
     @Override
-    public ResponseEntity<ResponseDTO<PageResponse<ProjectResponeDTO>>> getAll(ProjectSearchDTO searchDTO, Pageable pageable) {
+    public ResponseEntity<ResponseDTO<PageResponse<ProjectResponseDTO>>> getAll(ProjectSearchDTO searchDTO, Pageable pageable) {
         if (searchDTO == null) searchDTO = new ProjectSearchDTO();
 
         Page<Project> page = projectRepository.searchProjects(
@@ -75,7 +85,7 @@ public class ProjectServiceImpl implements ProjectService {
                 pageable
         );
 
-        var content = page.getContent().stream().map(this::toDTO).toList();
+        var content = page.getContent().stream().map(this::toResponseDTO).toList();
 
         return ResponseEntity.ok(ResponseUtil.success(new PageResponse<>(
                 content,
@@ -88,7 +98,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ResponseEntity<ResponseDTO<ProjectResponeDTO>> patch(Long id, ProjectRequestDTO dto) {
+    public ResponseEntity<ResponseDTO<ProjectResponseDTO>> patch(Long id, ProjectRequestDTO dto) {
         Project existing = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
 
@@ -101,21 +111,29 @@ public class ProjectServiceImpl implements ProjectService {
         if (dto.getIsOdc() != null) existing.setOdc(dto.getIsOdc());
 
         Project updated = projectRepository.save(existing);
-        return ResponseEntity.ok(ResponseUtil.success(toDTO(updated)));
+        return ResponseEntity.ok(ResponseUtil.success(toResponseDTO(updated)));
     }
 
     public void delete(Long id) {
-        Project existing = projectRepository.findById(id)
+        Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
-        existing.setDeleted(true);        // xóa mềm
-        projectRepository.save(existing);
+
+        // Remove project from associated evaluation cycles
+        for (EvaluationCycle cycle: project.getEvaluationCycles()) {
+            cycle.getProjects().remove(project);
+        }
+        evaluationCycleRepository.saveAll(project.getEvaluationCycles());
+
+        project.getEmployees().clear();
+        project.setDeleted(true);
+        projectRepository.save(project);
     }
 
-    private ProjectResponeDTO toDTO(Project project) {
-        ProjectResponeDTO dto = modelMapper.map(project, ProjectResponeDTO.class);
+    public ProjectResponseDTO toResponseDTO(Project project) {
+        ProjectResponseDTO dto = modelMapper.map(project, ProjectResponseDTO.class);
         dto.setManagerName(project.getManager().getFullName());
-        dto.setEmployeeNames(project.getEmployees()
-                .stream().map(Employee::getFullName).collect(Collectors.toSet()));
+        dto.setEmployees(project.getEmployees().stream().map(emp -> modelMapper.map(emp, EmployeeResponseDTO.class)).collect(java.util.stream.Collectors.toSet()));
+        dto.setEvaluationCycleIds(project.getEvaluationCycles().stream().map(EvaluationCycle::getId).collect(java.util.stream.Collectors.toSet()));
         return dto;
     }
 }

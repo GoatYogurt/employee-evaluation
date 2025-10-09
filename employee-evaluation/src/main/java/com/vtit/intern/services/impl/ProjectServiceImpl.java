@@ -118,7 +118,7 @@ public class ProjectServiceImpl implements ProjectService {
         return ResponseEntity.ok(ResponseUtil.success(toResponseDTO(updated)));
     }
 
-    public void delete(Long id) {
+    public ResponseEntity<Void> delete(Long id) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
 
@@ -131,6 +131,21 @@ public class ProjectServiceImpl implements ProjectService {
         project.getEmployees().clear();
         project.setDeleted(true);
         projectRepository.save(project);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> addProjectToEvaluationCycle(Long projectId, Long evaluationCycleId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
+        EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(evaluationCycleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluation cycle not found with id: " + evaluationCycleId));
+//        project.getEvaluationCycles().add(evaluationCycle);
+        evaluationCycle.getProjects().add(project);
+//        projectRepository.save(project);
+        evaluationCycleRepository.save(evaluationCycle);
+        return ResponseEntity.ok().build();
     }
 
     public ProjectResponseDTO toResponseDTO(Project project) {

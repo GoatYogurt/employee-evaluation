@@ -8,11 +8,13 @@ import com.vtit.intern.dtos.searches.ProjectSearchDTO;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
+
 public interface ProjectService {
     ResponseEntity<ResponseDTO<ProjectResponseDTO>> create(ProjectRequestDTO dto);
     ResponseEntity<ResponseDTO<ProjectResponseDTO>> getById(Long id);
     ResponseEntity<ResponseDTO<PageResponse<ProjectResponseDTO>>> getAll(ProjectSearchDTO searchDTO, Pageable pageable);
     ResponseEntity<ResponseDTO<ProjectResponseDTO>> patch(Long id, ProjectRequestDTO dto);
-    void delete(Long id);
+    ResponseEntity<Void> delete(Long id);
+    ResponseEntity<Void> addProjectToEvaluationCycle(Long projectId, Long evaluationCycleId);
 }
 

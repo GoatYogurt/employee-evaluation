@@ -7,9 +7,7 @@ import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.dtos.searches.ProjectSearchDTO;
 import com.vtit.intern.services.ProjectService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -48,6 +46,13 @@ public class ProjectController {
         return projectService.create(dto);
     }
 
+    @PutMapping("/{id}/add-evaluation-cycle/{cycleId}")
+    public ResponseEntity<Void> addProjectToEvaluationCycle(
+            @PathVariable @Positive Long id,
+            @PathVariable @Positive Long cycleId) {
+        return projectService.addProjectToEvaluationCycle(id, cycleId);
+    }
+
     @PatchMapping("/{id}")
     public ResponseEntity<ResponseDTO<ProjectResponseDTO>> patch(
             @PathVariable @Positive Long id,
@@ -57,7 +62,6 @@ public class ProjectController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable @Positive Long id) {
-        projectService.delete(id);
-        return ResponseEntity.noContent().build();
+        return projectService.delete(id);
     }
 }

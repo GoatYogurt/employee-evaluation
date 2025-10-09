@@ -26,7 +26,6 @@ public class EvaluationCycleController {
         this.evaluationCycleService = evaluationCycleService;
     }
 
-
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping
     public PageResponse<EvaluationCycleResponseDTO> getAllEvaluationCycles(

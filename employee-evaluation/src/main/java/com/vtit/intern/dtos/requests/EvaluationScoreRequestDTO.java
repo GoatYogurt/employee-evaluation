@@ -14,4 +14,5 @@ public class EvaluationScoreRequestDTO {
     private Long evaluationId;
     private double score;
     private boolean isDeleted = false;
+
 }

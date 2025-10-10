@@ -12,35 +12,24 @@ import com.vtit.intern.repositories.EvaluationRepository;
 import com.vtit.intern.repositories.EvaluationScoreRepository;
 import com.vtit.intern.services.EvaluationScoreService;
 import com.vtit.intern.utils.ResponseUtil;
+import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class EvaluationScoreServiceImpl implements EvaluationScoreService {
 
     private final EvaluationScoreRepository evaluationScoreRepository;
-    private final ModelMapper modelMapper;
     private final EvaluationRepository evaluationRepository;
     private final CriterionRepository criterionRepository;
-
-    @Autowired
-    public EvaluationScoreServiceImpl(
-            EvaluationScoreRepository evaluationScoreRepository,
-            ModelMapper modelMapper,
-            CriterionRepository criterionRepository,
-            EvaluationRepository evaluationRepository
-    ) {
-        this.evaluationScoreRepository = evaluationScoreRepository;
-        this.modelMapper = modelMapper;
-        this.evaluationRepository = evaluationRepository;
-        this.criterionRepository = criterionRepository;
-    }
 
     @Override
     public ResponseEntity<ResponseDTO<PageResponse<EvaluationScoreResponseDTO>>> getAll(
@@ -103,7 +92,7 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
         dto.setEvaluationId(saved.getEvaluation().getId());
         dto.setScore(saved.getScore());
 
-        return ResponseEntity.ok(ResponseUtil.success(dto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseUtil.created(dto));
     }
 
     @Override
@@ -134,10 +123,12 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
 
 
     @Override
-    public void delete(Long id) {
+    public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
         EvaluationScore existing = evaluationScoreRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
         existing.setDeleted(true);        // xóa mềm
         evaluationScoreRepository.save(existing);
+
+        return ResponseEntity.ok(ResponseUtil.deleted());
     }
 }

@@ -9,12 +9,8 @@ public interface EvaluationScoreService {
     ResponseEntity<ResponseDTO<PageResponse<EvaluationScoreResponseDTO>>> getAll(
             Long criterionId, Long evaluationId,
             Double minScore, Double maxScore, Pageable pageable);
-
     ResponseEntity<ResponseDTO<EvaluationScoreResponseDTO>> getById(Long id);
-
     ResponseEntity<ResponseDTO<EvaluationScoreResponseDTO>> create(EvaluationScoreRequestDTO dto);
-
     ResponseEntity<ResponseDTO<EvaluationScoreResponseDTO>> update(Long id, EvaluationScoreRequestDTO dto);
-
-    void delete(Long id);
+    ResponseEntity<ResponseDTO<Void>> delete(Long id);
 }

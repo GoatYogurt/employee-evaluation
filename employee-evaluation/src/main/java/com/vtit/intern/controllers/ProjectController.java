@@ -47,7 +47,7 @@ public class ProjectController {
     }
 
     @PutMapping("/{id}/add-evaluation-cycle/{cycleId}")
-    public ResponseEntity<Void> addProjectToEvaluationCycle(
+    public ResponseEntity<ResponseDTO<Void>> addProjectToEvaluationCycle(
             @PathVariable @Positive Long id,
             @PathVariable @Positive Long cycleId) {
         return projectService.addProjectToEvaluationCycle(id, cycleId);
@@ -61,7 +61,7 @@ public class ProjectController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable @Positive Long id) {
+    public ResponseEntity<ResponseDTO<Void>> delete(@PathVariable @Positive Long id) {
         return projectService.delete(id);
     }
 }

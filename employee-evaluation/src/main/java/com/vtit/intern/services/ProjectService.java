@@ -14,7 +14,7 @@ public interface ProjectService {
     ResponseEntity<ResponseDTO<ProjectResponseDTO>> getById(Long id);
     ResponseEntity<ResponseDTO<PageResponse<ProjectResponseDTO>>> getAll(ProjectSearchDTO searchDTO, Pageable pageable);
     ResponseEntity<ResponseDTO<ProjectResponseDTO>> patch(Long id, ProjectRequestDTO dto);
-    ResponseEntity<Void> delete(Long id);
-    ResponseEntity<Void> addProjectToEvaluationCycle(Long projectId, Long evaluationCycleId);
+    ResponseEntity<ResponseDTO<Void>> delete(Long id);
+    ResponseEntity<ResponseDTO<Void>> addProjectToEvaluationCycle(Long projectId, Long evaluationCycleId);
 }
 

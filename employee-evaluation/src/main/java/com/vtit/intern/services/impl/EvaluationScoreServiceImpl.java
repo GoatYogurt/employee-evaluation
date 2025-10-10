@@ -6,6 +6,7 @@ import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.CriterionGroup;
+import com.vtit.intern.models.Evaluation;
 import com.vtit.intern.models.EvaluationScore;
 import com.vtit.intern.repositories.CriterionRepository;
 import com.vtit.intern.repositories.EvaluationRepository;
@@ -85,6 +86,13 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
         );
 
         EvaluationScore saved = evaluationScoreRepository.save(evaluationScore);
+
+        Evaluation evaluation = evaluationRepository.findByIdAndIsDeletedFalse(requestDTO.getEvaluationId())
+                .orElseThrow(() -> new RuntimeException("Evaluation not found"));
+        double weight = saved.getCriterion().getWeight();
+        double newTotalScore = evaluation.getTotalScore() + requestDTO.getScore() * weight;
+        evaluation.setTotalScore(newTotalScore);
+        evaluationRepository.save(evaluation);
 
         EvaluationScoreResponseDTO dto = new EvaluationScoreResponseDTO();
         dto.setCriterionId(saved.getCriterion().getId());

@@ -15,6 +15,9 @@ import CriterionAdd from "./pages/CriterionAdd";
 import CriterionGroupList from "./pages/CriterionGroupList";
 import CriterionGroupAdd from "./pages/CriterionGroupAdd";
 import CriterionGroupView from "./pages/CriterionGroupView";
+import ProjectList from "./pages/ProjectList";
+import EmployeeAddOld from "./pages/EmployeeAddOld";
+
 
 function AppLayout() {
   const location = useLocation();
@@ -36,6 +39,7 @@ function AppLayout() {
         <Route path='/employee-list' element={<Dashboard><EmployeeList /></Dashboard>} />
         <Route path='/employee-view/:id' element={<Dashboard><EmployeeView /></Dashboard>} />
         <Route path="/employee-add" element={<Dashboard><EmployeeAdd /></Dashboard>} />
+        <Route path="/employee-add-old" element={<Dashboard><EmployeeAddOld /></Dashboard>} />
 
         <Route path='/criterion-list' element={<Dashboard><CriterionList /></Dashboard>} />
         <Route path='/criterion-view/:id' element={<Dashboard><CriterionView /></Dashboard>} />
@@ -44,6 +48,9 @@ function AppLayout() {
         <Route path='/criterion-group-list' element={<Dashboard><CriterionGroupList /></Dashboard>} />
         <Route path='/criterion-group-view/:id' element={<Dashboard><CriterionGroupView /></Dashboard>} />
         <Route path="/criterion-group-add" element={<Dashboard><CriterionGroupAdd /></Dashboard>} />
+
+        <Route path='/project-list' element={<Dashboard><ProjectList /></Dashboard>}></Route>
+        {/* <Route path='/project-add' element={<Dashboard><ProjectAdd /></Dashboard>}></Route> */}
 
         <Route path="/evaluation-cycle-list" element={<Dashboard><EvaluationCycleList /></Dashboard>} />
       </Routes>

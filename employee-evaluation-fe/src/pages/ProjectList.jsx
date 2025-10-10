@@ -1,8 +1,8 @@
-import EmployeeTable from "../components/EmployeeTable";
+import ProjectTable from '../components/ProjectTable';
 import '../index.css';
 
 function EmployeeList() {
-    return <EmployeeTable />
+    return <ProjectTable />
 }
 
 export default EmployeeList;

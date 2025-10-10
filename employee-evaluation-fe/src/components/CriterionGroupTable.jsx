@@ -39,13 +39,15 @@ const CriterionGroupTable = () => {
       }
 
       const data = await res.json();
-      const normalized = (data.content || []).map((group) => ({
-        id: group.id,
-        name: group.name,
-        description: group.description,
-        createdDate: group.createdDate,
+      const content = data.data?.content || [];  
+      const normalized = content.map((group) => ({
+      id: group.id,
+      name: group.name,
+      description: group.description,
+      createdDate: group.createdAt, 
       }));
       setCriterionGroups(normalized);
+
     } catch (error) {
       console.error("Failed to fetch criterion groups:", error);
     }
@@ -73,7 +75,7 @@ const CriterionGroupTable = () => {
       const res = await fetch(
         `http://localhost:8080/api/criterion-groups/${selectedCriterionGroup.id}`,
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
             "Content-Type": "application/json",
@@ -226,14 +228,14 @@ const CriterionGroupTable = () => {
                       >
                         <i className="fas fa-eye"></i>
                       </button>
-                      <button
+                      {/* <button
                         type="button"
                         className="btn btn-sm btn-primary"
                         title="Xem tiêu chí trong nhóm"
                         onClick={() => handleViewCriteria(group.id)}
                       >
                         <i className="fas fa-list"></i>
-                      </button>
+                      </button> */}
                     </div>
                   </td>
                 </tr>

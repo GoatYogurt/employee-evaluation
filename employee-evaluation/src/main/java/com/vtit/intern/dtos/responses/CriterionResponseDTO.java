@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class CriterionResponseDTO {
+    private Long id;
     private String name;
     private String description;
     private Double weight;

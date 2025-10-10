@@ -164,10 +164,10 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
             existingEvaluationCycle.setStatus(dto.getStatus());
         }
         if (dto.getStartDate() != null) {
-            existingEvaluationCycle.setStartDate(dto.getStartDate().atStartOfDay());
+            existingEvaluationCycle.setStartDate(dto.getStartDate());
         }
         if (dto.getEndDate() != null) {
-            existingEvaluationCycle.setEndDate(dto.getEndDate().atStartOfDay());
+            existingEvaluationCycle.setEndDate(dto.getEndDate());
         }
 
         EvaluationCycle updatedEvaluationCycle = evaluationCycleRepository.save(existingEvaluationCycle);
@@ -176,10 +176,11 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
 
     private EvaluationCycleResponseDTO entityToResponse(EvaluationCycle evaluationCycle) {
         EvaluationCycleResponseDTO evaluationCycleResponseDTO = new EvaluationCycleResponseDTO();
+        evaluationCycleResponseDTO.setId(evaluationCycle.getId());
         evaluationCycleResponseDTO.setName(evaluationCycle.getName());
         evaluationCycleResponseDTO.setDescription(evaluationCycle.getDescription());
-        evaluationCycleResponseDTO.setStartDate(evaluationCycle.getStartDate().toLocalDate());
-        evaluationCycleResponseDTO.setEndDate(evaluationCycle.getEndDate().toLocalDate());
+        evaluationCycleResponseDTO.setStartDate(evaluationCycle.getStartDate());
+        evaluationCycleResponseDTO.setEndDate(evaluationCycle.getEndDate());
         evaluationCycleResponseDTO.setStatus(evaluationCycle.getStatus());
         evaluationCycleResponseDTO.setProjectIds(evaluationCycle.getProjects().stream().map(Project::getId).collect(Collectors.toSet()));
         evaluationCycleResponseDTO.setCreatedAt(evaluationCycle.getCreatedAt());
@@ -195,8 +196,8 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
         evaluationCycle.setId(dto.getId());
         evaluationCycle.setName(dto.getName());
         evaluationCycle.setDescription(dto.getDescription());
-        evaluationCycle.setStartDate(dto.getStartDate().atStartOfDay());
-        evaluationCycle.setEndDate(dto.getEndDate().atStartOfDay());
+        evaluationCycle.setStartDate(dto.getStartDate());
+        evaluationCycle.setEndDate(dto.getEndDate());
         evaluationCycle.setStatus(dto.getStatus());
 
         return evaluationCycle;

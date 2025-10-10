@@ -33,6 +33,8 @@ public class EvaluationCycleRequestDTO {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy", timezone = "Asia/Ho_Chi_Minh")
     private LocalDate startDate;
 
+    private Set<Long> projectIds;
+
     @NotNull(message = "End date cannot be null")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy", timezone = "Asia/Ho_Chi_Minh")
     private LocalDate endDate;

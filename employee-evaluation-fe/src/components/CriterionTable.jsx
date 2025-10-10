@@ -20,22 +20,23 @@ const CriterionTable = () => {
   const [selectedCriterion, setSelectedCriterion] = useState(null);
   const [deleteMessage, setDeleteMessage] = useState('');
 
-  // Lấy groupId từ URL mỗi khi URL thay đổi
+  // ✅ Lấy groupId từ URL mỗi khi URL thay đổi
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const groupId = params.get('groupId') || '';
     setSelectedGroupId(groupId);
   }, [location.search]);
 
-  // Load dữ liệu nhóm và tiêu chí
+  // ✅ Load dữ liệu nhóm trước, sau đó fetch tiêu chí
   useEffect(() => {
     const loadData = async () => {
       await fetchCriterionGroups();
+      await fetchCriteria(); // fetch sau khi đã có groups
     };
     loadData();
   }, []);
 
-  // Fetch tiêu chí mỗi khi groupId thay đổi
+  // ✅ Khi đổi groupId hoặc criterionGroups thì refetch criteria
   useEffect(() => {
     fetchCriteria();
   }, [selectedGroupId, criterionGroups]);
@@ -53,7 +54,7 @@ const CriterionTable = () => {
 
       if (res.ok) {
         const data = await res.json();
-        setCriterionGroups(data.content || []);
+        setCriterionGroups(data.content || data.data?.content || []); // ✅ FIX: thêm fallback
       }
     } catch (error) {
       console.error('❌ Failed to fetch criterion groups:', error);
@@ -77,17 +78,19 @@ const CriterionTable = () => {
       }
 
       const data = await res.json();
-      const list = data.data?.content || [];
+      const list = data.content || data.data?.content || []; // ✅ FIX: lấy đúng content
 
-      // Chuẩn hoá dữ liệu
+      // ✅ Chuẩn hoá dữ liệu
       const normalized = list.map((c) => ({
-        id: c.id,
+        id: c.id || c.criterionId, // ✅ FIX: bảo đảm có id
         name: c.name,
         description: c.description,
         weight: c.weight,
-        criterionGroupId: c.groupId || c.criterionGroup?.id || null,
+        criterionGroupId: c.groupId || c.criterionGroupId || c.criterionGroup?.id || null, // ✅ FIX
         criterionGroupName:
-          criterionGroups.find((g) => g.id === (c.groupId || c.criterionGroup?.id))?.name || 'N/A',
+          criterionGroups.find(
+            (g) => g.id === (c.groupId || c.criterionGroupId || c.criterionGroup?.id)
+          )?.name || 'N/A',
       }));
 
       setCriteria(normalized);
@@ -118,47 +121,54 @@ const CriterionTable = () => {
 
   // Sửa
   const handleEdit = (criterion) => {
+    console.log("✏️ Edit criterion:", criterion); // ✅ FIX: debug log
     setSelectedCriterion(criterion);
     setShowEditModal(true);
   };
 
   const handleEditConfirm = async () => {
+    if (!selectedCriterion || !selectedCriterion.id) {       // ✅ FIX: kiểm tra id trước khi call API
+      alert('❌ Không tìm thấy ID tiêu chí!');
+      return;
+    }
+
     try {
       const res = await fetch(`http://localhost:8080/api/criteria/${selectedCriterion.id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('accessToken') || localStorage.getItem('token')}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           name: selectedCriterion.name,
           description: selectedCriterion.description,
           weight: selectedCriterion.weight,
-          groupId: selectedCriterion.criterionGroupId, // ✅ field đúng
+          groupId: selectedCriterion.criterionGroupId, 
         }),
       });
 
       if (!res.ok) {
         const errMsg = await res.text();
-        console.error('❌ Update failed:', errMsg);
+        console.error(' Update failed:', errMsg);
         alert('Sửa tiêu chí thất bại!');
         return;
       }
 
       const updatedCriterion = await res.json();
       const groupName =
-        criterionGroups.find((g) => g.id === updatedCriterion.groupId)?.name || 'N/A';
+        criterionGroups.find((g) => g.id === (updatedCriterion.groupId || updatedCriterion.criterionGroupId))
+          ?.name || 'N/A';
 
       setCriteria((prev) =>
         prev.map((criterion) =>
-          criterion.id === updatedCriterion.id
+          criterion.id === (updatedCriterion.id || updatedCriterion.criterionId)
             ? {
-                id: updatedCriterion.id,
+                id: updatedCriterion.id || updatedCriterion.criterionId,
                 name: updatedCriterion.name,
                 description: updatedCriterion.description,
-                weight: updatedCriterion.weight,
-                criterionGroupId: updatedCriterion.groupId,
+                criterionGroupId: updatedCriterion.groupId || updatedCriterion.criterionGroupId,
                 criterionGroupName: groupName,
+                weight: updatedCriterion.weight,
               }
             : criterion
         )
@@ -174,11 +184,16 @@ const CriterionTable = () => {
 
   // Xoá
   const handleDelete = async (id) => {
+    if (!id) { // ✅ FIX: kiểm tra id
+      alert('❌ ID tiêu chí không hợp lệ!');
+      return;
+    }
+
     try {
       const res = await fetch(`http://localhost:8080/api/criteria/${id}`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('accessToken') || localStorage.getItem('token')}`,
           'Content-Type': 'application/json',
         },
       });
@@ -198,6 +213,8 @@ const CriterionTable = () => {
     setSelectedCriterion(criterion);
     setShowViewModal(true);
   };
+
+  // ==================================== JSX ====================================
 
   return (
     <div>
@@ -340,7 +357,6 @@ const CriterionTable = () => {
       </div>
 
       {/* =================== MODALS =================== */}
-
       {/* Edit Modal */}
       {showEditModal && selectedCriterion && (
         <div className="modal-overlay">

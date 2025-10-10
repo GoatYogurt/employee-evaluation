@@ -18,7 +18,6 @@ import org.springframework.data.domain.Page;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -78,7 +77,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
         employee.setDeleted(true);
-        Page<Project> projects = projectRepository.findByIdIn(employee.getProjects().stream().map(Project::getId).toList(), null);
+        Page<Project> projects = projectRepository.findByIdInAndIsDeletedFalse(employee.getProjects().stream().map(Project::getId).toList(), null);
         projects.forEach(project -> project.getEmployees().remove(employee));
         employeeRepository.save(employee);
         return ResponseUtil.deleted();
@@ -87,7 +86,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public ResponseEntity<ResponseDTO<PageResponse<EmployeeResponseDTO>>> getAllEmployees(EmployeeSearchDTO dto, Pageable pageable) {
         if (dto == null) {
-            Page<Employee> employeePage = employeeRepository.findAllAndIsDeletedFalse(pageable);
+            Page<Employee> employeePage = employeeRepository.findAllByIsDeletedFalse(pageable);
             List<EmployeeResponseDTO> content = employeePage.getContent().stream()
                     .map(e -> modelMapper.map(e, EmployeeResponseDTO.class))
                     .toList();

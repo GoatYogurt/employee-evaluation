@@ -4,12 +4,10 @@ import com.vtit.intern.models.Employee;
 import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -40,7 +38,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     boolean existsByEmailAndIsDeletedFalse(String email);
     boolean existsByStaffCodeAndIsDeletedFalse(Integer staffCode);
     Optional<Employee> findByUsernameAndIsDeletedFalse(String username);
-    Page<Employee> findAllAndIsDeletedFalse(Pageable pageable);
+    Page<Employee> findAllByIsDeletedFalse(Pageable pageable);
     Set<Employee> findByIdInAndIsDeletedFalse(Set<Long> ids);
     Optional<Employee> findByIdAndIsDeletedFalse(Long id);
 }

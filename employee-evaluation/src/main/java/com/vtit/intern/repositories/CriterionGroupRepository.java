@@ -14,7 +14,7 @@ public interface CriterionGroupRepository extends JpaRepository<CriterionGroup, 
 
     @Query("SELECT g FROM CriterionGroup g " +
             "WHERE g.isDeleted = false " +
-            "WHERE (:name IS NULL OR LOWER(g.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+            "AND (:name IS NULL OR LOWER(g.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
             "AND (:description IS NULL OR LOWER(g.description) LIKE LOWER(CONCAT('%', :description, '%'))) " +
             "AND g.isDeleted = false")
     Page<CriterionGroup> searchGroups(

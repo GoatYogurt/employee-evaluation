@@ -45,22 +45,22 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public ResponseEntity<ResponseDTO<EmployeeResponseDTO>> getById(Long id) {
-        return ResponseEntity.ok(ResponseUtil.success(employeeRepository.findById(id)
+        return ResponseUtil.success(employeeRepository.findByIdAndIsDeletedFalse(id)
                 .map(employee -> modelMapper.map(employee, EmployeeResponseDTO.class))
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id))));
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id)));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<EmployeeResponseDTO>> create(EmployeeRequestDTO dto) {
-        if (employeeRepository.existsByUsername(dto.getUsername())) {
+        if (employeeRepository.existsByUsernameAndIsDeletedFalse(dto.getUsername())) {
             throw new ResourceNotFoundException("Cannot create. Employee with username " + dto.getUsername() + " already exists.");
         }
 
-        if (employeeRepository.existsByEmail(dto.getEmail())) {
+        if (employeeRepository.existsByEmailAndIsDeletedFalse(dto.getEmail())) {
             throw new ResourceNotFoundException("Cannot create. Employee with email " + dto.getEmail() + " already exists.");
         }
 
-        if (employeeRepository.existsByStaffCode(dto.getStaffCode())) {
+        if (employeeRepository.existsByStaffCodeAndIsDeletedFalse(dto.getStaffCode())) {
             throw new ResourceNotFoundException("Cannot create. Employee with staff code " + dto.getStaffCode() + " already exists.");
         }
 
@@ -70,36 +70,36 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setPassword(passwordEncoder.encode(employee.getPassword()));
 
         Employee savedEmployee = employeeRepository.save(employee);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseUtil.created(modelMapper.map(savedEmployee, EmployeeResponseDTO.class)));
+        return ResponseUtil.created(modelMapper.map(savedEmployee, EmployeeResponseDTO.class));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
-        Employee employee = employeeRepository.findById(id)
+        Employee employee = employeeRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
         employee.setDeleted(true);
         Page<Project> projects = projectRepository.findByIdIn(employee.getProjects().stream().map(Project::getId).toList(), null);
         projects.forEach(project -> project.getEmployees().remove(employee));
         employeeRepository.save(employee);
-        return ResponseEntity.ok(ResponseUtil.deleted());
+        return ResponseUtil.deleted();
     }
 
     @Override
     public ResponseEntity<ResponseDTO<PageResponse<EmployeeResponseDTO>>> getAllEmployees(EmployeeSearchDTO dto, Pageable pageable) {
         if (dto == null) {
-            Page<Employee> employeePage = employeeRepository.findAll(pageable);
+            Page<Employee> employeePage = employeeRepository.findAllAndIsDeletedFalse(pageable);
             List<EmployeeResponseDTO> content = employeePage.getContent().stream()
                     .map(e -> modelMapper.map(e, EmployeeResponseDTO.class))
                     .toList();
 
-            return ResponseEntity.ok(ResponseUtil.success(new PageResponse<>(
+            return ResponseUtil.success(new PageResponse<>(
                     content,
                     employeePage.getNumber(),
                     employeePage.getSize(),
                     employeePage.getTotalElements(),
                     employeePage.getTotalPages(),
                     employeePage.isLast()
-            )));
+            ));
         }
 
         String searchFullName = dto.getFullName() != null ? dto.getFullName().trim() : "";
@@ -121,19 +121,19 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .map(e -> modelMapper.map(e, EmployeeResponseDTO.class))
                 .toList();
 
-        return ResponseEntity.ok(ResponseUtil.success(new PageResponse<>(
+        return ResponseUtil.success(new PageResponse<>(
                 content,
                 employeePage.getNumber(),
                 employeePage.getSize(),
                 employeePage.getTotalElements(),
                 employeePage.getTotalPages(),
                 employeePage.isLast()
-        )));
+        ));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<EmployeeResponseDTO>> patch(Long id, EmployeeRequestDTO dto) {
-        Employee existingEmployee = employeeRepository.findById(id)
+        Employee existingEmployee = employeeRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
 
         if (dto.getFullName() != null) {
@@ -159,13 +159,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         Employee updatedEmployee = employeeRepository.save(existingEmployee);
-        updatedEmployee.setPassword(null); // Clear password before returning
-        return ResponseEntity.ok(ResponseUtil.success(modelMapper.map(updatedEmployee, EmployeeResponseDTO.class)));
+        return ResponseUtil.success(modelMapper.map(updatedEmployee, EmployeeResponseDTO.class));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> changePassword(String username, String oldPassword, String newPassword) {
-        Employee employee = employeeRepository.findByUsername(username).
+        Employee employee = employeeRepository.findByUsernameAndIsDeletedFalse(username).
                 orElseThrow(() -> new ResourceNotFoundException("Employee not found with username: " + username));
 
         if (newPassword == null || newPassword.isEmpty()) {
@@ -179,6 +178,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setPassword(passwordEncoder.encode(newPassword));
         employeeRepository.save(employee);
 
-        return ResponseEntity.ok(ResponseUtil.success("Password changed successfully"));
+        return ResponseUtil.success("Password changed successfully");
     }
 }

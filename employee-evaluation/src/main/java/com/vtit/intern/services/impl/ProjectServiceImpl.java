@@ -15,41 +15,30 @@ import com.vtit.intern.repositories.EvaluationCycleRepository;
 import com.vtit.intern.repositories.ProjectRepository;
 import com.vtit.intern.services.ProjectService;
 import com.vtit.intern.utils.ResponseUtil;
+import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
 @Service
+@AllArgsConstructor
 public class ProjectServiceImpl implements ProjectService {
-    @Autowired
     private final ProjectRepository projectRepository;
-    @Autowired
     private final EmployeeRepository employeeRepository;
-    @Autowired
     private final EvaluationCycleRepository evaluationCycleRepository;
-    @Autowired
     private final ModelMapper modelMapper;
-
-    public ProjectServiceImpl(ProjectRepository projectRepository, EmployeeRepository employeeRepository, EvaluationCycleRepository evaluationCycleRepository, ModelMapper modelMapper) {
-        this.projectRepository = projectRepository;
-        this.employeeRepository = employeeRepository;
-        this.evaluationCycleRepository = evaluationCycleRepository;
-        this.modelMapper = modelMapper;
-    }
 
     @Override
     public ResponseEntity<ResponseDTO<ProjectResponseDTO>> create(ProjectRequestDTO dto) {
-        if (projectRepository.existsByCode(dto.getCode())) {
+        if (projectRepository.existsByCodeAndIsDeletedFalse(dto.getCode())) {
             throw new ResourceNotFoundException("Project with code " + dto.getCode() + " already exists.");
         }
 
-        Employee manager = employeeRepository.findById(dto.getManagerId())
+        Employee manager = employeeRepository.findByIdAndIsDeletedFalse(dto.getManagerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Manager not found with id: " + dto.getManagerId()));
 
         Project project = new Project();
@@ -58,24 +47,23 @@ public class ProjectServiceImpl implements ProjectService {
         project.setOdc(dto.getIsOdc());
         project.setDeleted(false);
 
-        Set<Employee> employees = employeeRepository.findByIdIn(dto.getEmployeeIds());
+        Set<Employee> employees = employeeRepository.findByIdInAndIsDeletedFalse(dto.getEmployeeIds());
         project.getEmployees().addAll(employees);
 
-        Set<EvaluationCycle> evaluationCycles = evaluationCycleRepository.findByIdIn(dto.getEvaluationCycleIds());
+        Set<EvaluationCycle> evaluationCycles = evaluationCycleRepository.findByIdInAndIsDeletedFalse(dto.getEvaluationCycleIds());
         for (EvaluationCycle cycle : evaluationCycles) {
             cycle.getProjects().add(project);
         }
 
         Project saved = projectRepository.save(project);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ResponseUtil.created(toResponseDTO(saved)));
+        return ResponseUtil.created(toResponseDTO(saved));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<ProjectResponseDTO>> getById(Long id) {
-        Project project = projectRepository.findById(id)
+        Project project = projectRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
-        return ResponseEntity.ok(ResponseUtil.success(toResponseDTO(project)));
+        return ResponseUtil.success(toResponseDTO(project));
     }
 
     @Override
@@ -91,35 +79,35 @@ public class ProjectServiceImpl implements ProjectService {
 
         var content = page.getContent().stream().map(this::toResponseDTO).toList();
 
-        return ResponseEntity.ok(ResponseUtil.success(new PageResponse<>(
+        return ResponseUtil.success(new PageResponse<>(
                 content,
                 page.getNumber(),
                 page.getSize(),
                 page.getTotalElements(),
                 page.getTotalPages(),
                 page.isLast()
-        )));
+        ));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<ProjectResponseDTO>> patch(Long id, ProjectRequestDTO dto) {
-        Project existing = projectRepository.findById(id)
+        Project existing = projectRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
 
         if (dto.getCode() != null) existing.setCode(dto.getCode());
         if (dto.getManagerId() != null) {
-            Employee manager = employeeRepository.findById(dto.getManagerId())
+            Employee manager = employeeRepository.findByIdAndIsDeletedFalse(dto.getManagerId())
                     .orElseThrow(() -> new ResourceNotFoundException("Manager not found with id: " + dto.getManagerId()));
             existing.setManager(manager);
         }
         if (dto.getIsOdc() != null) existing.setOdc(dto.getIsOdc());
 
         Project updated = projectRepository.save(existing);
-        return ResponseEntity.ok(ResponseUtil.success(toResponseDTO(updated)));
+        return ResponseUtil.success(toResponseDTO(updated));
     }
 
     public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
-        Project project = projectRepository.findById(id)
+        Project project = projectRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
 
         // Remove project from associated evaluation cycles
@@ -132,31 +120,29 @@ public class ProjectServiceImpl implements ProjectService {
         project.setDeleted(true);
         projectRepository.save(project);
 
-        return ResponseEntity.ok(ResponseUtil.deleted());
+        return ResponseUtil.deleted();
     }
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> addProjectToEvaluationCycle(Long projectId, Long evaluationCycleId) {
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findByIdAndIsDeletedFalse(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
-        EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(evaluationCycleId)
+        EvaluationCycle evaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation cycle not found with id: " + evaluationCycleId));
-//        project.getEvaluationCycles().add(evaluationCycle);
         evaluationCycle.getProjects().add(project);
-//        projectRepository.save(project);
         evaluationCycleRepository.save(evaluationCycle);
-        return ResponseEntity.ok(ResponseUtil.success("Project added to evaluation cycle successfully."));
+        return ResponseUtil.success("Project added to evaluation cycle successfully.");
     }
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> addEmployeeToProject(Long projectId, Long employeeId) {
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findByIdAndIsDeletedFalse(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
-        Employee employee = employeeRepository.findById(employeeId)
+        Employee employee = employeeRepository.findByIdAndIsDeletedFalse(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + employeeId));
         project.getEmployees().add(employee);
         projectRepository.save(project);
-        return ResponseEntity.ok(ResponseUtil.success("Employee added to project successfully."));
+        return ResponseUtil.success("Employee added to project successfully.");
     }
 
     public ProjectResponseDTO toResponseDTO(Project project) {

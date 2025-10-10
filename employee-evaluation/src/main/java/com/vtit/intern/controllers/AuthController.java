@@ -45,7 +45,7 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
 
-            Employee employee = employeeRepository.findByUsername(request.getUsername())
+            Employee employee = employeeRepository.findByUsernameAndIsDeletedFalse(request.getUsername())
                     .orElseThrow(() -> new RuntimeException("User not found with username: " + request.getUsername()));
 
             return new AuthResponseDTO(jwtUtil.generateAccessToken(employee),
@@ -59,7 +59,7 @@ public class AuthController {
     @PostMapping("/register")
     public AuthResponseDTO register(@RequestBody @Valid EmployeeRequestDTO dto) {
         employeeServiceImpl.create(dto);
-        Employee employee = employeeRepository.findByUsername(dto.getUsername())
+        Employee employee = employeeRepository.findByUsernameAndIsDeletedFalse(dto.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found with username: " + dto.getUsername()));
 
         return new AuthResponseDTO(jwtUtil.generateAccessToken(employee),
@@ -75,7 +75,7 @@ public class AuthController {
         }
 
         String username = jwtUtil.extractUsername(refreshToken);
-        Employee employee = employeeRepository.findByUsername(username)
+        Employee employee = employeeRepository.findByUsernameAndIsDeletedFalse(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         String newAccessToken = jwtUtil.generateAccessToken(employee);

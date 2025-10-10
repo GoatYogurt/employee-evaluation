@@ -1,42 +1,36 @@
 package com.vtit.intern.utils;
 
 import com.vtit.intern.dtos.responses.ResponseDTO;
+import org.springframework.http.ResponseEntity;
 
 public class ResponseUtil {
-    public static <T> ResponseDTO<T> success(T data) {
-        return ResponseDTO.<T>builder()
+    public static <T> ResponseEntity<ResponseDTO<T>> success(T data) {
+        return ResponseEntity.ok(ResponseDTO.<T>builder()
                 .code("200")
                 .message("Success")
                 .data(data)
-                .build();
+                .build());
     }
 
-    public static <T> ResponseDTO<T> success(String message) {
-        return ResponseDTO.<T>builder()
+    public static <T> ResponseEntity<ResponseDTO<T>> success(String message) {
+        return ResponseEntity.ok(ResponseDTO.<T>builder()
                 .code("200")
                 .message(message)
-                .build();
+                .build());
     }
 
-    public static <T> ResponseDTO<T> error(String code, String message) {
-        return ResponseDTO.<T>builder()
-                .code(code)
-                .message(message)
-                .build();
-    }
-
-    public static <T> ResponseDTO<T> created(T data) {
-        return ResponseDTO.<T>builder()
-                .code("201")
+    public static <T> ResponseEntity<ResponseDTO<T>> created(T data) {
+        return ResponseEntity.ok(ResponseDTO.<T>builder()
+                .code("200")
                 .message("Created")
                 .data(data)
-                .build();
+                .build());
     }
 
-    public static <T> ResponseDTO<T> deleted() {
-        return ResponseDTO.<T>builder()
+    public static <T> ResponseEntity<ResponseDTO<T>> deleted() {
+        return ResponseEntity.ok(ResponseDTO.<T>builder()
                 .code("200")
                 .message("Deleted")
-                .build();
+                .build());
     }
 }

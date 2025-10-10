@@ -12,10 +12,9 @@ import com.vtit.intern.repositories.EvaluationCycleRepository;
 import com.vtit.intern.repositories.ProjectRepository;
 import com.vtit.intern.services.EvaluationCycleService;
 import com.vtit.intern.utils.ResponseUtil;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.vtit.intern.enums.EvaluationCycleStatus;
@@ -26,49 +25,33 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class EvaluationCycleServiceImpl implements EvaluationCycleService {
-    @Autowired
     private final EvaluationCycleRepository evaluationCycleRepository;
-
-    @Autowired
     private final ProjectRepository projectRepository;
-
-    private EvaluationCycleServiceImpl(EvaluationCycleRepository evaluationCycleRepository, ProjectRepository projectRepository) {
-        this.evaluationCycleRepository = evaluationCycleRepository;
-        this.projectRepository = projectRepository;
-    }
 
     @Override
     public ResponseEntity<ResponseDTO<EvaluationCycleResponseDTO>> create(EvaluationCycleRequestDTO dto) {
         EvaluationCycle evaluationCycle = requestToEntity(dto);
         EvaluationCycle savedEvaluationCycle = evaluationCycleRepository.save(evaluationCycle);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseUtil.created(entityToResponse(savedEvaluationCycle)));
+        return ResponseUtil.created(entityToResponse(savedEvaluationCycle));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<EvaluationCycleResponseDTO>> get(Long id) {
-        EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(id)
+        EvaluationCycle evaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
-        return ResponseEntity.ok(ResponseUtil.success(entityToResponse(evaluationCycle)));
+        return ResponseUtil.success(entityToResponse(evaluationCycle));
     }
-
-//    @Override
-//    public EvaluationCycleResponseDTO update(Long id, EvaluationCycleRequestDTO dto) {
-//        EvaluationCycle existingEvaluationCycle = evaluationCycleRepository.findById(id)
-//                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
-//
-//        EvaluationCycle updatedEvaluationCycle = evaluationCycleRepository.save(existingEvaluationCycle);
-//        return EvaluationCycleMapper.entityToResponse(updatedEvaluationCycle);
-//    }
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
-        EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(id)
+        EvaluationCycle evaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
         evaluationCycle.setDeleted(true);
         evaluationCycle.getProjects().clear();
         evaluationCycleRepository.save(evaluationCycle);
-        return ResponseEntity.ok(ResponseUtil.deleted());
+        return ResponseUtil.deleted();
     }
 
     @Override
@@ -92,14 +75,14 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
                 .map(this::entityToResponse)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(ResponseUtil.success(new PageResponse<>(
+        return ResponseUtil.success(new PageResponse<>(
                 content,
                 evaluationCyclePage.getNumber(),
                 evaluationCyclePage.getSize(),
                 evaluationCyclePage.getTotalElements(),
                 evaluationCyclePage.getTotalPages(),
                 evaluationCyclePage.isLast()
-        )));
+        ));
     }
 
     @Override
@@ -117,24 +100,24 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
                 .map(this::entityToResponse)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(ResponseUtil.success(new PageResponse<>(
+        return ResponseUtil.success(new PageResponse<>(
                 content,
                 evaluationCyclePage.getNumber(),
                 evaluationCyclePage.getSize(),
                 evaluationCyclePage.getTotalElements(),
                 evaluationCyclePage.getTotalPages(),
                 evaluationCyclePage.isLast()
-        )));
+        ));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<PageResponse<ProjectResponseDTO>>> getProjectsByEvaluationCycleId(Long evaluationCycleId, Pageable pageable) {
-        Optional<EvaluationCycle> evaluationCycle = evaluationCycleRepository.findById(evaluationCycleId);
+        Optional<EvaluationCycle> evaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId);
 
         if (evaluationCycle.isEmpty()) {
             throw new ResourceNotFoundException("Evaluation Cycle not found with id: " + evaluationCycleId);
         } else {
-            Page<Project> projectPage = projectRepository.findByIdIn(
+            Page<Project> projectPage = projectRepository.findByIdInAndIsDeletedFalse(
                     evaluationCycle.get().getProjects().stream().map(Project::getId).collect(Collectors.toSet()),
                     pageable
             );
@@ -154,20 +137,20 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
                     })
                     .toList();
 
-            return ResponseEntity.ok(ResponseUtil.success(new PageResponse<>(
+            return ResponseUtil.success(new PageResponse<>(
                     content,
                     projectPage.getNumber(),
                     projectPage.getSize(),
                     projectPage.getTotalElements(),
                     projectPage.getTotalPages(),
                     projectPage.isLast()
-            )));
+            ));
         }
     }
 
     @Override
     public ResponseEntity<ResponseDTO<EvaluationCycleResponseDTO>> patch(Long id, EvaluationCycleRequestDTO dto) {
-        EvaluationCycle existingEvaluationCycle = evaluationCycleRepository.findById(id)
+        EvaluationCycle existingEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
 
         // Update fields selectively based on non-null values in evaluationCycleDTO
@@ -188,7 +171,7 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
         }
 
         EvaluationCycle updatedEvaluationCycle = evaluationCycleRepository.save(existingEvaluationCycle);
-        return ResponseEntity.ok(ResponseUtil.success(entityToResponse(updatedEvaluationCycle)));
+        return ResponseUtil.success(entityToResponse(updatedEvaluationCycle));
     }
 
     private EvaluationCycleResponseDTO entityToResponse(EvaluationCycle evaluationCycle) {

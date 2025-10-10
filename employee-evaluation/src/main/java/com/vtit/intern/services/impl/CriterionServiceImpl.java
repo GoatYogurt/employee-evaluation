@@ -5,7 +5,6 @@ import com.vtit.intern.dtos.responses.CriterionResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.models.Criterion;
-import com.vtit.intern.models.CriterionGroup;
 import com.vtit.intern.repositories.CriterionRepository;
 import com.vtit.intern.services.CriterionService;
 import com.vtit.intern.utils.ResponseUtil;
@@ -13,9 +12,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 
@@ -51,21 +48,21 @@ public class CriterionServiceImpl implements CriterionService {
                 .map(criterion -> modelMapper.map(criterion, CriterionResponseDTO.class))
                 .toList();
 
-        return ResponseEntity.ok(ResponseUtil.success(new PageResponse<>(
+        return ResponseUtil.success(new PageResponse<>(
                 content,
                 criterionPage.getNumber(),
                 criterionPage.getSize(),
                 criterionPage.getTotalElements(),
                 criterionPage.getTotalPages(),
                 criterionPage.isLast()
-        )));
+        ));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<CriterionResponseDTO>> getById(Long id) {
-        return ResponseEntity.ok(ResponseUtil.success(criterionRepository.findById(id)
+        return ResponseUtil.success(criterionRepository.findByIdAndIsDeletedFalse(id)
                 .map(criterion -> modelMapper.map(criterion, CriterionResponseDTO.class))
-                .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id))));
+                .orElseThrow(() -> new ResourceNotFoundException("Criterion not found or deleted with id: " + id)));
     }
 
     @Override
@@ -73,38 +70,25 @@ public class CriterionServiceImpl implements CriterionService {
         Criterion criterion = modelMapper.map(dto, Criterion.class);
         criterion.setCreatedAt(java.time.LocalDateTime.now());
         Criterion savedCriterion = criterionRepository.save(criterion);
-        return ResponseEntity.ok(ResponseUtil.created(modelMapper.map(savedCriterion, CriterionResponseDTO.class)));
+        return ResponseUtil.created(modelMapper.map(savedCriterion, CriterionResponseDTO.class));
     }
-
-//    @Override
-//    public CriterionResponseDTO update(Long id, CriterionRequestDTO dto) {
-//        if (!criterionRepository.existsById(id)) {
-//            throw new ResourceNotFoundException("Cannot update. Criterion not found with id: " + id);
-//        }
-//
-//        Criterion criterion = modelMapper.map(dto, Criterion.class);
-//        criterion.setId(id); // Ensure the ID is set for the update
-//        Criterion updatedCriterion = criterionRepository.save(criterion);
-//        return modelMapper.map(updatedCriterion, CriterionResponseDTO.class);
-//    }
-
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
-        Criterion existing = criterionRepository.findById(id)
+        Criterion existing = criterionRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id));
         existing.setDeleted(true);
         criterionRepository.save(existing);
-        return ResponseEntity.ok(ResponseUtil.deleted());
+        return ResponseUtil.deleted();
     }
 
     @Override
     public ResponseEntity<ResponseDTO<CriterionResponseDTO>> patch(Long id, CriterionRequestDTO dto) {
-        if (!criterionRepository.existsById(id)) {
+        if (!criterionRepository.existsByIdAndIsDeletedFalse(id)) {
             throw new ResourceNotFoundException("Cannot patch. Criterion not found with id: " + id);
         }
 
-        Criterion existingCriterion = criterionRepository.findById(id)
+        Criterion existingCriterion = criterionRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id));
 
         // update only the fields that are present in the DTO
@@ -119,6 +103,6 @@ public class CriterionServiceImpl implements CriterionService {
         }
 
         Criterion updatedCriterion = criterionRepository.save(existingCriterion);
-        return ResponseEntity.ok(ResponseUtil.success(modelMapper.map(updatedCriterion, CriterionResponseDTO.class)));
+        return ResponseUtil.success(modelMapper.map(updatedCriterion, CriterionResponseDTO.class));
     }
 }

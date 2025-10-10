@@ -37,33 +37,33 @@ public class CriterionGroupServiceImpl implements CriterionGroupService {
                 .map(group -> modelMapper.map(group, CriterionGroupResponseDTO.class))
                 .toList();
 
-        return ResponseEntity.ok(ResponseUtil.success(new PageResponse<>(
+        return ResponseUtil.success(new PageResponse<>(
                 content,
                 pageGroups.getNumber(),
                 pageGroups.getSize(),
                 pageGroups.getTotalElements(),
                 pageGroups.getTotalPages(),
                 pageGroups.isLast()
-        )));
+        ));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<CriterionGroupResponseDTO>> getById(Long id) {
-        CriterionGroup group = groupRepository.findById(id)
+        CriterionGroup group = groupRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
-        return ResponseEntity.ok(ResponseUtil.success(modelMapper.map(group, CriterionGroupResponseDTO.class)));
+        return ResponseUtil.success(modelMapper.map(group, CriterionGroupResponseDTO.class));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<CriterionGroupResponseDTO>> create(CriterionGroupRequestDTO dto) {
         CriterionGroup group = modelMapper.map(dto, CriterionGroup.class);
         CriterionGroup saved = groupRepository.save(group);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseUtil.created(modelMapper.map(saved, CriterionGroupResponseDTO.class)));
+        return ResponseUtil.created(modelMapper.map(saved, CriterionGroupResponseDTO.class));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<CriterionGroupResponseDTO>> patch(Long id, CriterionGroupRequestDTO dto) {
-        CriterionGroup existing = groupRepository.findById(id)
+        CriterionGroup existing = groupRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
 
         if (dto.getName() != null) {
@@ -74,15 +74,15 @@ public class CriterionGroupServiceImpl implements CriterionGroupService {
         }
 
         CriterionGroup updated = groupRepository.save(existing);
-        return ResponseEntity.ok(ResponseUtil.success(modelMapper.map(updated, CriterionGroupResponseDTO.class)));
+        return ResponseUtil.success(modelMapper.map(updated, CriterionGroupResponseDTO.class));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
-        CriterionGroup existing = groupRepository.findById(id)
+        CriterionGroup existing = groupRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
         existing.setDeleted(true);
         groupRepository.save(existing);
-        return ResponseEntity.ok(ResponseUtil.deleted());
+        return ResponseUtil.deleted();
     }
 }

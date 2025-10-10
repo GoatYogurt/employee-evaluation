@@ -10,14 +10,18 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     Page<Evaluation> findByEmployeeId(Long employeeId, Pageable pageable);
 
     @Query("SELECT e FROM Evaluation e WHERE " +
+            "e.isDeleted = false AND " +
             "(:employeeId IS NULL OR e.employee.id = :employeeId)")
     Page<Evaluation> searchEvaluations(
             @Param("employeeId") Long employeeId,
             Pageable pageable);
+
+    Optional<Evaluation> findByIdAndIsDeletedFalse(Long id);
 }

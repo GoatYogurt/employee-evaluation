@@ -148,6 +148,17 @@ public class ProjectServiceImpl implements ProjectService {
         return ResponseEntity.ok(ResponseUtil.success("Project added to evaluation cycle successfully."));
     }
 
+    @Override
+    public ResponseEntity<ResponseDTO<Void>> addEmployeeToProject(Long projectId, Long employeeId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + employeeId));
+        project.getEmployees().add(employee);
+        projectRepository.save(project);
+        return ResponseEntity.ok(ResponseUtil.success("Employee added to project successfully."));
+    }
+
     public ProjectResponseDTO toResponseDTO(Project project) {
         ProjectResponseDTO dto = modelMapper.map(project, ProjectResponseDTO.class);
         dto.setManagerName(project.getManager().getFullName());

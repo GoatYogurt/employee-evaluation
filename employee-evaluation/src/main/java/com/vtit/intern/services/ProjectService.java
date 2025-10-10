@@ -16,5 +16,6 @@ public interface ProjectService {
     ResponseEntity<ResponseDTO<ProjectResponseDTO>> patch(Long id, ProjectRequestDTO dto);
     ResponseEntity<ResponseDTO<Void>> delete(Long id);
     ResponseEntity<ResponseDTO<Void>> addProjectToEvaluationCycle(Long projectId, Long evaluationCycleId);
+    ResponseEntity<ResponseDTO<Void>> addEmployeeToProject(Long projectId, Long employeeId);
 }
 

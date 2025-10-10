@@ -74,13 +74,14 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public void delete(Long id) {
+    public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
         employee.setDeleted(true);
         Page<Project> projects = projectRepository.findByIdIn(employee.getProjects().stream().map(Project::getId).toList(), null);
         projects.forEach(project -> project.getEmployees().remove(employee));
         employeeRepository.save(employee);
+        return ResponseEntity.ok(ResponseUtil.deleted());
     }
 
     @Override
@@ -163,7 +164,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public void changePassword(String username, String oldPassword, String newPassword) {
+    public ResponseEntity<ResponseDTO<Void>> changePassword(String username, String oldPassword, String newPassword) {
         Employee employee = employeeRepository.findByUsername(username).
                 orElseThrow(() -> new ResourceNotFoundException("Employee not found with username: " + username));
 
@@ -177,5 +178,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         employee.setPassword(passwordEncoder.encode(newPassword));
         employeeRepository.save(employee);
+
+        return ResponseEntity.ok(ResponseUtil.success("Password changed successfully"));
     }
 }

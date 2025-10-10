@@ -10,6 +10,7 @@ import com.vtit.intern.services.impl.EmployeeServiceImpl;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -22,13 +23,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/employees")
 @Validated
+@AllArgsConstructor
 public class EmployeeController {
-    @Autowired
     private final EmployeeService employeeService;
-
-    public EmployeeController(EmployeeService employeeService) {
-        this.employeeService = employeeService;
-    }
 
     @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     @GetMapping
@@ -72,11 +69,8 @@ public class EmployeeController {
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
-            @PathVariable @Positive(message = "ID must be a positive number") Long id
-    ) {
-        employeeService.delete(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ResponseDTO<Void>> delete(@PathVariable @Positive(message = "ID must be a positive number") Long id) {
+        return employeeService.delete(id);
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")

@@ -13,6 +13,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
@@ -89,11 +90,12 @@ public class CriterionServiceImpl implements CriterionService {
 
 
     @Override
-    public void delete(Long id) {
+    public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
         Criterion existing = criterionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id));
-        existing.setDeleted(true);        // xóa mềm
+        existing.setDeleted(true);
         criterionRepository.save(existing);
+        return ResponseEntity.ok(ResponseUtil.deleted());
     }
 
     @Override

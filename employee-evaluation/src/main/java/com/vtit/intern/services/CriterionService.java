@@ -13,6 +13,6 @@ public interface CriterionService {
     ResponseEntity<ResponseDTO<CriterionResponseDTO>> getById(Long id);
     ResponseEntity<ResponseDTO<CriterionResponseDTO>> create(CriterionRequestDTO dto);
 //    CriterionResponseDTO update(Long id, CriterionRequestDTO dto);
-    void delete(Long id);
+    ResponseEntity<ResponseDTO<Void>> delete(Long id);
     ResponseEntity<ResponseDTO<CriterionResponseDTO>> patch(Long id, CriterionRequestDTO dto);
 }

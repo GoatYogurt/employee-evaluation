@@ -1,6 +1,7 @@
 package com.vtit.intern.controllers;
 
 import com.vtit.intern.dtos.requests.EmployeeRequestDTO;
+import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.repositories.EmployeeRepository;
@@ -84,13 +85,12 @@ public class AuthController {
 
 
     @PostMapping("/change-password")
-    public ResponseEntity<String> changePassword(
+    public ResponseEntity<ResponseDTO<Void>> changePassword(
             @RequestBody ChangePasswordRequestDTO changePasswordRequest,
             Authentication authentication
     ) {
         String username = authentication.getName();
         System.out.println("Changing password for user: " + username);
-        employeeServiceImpl.changePassword(username, changePasswordRequest.getOldPassword(), changePasswordRequest.getNewPassword());
-        return ResponseEntity.ok("Password changed successfully");
+        return employeeServiceImpl.changePassword(username, changePasswordRequest.getOldPassword(), changePasswordRequest.getNewPassword());
     }
 }

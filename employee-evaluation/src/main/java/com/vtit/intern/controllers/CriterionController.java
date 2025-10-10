@@ -6,7 +6,6 @@ import com.vtit.intern.dtos.requests.CriterionRequestDTO;
 import com.vtit.intern.dtos.responses.CriterionResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.services.CriterionService;
-import jakarta.validation.ReportAsSingleViolation;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -14,7 +13,6 @@ import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -79,11 +77,10 @@ public class CriterionController {
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<ResponseDTO<Void>> delete(
             @PathVariable @Positive(message = "ID must be a positive number") Long id
     ) {
-        criteriaService.delete(id);
-        return ResponseEntity.noContent().build();
+        return criteriaService.delete(id);
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")

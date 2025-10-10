@@ -15,45 +15,27 @@ import com.vtit.intern.repositories.*;
 import com.vtit.intern.services.EvaluationService;
 import com.vtit.intern.utils.ResponseUtil;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class EvaluationServiceImpl implements EvaluationService {
-    @Autowired
     private final EvaluationRepository evaluationRepository;
-    @Autowired
     private final EmployeeRepository employeeRepository;
-    @Autowired
-    private final CriterionRepository criterionRepository;
-    @Autowired
     private final EvaluationCycleRepository evaluationCycleRepository;
-    @Autowired
     private final ProjectRepository projectRepository;
-    @Autowired
     private final ModelMapper modelMapper;
-
-    public EvaluationServiceImpl(EvaluationRepository evaluationRepository, EmployeeRepository employeeRepository,
-                                 CriterionRepository criterionRepository, EvaluationCycleRepository evaluationCycleRepository, ModelMapper modelMapper, ProjectRepository projectRepository) {
-        this.evaluationRepository = evaluationRepository;
-        this.employeeRepository = employeeRepository;
-        this.criterionRepository = criterionRepository;
-        this.modelMapper = modelMapper;
-        this.evaluationCycleRepository = evaluationCycleRepository;
-        this.projectRepository = projectRepository;
-    }
 
     @Override
     public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> create(EvaluationRequestDTO dto) {
@@ -109,7 +91,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
-    public void delete(Long evaluationId) {
+    public ResponseEntity<ResponseDTO<Void>> delete(Long evaluationId) {
         Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
 
@@ -121,6 +103,8 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         existingEvaluation.setDeleted(true);
         evaluationRepository.save(existingEvaluation);
+
+        return ResponseEntity.ok(ResponseUtil.deleted());
     }
 
     @Override

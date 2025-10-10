@@ -15,7 +15,7 @@ public interface EvaluationService {
     ResponseEntity<ResponseDTO<EvaluationResponseDTO>> create(EvaluationRequestDTO dto);
     ResponseEntity<ResponseDTO<PageResponse<EvaluationResponseDTO>>> getEvaluations(EvaluationSearchDTO dto, Pageable pageable, Authentication auth);
     ResponseEntity<ResponseDTO<EvaluationResponseDTO>> update(Long evaluationId, EvaluationRequestDTO dto);
-    void delete(Long evaluationId);
+    ResponseEntity<ResponseDTO<Void>> delete(Long evaluationId);
     ResponseEntity<ResponseDTO<EvaluationResponseDTO>> moveEvaluationToCycle(Long evaluationId, Long newCycleId);
     ResponseEntity<ResponseDTO<EvaluationResponseDTO>> patch(Long evaluationId, EvaluationRequestDTO dto);
 }

@@ -12,10 +12,10 @@ public interface EmployeeService {
     ResponseEntity<ResponseDTO<EmployeeResponseDTO>> getById(Long id);
     ResponseEntity<ResponseDTO<EmployeeResponseDTO>> create(EmployeeRequestDTO dto);
 //    EmployeeResponseDTO update(Long id, EmployeeRequestDTO dto);
-    void delete(Long id);
+    ResponseEntity<ResponseDTO<Void>> delete(Long id);
 
     ResponseEntity<ResponseDTO<PageResponse<EmployeeResponseDTO>>> getAllEmployees(EmployeeSearchDTO dto, Pageable pageable);
 
     ResponseEntity<ResponseDTO<EmployeeResponseDTO>> patch(Long id, EmployeeRequestDTO dto);
-    void changePassword(String username, String oldPassword, String newPassword);
+    ResponseEntity<ResponseDTO<Void>> changePassword(String username, String oldPassword, String newPassword);
 }

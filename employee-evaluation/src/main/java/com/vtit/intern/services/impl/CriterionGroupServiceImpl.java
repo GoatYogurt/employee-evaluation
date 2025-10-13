@@ -80,9 +80,9 @@ public class CriterionGroupServiceImpl implements CriterionGroupService {
     @Override
     public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
         CriterionGroup existing = groupRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Criterion group not found with id: " + id));
         existing.setDeleted(true);
         groupRepository.save(existing);
-        return ResponseUtil.deleted();
+        return ResponseUtil.deleted("Criterion group " + existing.getName() + " deleted successfully");
     }
 }

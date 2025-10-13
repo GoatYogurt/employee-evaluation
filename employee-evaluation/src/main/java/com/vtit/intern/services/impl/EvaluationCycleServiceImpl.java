@@ -51,7 +51,7 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
         evaluationCycle.setDeleted(true);
         evaluationCycle.getProjects().clear();
         evaluationCycleRepository.save(evaluationCycle);
-        return ResponseUtil.deleted();
+        return ResponseUtil.deleted("Evaluation Cycle " + evaluationCycle.getName() + " deleted successfully.");
     }
 
     @Override

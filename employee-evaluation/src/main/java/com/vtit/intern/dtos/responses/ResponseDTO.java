@@ -10,7 +10,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 public class ResponseDTO<T> implements Serializable {
-    private String code;
+    private Integer code;
     private String message;
     private transient T data;
 }

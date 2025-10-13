@@ -120,7 +120,7 @@ public class ProjectServiceImpl implements ProjectService {
         project.setDeleted(true);
         projectRepository.save(project);
 
-        return ResponseUtil.deleted();
+        return ResponseUtil.deleted("Project " + project.getCode() + " deleted successfully.");
     }
 
     @Override

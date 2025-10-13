@@ -64,6 +64,9 @@ public class Evaluation {
      * Set total score and update completion level and KI ranking
      */
     public void setTotalScore(double totalScore) {
+        if (totalScore < 0 || totalScore > 5) {
+            throw new IllegalArgumentException("Tổng điểm phải nằm trong khoảng từ 0 đến 5");
+        }
         this.totalScore = totalScore;
         this.completionLevel = scoreToCompletionLevel(totalScore);
         this.kiRanking = scoreToRanking(totalScore);

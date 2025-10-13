@@ -80,7 +80,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         Page<Project> projects = projectRepository.findByIdInAndIsDeletedFalse(employee.getProjects().stream().map(Project::getId).toList(), null);
         projects.forEach(project -> project.getEmployees().remove(employee));
         employeeRepository.save(employee);
-        return ResponseUtil.deleted();
+        return ResponseUtil.deleted("Employee "+ employee.getFullName() + " deleted successfully");
     }
 
     @Override

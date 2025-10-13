@@ -1,6 +1,7 @@
 package com.vtit.intern.controllers;
 
 import com.vtit.intern.dtos.requests.EvaluationScoreRequestDTO;
+import com.vtit.intern.dtos.requests.MultipleEvaluationScoreRequestDTO;
 import com.vtit.intern.dtos.responses.*;
 import com.vtit.intern.services.EvaluationScoreService;
 import jakarta.validation.Valid;
@@ -42,6 +43,13 @@ public class EvaluationScoreController {
             @Valid @RequestBody EvaluationScoreRequestDTO dto
     ) {
         return evaluationScoreService.create(dto);
+    }
+
+    @PostMapping("/create-multiple")
+    public ResponseEntity<ResponseDTO<Void>> createMultiple(
+            @Valid @RequestBody MultipleEvaluationScoreRequestDTO dto
+    ) {
+        return evaluationScoreService.createMultiple(dto);
     }
 
 

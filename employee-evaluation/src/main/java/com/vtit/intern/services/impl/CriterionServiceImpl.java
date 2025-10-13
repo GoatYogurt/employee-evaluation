@@ -79,7 +79,7 @@ public class CriterionServiceImpl implements CriterionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id));
         existing.setDeleted(true);
         criterionRepository.save(existing);
-        return ResponseUtil.deleted();
+        return ResponseUtil.deleted("Criterion " + existing.getName() + " deleted successfully");
     }
 
     @Override

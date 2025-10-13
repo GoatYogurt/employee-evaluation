@@ -1,10 +1,13 @@
 package com.vtit.intern.services.impl;
 
+import com.vtit.intern.dtos.requests.CriterionScoreRequestDTO;
 import com.vtit.intern.dtos.requests.EvaluationScoreRequestDTO;
+import com.vtit.intern.dtos.requests.MultipleEvaluationScoreRequestDTO;
 import com.vtit.intern.dtos.responses.EvaluationScoreResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
+import com.vtit.intern.models.Criterion;
 import com.vtit.intern.models.CriterionGroup;
 import com.vtit.intern.models.Evaluation;
 import com.vtit.intern.models.EvaluationScore;
@@ -75,23 +78,24 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
     @Override
     public ResponseEntity<ResponseDTO<EvaluationScoreResponseDTO>> create(EvaluationScoreRequestDTO requestDTO) {
         EvaluationScore evaluationScore = new EvaluationScore();
-        evaluationScore.setScore(requestDTO.getScore());
-        evaluationScore.setCriterion(
-                criterionRepository.findByIdAndIsDeletedFalse(requestDTO.getCriterionId())
-                        .orElseThrow(() -> new RuntimeException("Criterion not found"))
-        );
-        evaluationScore.setEvaluation(
-                evaluationRepository.findByIdAndIsDeletedFalse(requestDTO.getEvaluationId())
-                        .orElseThrow(() -> new RuntimeException("Evaluation not found"))
-        );
 
-        EvaluationScore saved = evaluationScoreRepository.save(evaluationScore);
+        Criterion criterion = criterionRepository.findByIdAndIsDeletedFalse(requestDTO.getCriterionId())
+                .orElseThrow(() -> new RuntimeException("Criterion not found"));
 
         Evaluation evaluation = evaluationRepository.findByIdAndIsDeletedFalse(requestDTO.getEvaluationId())
                 .orElseThrow(() -> new RuntimeException("Evaluation not found"));
-        double weight = saved.getCriterion().getWeight();
-        double newTotalScore = evaluation.getTotalScore() + requestDTO.getScore() * weight;
-        evaluation.setTotalScore(newTotalScore);
+
+        evaluationScore.setScore(requestDTO.getScore());
+        evaluationScore.setCriterion(criterion);
+        evaluationScore.setEvaluation(evaluation);
+
+        double newTotalScore = evaluation.getTotalScore() + requestDTO.getScore() * criterion.getWeight();;
+        try {
+            evaluation.setTotalScore(newTotalScore);
+        } catch (IllegalArgumentException e) {
+            return ResponseUtil.error(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+        EvaluationScore saved = evaluationScoreRepository.save(evaluationScore);
         evaluationRepository.save(evaluation);
 
         EvaluationScoreResponseDTO dto = new EvaluationScoreResponseDTO();
@@ -101,6 +105,34 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
         dto.setScore(saved.getScore());
 
         return ResponseUtil.created(dto);
+    }
+
+    @Override
+    public ResponseEntity<ResponseDTO<Void>> createMultiple(MultipleEvaluationScoreRequestDTO dto) {
+        Evaluation evaluation = evaluationRepository.findByIdAndIsDeletedFalse(dto.getEvaluationId())
+                .orElseThrow(() -> new RuntimeException("Evaluation not found"));
+
+        double totalScore = 0.0;
+
+        for (CriterionScoreRequestDTO scoreDTO : dto.getScores()) {
+            EvaluationScore evaluationScore = new EvaluationScore();
+            evaluationScore.setScore(scoreDTO.getScore());
+            evaluationScore.setCriterion(
+                    criterionRepository.findByIdAndIsDeletedFalse(scoreDTO.getCriterionId())
+                            .orElseThrow(() -> new RuntimeException("Criterion not found"))
+            );
+            evaluationScore.setEvaluation(evaluation);
+
+            evaluationScoreRepository.save(evaluationScore);
+
+            double weight = evaluationScore.getCriterion().getWeight();
+            totalScore += scoreDTO.getScore() * weight;
+        }
+
+        evaluation.setTotalScore(totalScore);
+        evaluationRepository.save(evaluation);
+
+        return ResponseUtil.created("Multiple evaluation scores for " + evaluation.getId() + " created successfully");
     }
 
     @Override
@@ -131,11 +163,13 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
-        EvaluationScore existing = evaluationScoreRepository.findByIdAndIsDeletedFalse(id)
+        EvaluationScore evaluationScore = evaluationScoreRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
-        existing.setDeleted(true);
-        evaluationScoreRepository.save(existing);
+        Evaluation evaluation = evaluationScore.getEvaluation();
+        evaluation.setTotalScore(evaluation.getTotalScore() - evaluationScore.getScore());
+        evaluationScore.setDeleted(true);
+        evaluationScoreRepository.save(evaluationScore);
 
-        return ResponseUtil.deleted();
+        return ResponseUtil.deleted("Evaluation Score with id " + evaluationScore.getId() + " deleted successfully");
     }
 }

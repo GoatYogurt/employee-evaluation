@@ -102,7 +102,7 @@ public class EvaluationServiceImpl implements EvaluationService {
         existingEvaluation.setDeleted(true);
         evaluationRepository.save(existingEvaluation);
 
-        return ResponseUtil.deleted();
+        return ResponseUtil.deleted("Evaluation with id " + existingEvaluation.getId() + " deleted successfully");
     }
 
     @Override

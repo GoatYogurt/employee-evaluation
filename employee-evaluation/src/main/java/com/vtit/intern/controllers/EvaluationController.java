@@ -47,6 +47,14 @@ public class EvaluationController {
                 SecurityContextHolder.getContext().getAuthentication());
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
+    @GetMapping("/{id}")
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> getById(
+            @PathVariable @Positive(message = "Evaluation ID must be positive") Long id
+    ) {
+        return evaluationService.getById(id);
+    }
+
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> update(

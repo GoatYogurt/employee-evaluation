@@ -14,6 +14,7 @@ import java.time.LocalDate;
 public interface EvaluationService {
     ResponseEntity<ResponseDTO<EvaluationResponseDTO>> create(EvaluationRequestDTO dto);
     ResponseEntity<ResponseDTO<PageResponse<EvaluationResponseDTO>>> getEvaluations(EvaluationSearchDTO dto, Pageable pageable, Authentication auth);
+    ResponseEntity<ResponseDTO<EvaluationResponseDTO>> getById(Long evaluationId);
     ResponseEntity<ResponseDTO<EvaluationResponseDTO>> update(Long evaluationId, EvaluationRequestDTO dto);
     ResponseEntity<ResponseDTO<Void>> delete(Long evaluationId);
     ResponseEntity<ResponseDTO<EvaluationResponseDTO>> moveEvaluationToCycle(Long evaluationId, Long newCycleId);

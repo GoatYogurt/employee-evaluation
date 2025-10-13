@@ -208,6 +208,14 @@ public class EvaluationServiceImpl implements EvaluationService {
         ));
     }
 
+    @Override
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> getById(Long evaluationId) {
+        Evaluation evaluation = evaluationRepository.findByIdAndIsDeletedFalse(evaluationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
+
+        return ResponseUtil.success(modelMapper.map(evaluation, EvaluationResponseDTO.class));
+    }
+
     private boolean isEmployee(Authentication auth) {
         return auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYEE"));

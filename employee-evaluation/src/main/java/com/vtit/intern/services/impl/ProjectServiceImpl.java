@@ -179,6 +179,14 @@ public class ProjectServiceImpl implements ProjectService {
         Employee employee = employeeRepository.findByIdAndIsDeletedFalse(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + employeeId));
         project.getEmployees().remove(employee);
+        Set<EvaluationCycle> evaluationCycles = project.getEvaluationCycles();
+        for (EvaluationCycle cycle : evaluationCycles) {
+            Set<Evaluation> evaluations = evaluationRepository.findByEmployee_IdAndProject_IdAndEvaluationCycle_Id(employeeId, project.getId(), cycle.getId());
+            for (Evaluation eval : evaluations) {
+                eval.setDeleted(true);
+            }
+            evaluationRepository.saveAll(evaluations);
+        }
         projectRepository.save(project);
         return ResponseUtil.success("Employee removed from project successfully.");
     }

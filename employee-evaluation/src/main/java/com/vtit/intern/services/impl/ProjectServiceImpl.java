@@ -145,6 +145,17 @@ public class ProjectServiceImpl implements ProjectService {
         return ResponseUtil.success("Employee added to project successfully.");
     }
 
+    @Override
+    public ResponseEntity<ResponseDTO<Void>> removeEmployeeFromProject(Long projectId, Long employeeId) {
+        Project project = projectRepository.findByIdAndIsDeletedFalse(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
+        Employee employee = employeeRepository.findByIdAndIsDeletedFalse(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + employeeId));
+        project.getEmployees().remove(employee);
+        projectRepository.save(project);
+        return ResponseUtil.success("Employee removed from project successfully.");
+    }
+
     public ProjectResponseDTO toResponseDTO(Project project) {
         ProjectResponseDTO dto = modelMapper.map(project, ProjectResponseDTO.class);
         dto.setManagerName(project.getManager().getFullName());

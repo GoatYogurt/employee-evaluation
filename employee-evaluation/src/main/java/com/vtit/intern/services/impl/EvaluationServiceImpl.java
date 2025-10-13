@@ -153,8 +153,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
-    public ResponseEntity<ResponseDTO<PageResponse<EvaluationResponseDTO>>> getEvaluations(
-            EvaluationSearchDTO dto, Pageable pageable, Authentication auth) {
+    public ResponseEntity<ResponseDTO<PageResponse<EvaluationResponseDTO>>> getEvaluations(EvaluationSearchDTO dto, Pageable pageable, Authentication auth) {
 
         // Validate score range
         if (dto != null) {

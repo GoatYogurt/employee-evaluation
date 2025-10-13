@@ -53,11 +53,18 @@ public class ProjectController {
         return projectService.addProjectToEvaluationCycle(id, cycleId);
     }
 
-    @PutMapping("/{id}/add-employee/{emploteeId}")
+    @PutMapping("/{id}/add-employee/{employeeId}")
     public ResponseEntity<ResponseDTO<Void>> addEmployeeToProject(
             @PathVariable @Positive Long id,
-            @PathVariable @Positive Long emploteeId) {
-        return projectService.addEmployeeToProject(id, emploteeId);
+            @PathVariable @Positive Long employeeId) {
+        return projectService.addEmployeeToProject(id, employeeId);
+    }
+
+    @PutMapping("/{id}/remove-employee/{employeeId}")
+    public ResponseEntity<ResponseDTO<Void>> removeEmployeeFromProject(
+            @PathVariable @Positive Long id,
+            @PathVariable @Positive Long employeeId) {
+        return projectService.removeEmployeeFromProject(id, employeeId);
     }
 
     @PatchMapping("/{id}")

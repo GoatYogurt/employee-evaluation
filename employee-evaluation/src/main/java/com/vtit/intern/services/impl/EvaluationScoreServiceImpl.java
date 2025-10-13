@@ -129,7 +129,6 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
         return ResponseUtil.success(responseDTO);
     }
 
-
     @Override
     public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
         EvaluationScore existing = evaluationScoreRepository.findByIdAndIsDeletedFalse(id)

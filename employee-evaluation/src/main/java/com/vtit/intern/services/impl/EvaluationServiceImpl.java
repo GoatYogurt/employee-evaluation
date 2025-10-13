@@ -59,8 +59,6 @@ public class EvaluationServiceImpl implements EvaluationService {
         e.setEvaluationCycle(evaluationCycle);
         e.setProject(project);
         e.setTotalScore(0.0);
-        e.setCompletionLevel(null);
-        e.setKiRanking(null);
         e.setManagerFeedback(dto.getManagerFeedback() == null ? "" : dto.getManagerFeedback());
         e.setCustomerFeedback(dto.getCustomerFeedback() == null ? "" : dto.getCustomerFeedback());
         e.setNote(dto.getNote() == null ? "" : dto.getNote());

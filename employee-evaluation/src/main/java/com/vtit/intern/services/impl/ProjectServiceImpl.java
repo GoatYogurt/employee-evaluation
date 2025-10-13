@@ -135,6 +135,17 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
+    public ResponseEntity<ResponseDTO<Void>> removeProjectFromEvaluationCycle(Long projectId, Long evaluationCycleId) {
+        Project project = projectRepository.findByIdAndIsDeletedFalse(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
+        EvaluationCycle evaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluation cycle not found with id: " + evaluationCycleId));
+        evaluationCycle.getProjects().remove(project);
+        evaluationCycleRepository.save(evaluationCycle);
+        return ResponseUtil.success("Project removed from evaluation cycle successfully.");
+    }
+
+    @Override
     public ResponseEntity<ResponseDTO<Void>> addEmployeeToProject(Long projectId, Long employeeId) {
         Project project = projectRepository.findByIdAndIsDeletedFalse(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));

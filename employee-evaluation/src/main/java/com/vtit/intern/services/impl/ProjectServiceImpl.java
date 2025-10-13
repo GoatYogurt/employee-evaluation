@@ -8,10 +8,12 @@ import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.dtos.searches.ProjectSearchDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;
+import com.vtit.intern.models.Evaluation;
 import com.vtit.intern.models.EvaluationCycle;
 import com.vtit.intern.models.Project;
 import com.vtit.intern.repositories.EmployeeRepository;
 import com.vtit.intern.repositories.EvaluationCycleRepository;
+import com.vtit.intern.repositories.EvaluationRepository;
 import com.vtit.intern.repositories.ProjectRepository;
 import com.vtit.intern.services.ProjectService;
 import com.vtit.intern.utils.ResponseUtil;
@@ -22,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -30,6 +33,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final EmployeeRepository employeeRepository;
     private final EvaluationCycleRepository evaluationCycleRepository;
+    private final EvaluationRepository evaluationRepository;
     private final ModelMapper modelMapper;
 
     @Override
@@ -151,6 +155,18 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
         Employee employee = employeeRepository.findByIdAndIsDeletedFalse(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + employeeId));
+
+        Set<EvaluationCycle> evaluationCycles = project.getEvaluationCycles();
+        for (EvaluationCycle cycle : evaluationCycles) {
+            Evaluation evaluation = new Evaluation();
+            evaluation.setEmployee(employee);
+            evaluation.setEvaluationCycle(cycle);
+            evaluation.setDeleted(false);
+            evaluation.setProject(project);
+            evaluation.setTotalScore(0.0);
+            evaluationRepository.save(evaluation);
+        }
+
         project.getEmployees().add(employee);
         projectRepository.save(project);
         return ResponseUtil.success("Employee added to project successfully.");

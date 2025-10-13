@@ -13,7 +13,8 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class EvaluationSearchDTO {
     private Long employeeId;
-    private Long criterionId;
+    private Long evaluationCycleId;
+    private Long projectId;
     private Double minScore;
     private Double maxScore;
     private String comment;

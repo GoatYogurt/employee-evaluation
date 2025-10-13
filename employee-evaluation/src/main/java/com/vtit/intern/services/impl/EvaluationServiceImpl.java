@@ -193,17 +193,11 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         // Perform the search
         if (dto == null) {
-            return ResponseUtil.success(searchAndMap(employeeId, null, null, null, null, null, null, pageable));
+            return ResponseUtil.success(searchAndMap(employeeId, pageable));
         }
 
         return ResponseUtil.success(searchAndMap(
                 employeeId,
-                dto.getCriterionId(),
-                dto.getMinScore(),
-                dto.getMaxScore(),
-                trimOrNull(dto.getComment()),
-                dto.getStartDate(),
-                dto.getEndDate(),
                 pageable
         ));
     }
@@ -231,8 +225,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     private PageResponse<EvaluationResponseDTO> searchAndMap(
-            Long employeeId, Long criterionId, Double minScore, Double maxScore,
-            String comment, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+            Long employeeId, Pageable pageable) {
 
         Page<Evaluation> evaluationPage = evaluationRepository.searchEvaluations(
                 employeeId, pageable);

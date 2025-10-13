@@ -166,7 +166,7 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
         EvaluationScore evaluationScore = evaluationScoreRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
         Evaluation evaluation = evaluationScore.getEvaluation();
-        evaluation.setTotalScore(evaluation.getTotalScore() - evaluationScore.getScore());
+        evaluation.setTotalScore(evaluation.getTotalScore() - evaluationScore.getScore() * evaluationScore.getCriterion().getWeight());
         evaluationScore.setDeleted(true);
         evaluationScoreRepository.save(evaluationScore);
 

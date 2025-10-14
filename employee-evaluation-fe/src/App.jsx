@@ -20,15 +20,8 @@ import EmployeeAddOld from "./pages/EmployeeAddOld";
 
 
 function AppLayout() {
-  const location = useLocation();
-
-  // Các trang KHÔNG cần Dashboard layout
-  const noDashboardPaths = ["/", "/register", "/change-password"];
-  const shouldUseDashboard = !noDashboardPaths.includes(location.pathname);
-
   return (
-    <>
-      <Routes>
+    <Routes>
         {/* Các route không cần Dashboard */}
         <Route path='/' element={<LoginPage />} />
         <Route path='/register' element={<RegisterPage />} />
@@ -53,8 +46,7 @@ function AppLayout() {
         {/* <Route path='/project-add' element={<Dashboard><ProjectAdd /></Dashboard>}></Route> */}
 
         <Route path="/evaluation-cycle-list" element={<Dashboard><EvaluationCycleList /></Dashboard>} />
-      </Routes>
-    </>
+    </Routes>
   );
 }
 

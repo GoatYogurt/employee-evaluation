@@ -64,6 +64,7 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
                 .orElseThrow(() -> new RuntimeException("EvaluationScore not found"));
 
         EvaluationScoreResponseDTO dto = new EvaluationScoreResponseDTO();
+        dto.setId(score.getId());
         dto.setCriterionId(score.getCriterion().getId());
         dto.setCriterionName(score.getCriterion().getName());
         dto.setEvaluationId(score.getEvaluation().getId());

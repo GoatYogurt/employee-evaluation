@@ -20,7 +20,6 @@ const EvaluationCycleTable = () => {
     fetchEvaluationCycles();
   }, []);
 
-  // ✅ Fetch danh sách kỳ đánh giá
   const fetchEvaluationCycles = async () => {
     try {
       const res = await fetch("http://localhost:8080/api/evaluation-cycles", {
@@ -40,7 +39,6 @@ const EvaluationCycleTable = () => {
       else if (Array.isArray(data.data)) cycleList = data.data;
       else console.error("Unexpected API structure:", data);
 
-      // 🔧 Chuyển LocalDate dd/MM/yyyy → yyyy-MM-dd để hiển thị đúng trong input type="date"
       const convertDate = (d) => {
         if (!d) return "";
         const [day, month, year] = d.split("/");
@@ -67,12 +65,10 @@ const EvaluationCycleTable = () => {
     }
   };
 
-  // 🔍 Tìm kiếm
   const filteredCycles = cycles.filter((c) =>
     c.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // 📄 Phân trang
   const totalPages = Math.ceil(filteredCycles.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -84,7 +80,7 @@ const EvaluationCycleTable = () => {
   };
 
   const handleEdit = (cycle) => {
-    setSelectedCycle({ ...cycle }); // copy để không ảnh hưởng trực tiếp
+    setSelectedCycle({ ...cycle });
     setShowEditModal(true);
   };
 
@@ -101,18 +97,17 @@ const EvaluationCycleTable = () => {
       if (!res.ok) throw new Error("Delete failed");
 
       setCycles((prev) => prev.filter((c) => c.id !== id));
-      setDeleteMessage("✅ Xóa kỳ đánh giá thành công!");
+      setDeleteMessage("Xóa kỳ đánh giá thành công!");
     } catch (err) {
       console.error(err);
-      setDeleteMessage("❌ Xóa kỳ đánh giá thất bại!");
+      setDeleteMessage("Xóa kỳ đánh giá thất bại!");
     }
     setShowDeleteModal(true);
   };
 
-  // ✅ Khi xác nhận sửa
   const handleEditConfirm = async () => {
     try {
-      // Chuyển yyyy-MM-dd → dd/MM/yyyy để gửi lên backend
+
       const convertToDDMMYYYY = (dateStr) => {
         if (!dateStr) return null;
         const [year, month, day] = dateStr.split("-");
@@ -143,7 +138,6 @@ const EvaluationCycleTable = () => {
 
       const updated = await res.json();
 
-      // Cập nhật lại danh sách
       setCycles((prev) =>
         prev.map((c) =>
           c.id === updated.id

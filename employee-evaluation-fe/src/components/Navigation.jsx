@@ -19,7 +19,7 @@ function Navigation() {
     { path: "/criterion-group-list", icon: "fa-layer-group", label: "Nhóm tiêu chí" },
     { path: "/criterion-list", icon: "fa-clipboard-list", label: "Tiêu chí" },
     { path: "/project-list", icon: "fa-solid fa-diagram-project", label: "Dự án" },
-    { path: "/evaluation-cycle-list", icon: "fa-chart-bar", label: "Đánh giá" },
+    { path: "/evaluation-cycle-list", icon: "fa-chart-bar", label: "Chu kỳ đánh giá" },
   ];
 
   const isActive = (path) => {

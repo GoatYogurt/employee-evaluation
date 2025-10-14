@@ -188,7 +188,7 @@ public class ProjectServiceImpl implements ProjectService {
             evaluationRepository.saveAll(evaluations);
         }
         projectRepository.save(project);
-        return ResponseUtil.success("Employee removed from project successfully.");
+        return ResponseUtil.success("Employee removed from project successfully. Also removed associated evaluations.");
     }
 
     public ProjectResponseDTO toResponseDTO(Project project) {

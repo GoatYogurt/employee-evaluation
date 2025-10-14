@@ -146,6 +146,21 @@ public class EvaluationServiceImpl implements EvaluationService {
             throw new IllegalStateException("Cannot patch evaluation in a completed or closed evaluation cycle.");
         }
 
+        String managerFeedback = trimOrNull(dto.getManagerFeedback());
+        if (managerFeedback != null) {
+            existingEvaluation.setManagerFeedback(managerFeedback);
+        }
+
+        String customerFeedback = trimOrNull(dto.getCustomerFeedback());
+        if (customerFeedback != null) {
+            existingEvaluation.setCustomerFeedback(customerFeedback);
+        }
+
+        String note = trimOrNull(dto.getNote());
+        if (note != null) {
+            existingEvaluation.setNote(note);
+        }
+
         Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
         return ResponseUtil.success(modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class));
     }

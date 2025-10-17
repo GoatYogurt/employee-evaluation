@@ -43,6 +43,41 @@ public class ResponseUtil {
                 .build());
     }
 
+    public static <T> ResponseEntity<ResponseDTO<T>> notFound(String message) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseDTO.<T>builder()
+                .code(HttpStatus.NOT_FOUND.value())
+                .message(message)
+                .build());
+    }
+
+    public static <T> ResponseEntity<ResponseDTO<T>> alreadyExists(String message) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseDTO.<T>builder()
+                .code(HttpStatus.CONFLICT.value())
+                .message(message)
+                .build());
+    }
+
+    public static <T> ResponseEntity<ResponseDTO<T>> badRequest(String message) {
+        return ResponseEntity.badRequest().body(ResponseDTO.<T>builder()
+                .code(HttpStatus.BAD_REQUEST.value())
+                .message(message)
+                .build());
+    }
+
+    public static  <T> ResponseEntity<ResponseDTO<T>> forbidden(String message) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.<T>builder()
+                .code(HttpStatus.FORBIDDEN.value())
+                .message(message)
+                .build());
+    }
+
+    public static <T> ResponseEntity<ResponseDTO<T>> unauthorized(String message) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseDTO.<T>builder()
+                .code(HttpStatus.UNAUTHORIZED.value())
+                .message(message)
+                .build());
+    }
+
     public static <T> ResponseEntity<ResponseDTO<T>> error(HttpStatus status, String message) {
         return ResponseEntity.badRequest().body(ResponseDTO.<T>builder()
                 .code(status.value())

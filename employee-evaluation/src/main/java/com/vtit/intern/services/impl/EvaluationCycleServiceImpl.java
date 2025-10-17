@@ -39,15 +39,19 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
 
     @Override
     public ResponseEntity<ResponseDTO<EvaluationCycleResponseDTO>> get(Long id) {
-        EvaluationCycle evaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
-        return ResponseUtil.success(entityToResponse(evaluationCycle));
+        return evaluationCycleRepository.findByIdAndIsDeletedFalse(id)
+                .map(ec -> ResponseUtil.success(entityToResponse(ec)))
+                .orElseGet(() -> ResponseUtil.notFound("Evaluation Cycle not found with id: " + id));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
-        EvaluationCycle evaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
+        Optional<EvaluationCycle> optionalEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(id);;
+        if (optionalEvaluationCycle.isEmpty()) {
+            return ResponseUtil.notFound("Evaluation Cycle not found with id: " + id);
+        }
+        EvaluationCycle evaluationCycle = optionalEvaluationCycle.get();
+
         evaluationCycle.setDeleted(true);
         evaluationCycle.getProjects().clear();
         evaluationCycleRepository.save(evaluationCycle);
@@ -115,7 +119,7 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
         Optional<EvaluationCycle> evaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId);
 
         if (evaluationCycle.isEmpty()) {
-            throw new ResourceNotFoundException("Evaluation Cycle not found with id: " + evaluationCycleId);
+            return ResponseUtil.notFound("Evaluation Cycle not found with id: " + evaluationCycleId);
         } else {
             Page<Project> projectPage = projectRepository.findByIdInAndIsDeletedFalse(
                     evaluationCycle.get().getProjects().stream().map(Project::getId).collect(Collectors.toSet()),
@@ -150,8 +154,11 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
 
     @Override
     public ResponseEntity<ResponseDTO<EvaluationCycleResponseDTO>> patch(Long id, EvaluationCycleRequestDTO dto) {
-        EvaluationCycle existingEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
+        Optional<EvaluationCycle> optionalEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(id);
+        if (optionalEvaluationCycle.isEmpty()) {
+            return ResponseUtil.notFound("Evaluation Cycle not found with id: " + id);
+        }
+        EvaluationCycle existingEvaluationCycle = optionalEvaluationCycle.get();
 
         // Update fields selectively based on non-null values in evaluationCycleDTO
         if (dto.getName() != null) {

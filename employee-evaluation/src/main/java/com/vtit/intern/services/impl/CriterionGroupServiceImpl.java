@@ -4,7 +4,6 @@ import com.vtit.intern.dtos.requests.CriterionGroupRequestDTO;
 import com.vtit.intern.dtos.responses.CriterionGroupResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.responses.ResponseDTO;
-import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.CriterionGroup;
 import com.vtit.intern.repositories.CriterionGroupRepository;
 import com.vtit.intern.services.CriterionGroupService;
@@ -12,12 +11,12 @@ import com.vtit.intern.utils.ResponseUtil;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -49,9 +48,9 @@ public class CriterionGroupServiceImpl implements CriterionGroupService {
 
     @Override
     public ResponseEntity<ResponseDTO<CriterionGroupResponseDTO>> getById(Long id) {
-        CriterionGroup group = groupRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
-        return ResponseUtil.success(modelMapper.map(group, CriterionGroupResponseDTO.class));
+        return groupRepository.findByIdAndIsDeletedFalse(id)
+                .map(criterionGroup -> ResponseUtil.success(modelMapper.map(criterionGroup, CriterionGroupResponseDTO.class)))
+                .orElseGet(() -> ResponseUtil.notFound("CriterionGroup not found with id: " + id));
     }
 
     @Override
@@ -63,8 +62,11 @@ public class CriterionGroupServiceImpl implements CriterionGroupService {
 
     @Override
     public ResponseEntity<ResponseDTO<CriterionGroupResponseDTO>> patch(Long id, CriterionGroupRequestDTO dto) {
-        CriterionGroup existing = groupRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
+        Optional<CriterionGroup> optGroup = groupRepository.findByIdAndIsDeletedFalse(id);
+        if (optGroup.isEmpty()) {
+            return ResponseUtil.notFound("CriterionGroup not found with id: " + id);
+        }
+        CriterionGroup existing = optGroup.get();
 
         if (dto.getName() != null) {
             existing.setName(dto.getName());
@@ -79,8 +81,11 @@ public class CriterionGroupServiceImpl implements CriterionGroupService {
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
-        CriterionGroup existing = groupRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Criterion group not found with id: " + id));
+        Optional<CriterionGroup> optGroup = groupRepository.findByIdAndIsDeletedFalse(id);
+        if (optGroup.isEmpty()) {
+            return ResponseUtil.notFound("CriterionGroup not found with id: " + id);
+        }
+        CriterionGroup existing = optGroup.get();
         existing.setDeleted(true);
         groupRepository.save(existing);
         return ResponseUtil.deleted("Criterion group " + existing.getName() + " deleted successfully");

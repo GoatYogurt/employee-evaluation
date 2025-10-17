@@ -9,6 +9,7 @@ import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Criterion;
 import com.vtit.intern.models.Evaluation;
+import com.vtit.intern.models.EvaluationCycle;
 import com.vtit.intern.models.EvaluationScore;
 import com.vtit.intern.repositories.CriterionRepository;
 import com.vtit.intern.repositories.EvaluationRepository;
@@ -22,7 +23,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import javax.swing.text.html.Option;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -60,8 +63,11 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
 
     @Override
     public ResponseEntity<ResponseDTO<EvaluationScoreResponseDTO>> getById(Long id) {
-        EvaluationScore score = evaluationScoreRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("EvaluationScore not found"));
+        Optional<EvaluationScore> optionalEvaluationScore = evaluationScoreRepository.findByIdAndIsDeletedFalse(id);
+        if (optionalEvaluationScore.isEmpty()) {
+            return ResponseUtil.notFound("EvaluationScore not found with id: " + id);
+        }
+        EvaluationScore score = optionalEvaluationScore.get();
 
         EvaluationScoreResponseDTO dto = new EvaluationScoreResponseDTO();
         dto.setId(score.getId());
@@ -77,11 +83,17 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
     public ResponseEntity<ResponseDTO<EvaluationScoreResponseDTO>> create(EvaluationScoreRequestDTO requestDTO) {
         EvaluationScore evaluationScore = new EvaluationScore();
 
-        Criterion criterion = criterionRepository.findByIdAndIsDeletedFalse(requestDTO.getCriterionId())
-                .orElseThrow(() -> new RuntimeException("Criterion not found"));
+        Optional<Criterion> optionalCriterion = criterionRepository.findByIdAndIsDeletedFalse(requestDTO.getCriterionId());
+        if (optionalCriterion.isEmpty()) {
+            return ResponseUtil.notFound("Criterion not found with id: " + requestDTO.getCriterionId());
+        }
+        Criterion criterion = optionalCriterion.get();
 
-        Evaluation evaluation = evaluationRepository.findByIdAndIsDeletedFalse(requestDTO.getEvaluationId())
-                .orElseThrow(() -> new RuntimeException("Evaluation not found"));
+        Optional<Evaluation> optionalEvaluation = evaluationRepository.findByIdAndIsDeletedFalse(requestDTO.getEvaluationId());
+        if (optionalEvaluation.isEmpty()) {
+            return ResponseUtil.notFound("Evaluation not found with id: " + requestDTO.getEvaluationId());
+        }
+        Evaluation evaluation = optionalEvaluation.get();
 
         evaluationScore.setScore(requestDTO.getScore());
         evaluationScore.setCriterion(criterion);
@@ -107,18 +119,22 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> createMultiple(MultipleEvaluationScoreRequestDTO dto) {
-        Evaluation evaluation = evaluationRepository.findByIdAndIsDeletedFalse(dto.getEvaluationId())
-                .orElseThrow(() -> new RuntimeException("Evaluation not found"));
+        Optional<Evaluation> optionalEvaluation = evaluationRepository.findByIdAndIsDeletedFalse(dto.getEvaluationId());
+        if (optionalEvaluation.isEmpty()) {
+            return ResponseUtil.notFound("Evaluation not found with id: " + dto.getEvaluationId());
+        }
+        Evaluation evaluation = optionalEvaluation.get();
 
         double totalScore = 0.0;
 
         for (CriterionScoreRequestDTO scoreDTO : dto.getScores()) {
             EvaluationScore evaluationScore = new EvaluationScore();
             evaluationScore.setScore(scoreDTO.getScore());
-            evaluationScore.setCriterion(
-                    criterionRepository.findByIdAndIsDeletedFalse(scoreDTO.getCriterionId())
-                            .orElseThrow(() -> new RuntimeException("Criterion not found"))
-            );
+            Optional<Criterion> optionalCriterion = criterionRepository.findByIdAndIsDeletedFalse(scoreDTO.getCriterionId());
+            if (optionalCriterion.isEmpty()) {
+                return ResponseUtil.notFound("Criterion not found with id: " + scoreDTO.getCriterionId());
+            }
+            evaluationScore.setCriterion(optionalCriterion.get());
             evaluationScore.setEvaluation(evaluation);
 
             evaluationScoreRepository.save(evaluationScore);
@@ -135,18 +151,25 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
 
     @Override
     public ResponseEntity<ResponseDTO<EvaluationScoreResponseDTO>> update(Long id, EvaluationScoreRequestDTO dto) {
-        EvaluationScore evaluationScore = evaluationScoreRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("EvaluationScore not found"));
+        Optional<EvaluationScore> optionalEvaluationScore = evaluationScoreRepository.findByIdAndIsDeletedFalse(id);
+        if (optionalEvaluationScore.isEmpty()) {
+            return ResponseUtil.notFound("EvaluationScore not found with id: " + id);
+        }
+        EvaluationScore evaluationScore = optionalEvaluationScore.get();
 
         evaluationScore.setScore(dto.getScore());
-        evaluationScore.setCriterion(
-                criterionRepository.findByIdAndIsDeletedFalse(dto.getCriterionId())
-                        .orElseThrow(() -> new RuntimeException("Criterion not found"))
-        );
-        evaluationScore.setEvaluation(
-                evaluationRepository.findByIdAndIsDeletedFalse(dto.getEvaluationId())
-                        .orElseThrow(() -> new RuntimeException("Evaluation not found"))
-        );
+
+        Optional<Criterion> optionalCriterion = criterionRepository.findByIdAndIsDeletedFalse(dto.getCriterionId());
+        if (optionalCriterion.isEmpty()) {
+            return ResponseUtil.notFound("Criterion not found with id: " + dto.getCriterionId());
+        }
+        evaluationScore.setCriterion(optionalCriterion.get());
+
+        Optional<Evaluation> optionalEvaluation = evaluationRepository.findByIdAndIsDeletedFalse(dto.getEvaluationId());
+        if (optionalEvaluation.isEmpty()) {
+            return ResponseUtil.notFound("Evaluation not found with id: " + dto.getEvaluationId());
+        }
+        evaluationScore.setEvaluation(optionalEvaluation.get());
 
         EvaluationScore updated = evaluationScoreRepository.save(evaluationScore);
 
@@ -161,8 +184,11 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
-        EvaluationScore evaluationScore = evaluationScoreRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
+        Optional<EvaluationScore> optionalEvaluationScore = evaluationScoreRepository.findByIdAndIsDeletedFalse(id);
+        if (optionalEvaluationScore.isEmpty()) {
+            return ResponseUtil.notFound("EvaluationScore not found with id: " + id);
+        }
+        EvaluationScore evaluationScore = optionalEvaluationScore.get();
         Evaluation evaluation = evaluationScore.getEvaluation();
         evaluation.setTotalScore(evaluation.getTotalScore() - evaluationScore.getScore() * evaluationScore.getCriterion().getWeight());
         evaluationScore.setDeleted(true);

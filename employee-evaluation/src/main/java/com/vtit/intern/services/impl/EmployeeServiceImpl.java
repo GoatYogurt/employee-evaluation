@@ -23,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
@@ -44,23 +45,23 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public ResponseEntity<ResponseDTO<EmployeeResponseDTO>> getById(Long id) {
-        return ResponseUtil.success(employeeRepository.findByIdAndIsDeletedFalse(id)
-                .map(employee -> modelMapper.map(employee, EmployeeResponseDTO.class))
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id)));
+        return employeeRepository.findByIdAndIsDeletedFalse(id)
+                .map(employee -> ResponseUtil.success(modelMapper.map(employee, EmployeeResponseDTO.class)))
+                .orElseGet(() -> ResponseUtil.notFound("Employee not found with id: " + id));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<EmployeeResponseDTO>> create(EmployeeRequestDTO dto) {
         if (employeeRepository.existsByUsernameAndIsDeletedFalse(dto.getUsername())) {
-            throw new ResourceNotFoundException("Cannot create. Employee with username " + dto.getUsername() + " already exists.");
+            return ResponseUtil.alreadyExists("Employee with username " + dto.getUsername() + " already exists.");
         }
 
         if (employeeRepository.existsByEmailAndIsDeletedFalse(dto.getEmail())) {
-            throw new ResourceNotFoundException("Cannot create. Employee with email " + dto.getEmail() + " already exists.");
+            return ResponseUtil.alreadyExists("Employee with email " + dto.getEmail() + " already exists.");
         }
 
         if (employeeRepository.existsByStaffCodeAndIsDeletedFalse(dto.getStaffCode())) {
-            throw new ResourceNotFoundException("Cannot create. Employee with staff code " + dto.getStaffCode() + " already exists.");
+            return ResponseUtil.alreadyExists("Employee with staff code " + dto.getStaffCode() + " already exists.");
         }
 
         Employee employee = modelMapper.map(dto, Employee.class);
@@ -74,8 +75,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
-        Employee employee = employeeRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+        Optional<Employee> optionalEmployee = employeeRepository.findByIdAndIsDeletedFalse(id);;
+        if (optionalEmployee.isEmpty()) {
+            return ResponseUtil.notFound("Employee not found with id: " + id);
+        }
+        Employee employee = optionalEmployee.get();
         employee.setDeleted(true);
         Page<Project> projects = projectRepository.findByIdInAndIsDeletedFalse(employee.getProjects().stream().map(Project::getId).toList(), null);
         projects.forEach(project -> project.getEmployees().remove(employee));
@@ -132,8 +136,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public ResponseEntity<ResponseDTO<EmployeeResponseDTO>> patch(Long id, EmployeeRequestDTO dto) {
-        Employee existingEmployee = employeeRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+        Optional<Employee> optionalEmployee = employeeRepository.findByIdAndIsDeletedFalse(id);
+        if (optionalEmployee.isEmpty()) {
+            return ResponseUtil.notFound("Employee not found with id: " + id);
+        }
+        Employee existingEmployee = optionalEmployee.get();
 
         if (dto.getFullName() != null) {
             existingEmployee.setFullName(dto.getFullName());
@@ -163,20 +170,24 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> changePassword(String username, String oldPassword, String newPassword) {
-        Employee employee = employeeRepository.findByUsernameAndIsDeletedFalse(username).
-                orElseThrow(() -> new ResourceNotFoundException("Employee not found with username: " + username));
+        Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndIsDeletedFalse(username);
+        if (optionalEmployee.isEmpty()) {
+            return ResponseUtil.notFound("Employee not found with username: " + username);
+        }
+
+        Employee employee = optionalEmployee.get();
 
         if (newPassword == null || newPassword.isEmpty()) {
-            throw new IllegalArgumentException("New password cannot be null or empty.");
+            return ResponseUtil.badRequest("New password cannot be null or empty.");
         }
 
         if (!passwordEncoder.matches(oldPassword, employee.getPassword())) {
-            throw new ResourceNotFoundException("Old password is incorrect.");
+            return ResponseUtil.unauthorized("Old password is incorrect.");
         }
 
         employee.setPassword(passwordEncoder.encode(newPassword));
         employeeRepository.save(employee);
 
-        return ResponseUtil.success("Password changed successfully");
+        return ResponseUtil.success("Password changed successfully.");
     }
 }

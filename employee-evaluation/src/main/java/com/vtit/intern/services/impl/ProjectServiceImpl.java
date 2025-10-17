@@ -24,7 +24,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import javax.swing.text.html.Option;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -39,11 +41,14 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ResponseEntity<ResponseDTO<ProjectResponseDTO>> create(ProjectRequestDTO dto) {
         if (projectRepository.existsByCodeAndIsDeletedFalse(dto.getCode())) {
-            throw new ResourceNotFoundException("Project with code " + dto.getCode() + " already exists.");
+            return ResponseUtil.alreadyExists("Project with code " + dto.getCode() + " already exists.");
         }
 
-        Employee manager = employeeRepository.findByIdAndIsDeletedFalse(dto.getManagerId())
-                .orElseThrow(() -> new ResourceNotFoundException("Manager not found with id: " + dto.getManagerId()));
+        Optional<Employee> optionalManager = employeeRepository.findByIdAndIsDeletedFalse(dto.getManagerId());
+        if (optionalManager.isEmpty()) {
+            return ResponseUtil.notFound("Manager not found with id: " + dto.getManagerId());
+        }
+        Employee manager = optionalManager.get();
 
         Project project = new Project();
         project.setCode(dto.getCode());
@@ -65,8 +70,11 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ResponseEntity<ResponseDTO<ProjectResponseDTO>> getById(Long id) {
-        Project project = projectRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+        Optional<Project> optionalProject = projectRepository.findByIdAndIsDeletedFalse(id);
+        if (optionalProject.isEmpty()) {
+            return ResponseUtil.notFound("Project not found with id: " + id);
+        }
+        Project project = optionalProject.get();
         return ResponseUtil.success(toResponseDTO(project));
     }
 
@@ -95,25 +103,33 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ResponseEntity<ResponseDTO<ProjectResponseDTO>> patch(Long id, ProjectRequestDTO dto) {
-        Project existing = projectRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
-
-        if (dto.getCode() != null) existing.setCode(dto.getCode());
-        if (dto.getManagerId() != null) {
-            Employee manager = employeeRepository.findByIdAndIsDeletedFalse(dto.getManagerId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Manager not found with id: " + dto.getManagerId()));
-            existing.setManager(manager);
+        Optional<Project> optionalProject = projectRepository.findByIdAndIsDeletedFalse(id);
+        if (optionalProject.isEmpty()) {
+            return ResponseUtil.notFound("Project not found with id: " + id);
         }
-        if (dto.getIsOdc() != null) existing.setOdc(dto.getIsOdc());
+        Project project = optionalProject.get();
 
-        Project updated = projectRepository.save(existing);
+        if (dto.getCode() != null) project.setCode(dto.getCode());
+        if (dto.getManagerId() != null) {
+            Optional<Employee> optionalManager = employeeRepository.findByIdAndIsDeletedFalse(dto.getManagerId());
+            if (optionalManager.isEmpty()) {
+                return ResponseUtil.notFound("Manager not found with id: " + dto.getManagerId());
+            }
+            Employee manager = optionalManager.get();
+            project.setManager(manager);
+        }
+        if (dto.getIsOdc() != null) project.setOdc(dto.getIsOdc());
+
+        Project updated = projectRepository.save(project);
         return ResponseUtil.success(toResponseDTO(updated));
     }
 
     public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
-        Project project = projectRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("CriterionGroup not found with id: " + id));
-
+        Optional<Project> optionalProject = projectRepository.findByIdAndIsDeletedFalse(id);
+        if (optionalProject.isEmpty()) {
+            return ResponseUtil.notFound("Project not found with id: " + id);
+        }
+        Project project = optionalProject.get();
         // Remove project from associated evaluation cycles
         for (EvaluationCycle cycle: project.getEvaluationCycles()) {
             cycle.getProjects().remove(project);
@@ -129,10 +145,18 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> addProjectToEvaluationCycle(Long projectId, Long evaluationCycleId) {
-        Project project = projectRepository.findByIdAndIsDeletedFalse(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
-        EvaluationCycle evaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Evaluation cycle not found with id: " + evaluationCycleId));
+        Optional<Project> optionalProject = projectRepository.findByIdAndIsDeletedFalse(projectId);
+        if (optionalProject.isEmpty()) {
+            return ResponseUtil.notFound("Project not found with id: " + projectId);
+        }
+        Project project = optionalProject.get();
+
+        Optional<EvaluationCycle> optionalEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId);
+        if (optionalEvaluationCycle.isEmpty()) {
+            return ResponseUtil.notFound("Evaluation cycle not found with id: " + evaluationCycleId);
+        }
+        EvaluationCycle evaluationCycle = optionalEvaluationCycle.get();
+
         evaluationCycle.getProjects().add(project);
         evaluationCycleRepository.save(evaluationCycle);
         return ResponseUtil.success("Project added to evaluation cycle successfully.");
@@ -140,10 +164,18 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> removeProjectFromEvaluationCycle(Long projectId, Long evaluationCycleId) {
-        Project project = projectRepository.findByIdAndIsDeletedFalse(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
-        EvaluationCycle evaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Evaluation cycle not found with id: " + evaluationCycleId));
+        Optional<Project> optionalProject = projectRepository.findByIdAndIsDeletedFalse(projectId);
+        if (optionalProject.isEmpty()) {
+            return ResponseUtil.notFound("Project not found with id: " + projectId);
+        }
+        Project project = optionalProject.get();
+
+        Optional<EvaluationCycle> optionalEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId);
+        if (optionalEvaluationCycle.isEmpty()) {
+            return ResponseUtil.notFound("Evaluation cycle not found with id: " + evaluationCycleId);
+        }
+        EvaluationCycle evaluationCycle = optionalEvaluationCycle.get();
+
         evaluationCycle.getProjects().remove(project);
         evaluationCycleRepository.save(evaluationCycle);
         return ResponseUtil.success("Project removed from evaluation cycle successfully.");
@@ -151,10 +183,17 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> addEmployeeToProject(Long projectId, Long employeeId) {
-        Project project = projectRepository.findByIdAndIsDeletedFalse(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
-        Employee employee = employeeRepository.findByIdAndIsDeletedFalse(employeeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + employeeId));
+        Optional<Project> optionalProject = projectRepository.findByIdAndIsDeletedFalse(projectId);
+        if (optionalProject.isEmpty()) {
+            return ResponseUtil.notFound("Project not found with id: " + projectId);
+        }
+        Project project = optionalProject.get();
+
+        Optional<Employee> optionalEmployee = employeeRepository.findByIdAndIsDeletedFalse(employeeId);
+        if (optionalEmployee.isEmpty()) {
+            return ResponseUtil.notFound("Employee not found with id: " + employeeId);
+        }
+        Employee employee = optionalEmployee.get();
 
         Set<EvaluationCycle> evaluationCycles = project.getEvaluationCycles();
         for (EvaluationCycle cycle : evaluationCycles) {
@@ -174,10 +213,18 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> removeEmployeeFromProject(Long projectId, Long employeeId) {
-        Project project = projectRepository.findByIdAndIsDeletedFalse(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
-        Employee employee = employeeRepository.findByIdAndIsDeletedFalse(employeeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + employeeId));
+        Optional<Project> optionalProject = projectRepository.findByIdAndIsDeletedFalse(projectId);
+        if (optionalProject.isEmpty()) {
+            return ResponseUtil.notFound("Project not found with id: " + projectId);
+        }
+        Project project = optionalProject.get();
+
+        Optional<Employee> optionalEmployee = employeeRepository.findByIdAndIsDeletedFalse(employeeId);
+        if (optionalEmployee.isEmpty()) {
+            return ResponseUtil.notFound("Employee not found with id: " + employeeId);
+        }
+        Employee employee = optionalEmployee.get();
+
         project.getEmployees().remove(employee);
         Set<EvaluationCycle> evaluationCycles = project.getEvaluationCycles();
         for (EvaluationCycle cycle : evaluationCycles) {

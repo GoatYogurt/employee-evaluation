@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CriterionServiceImpl implements CriterionService {
@@ -60,9 +61,9 @@ public class CriterionServiceImpl implements CriterionService {
 
     @Override
     public ResponseEntity<ResponseDTO<CriterionResponseDTO>> getById(Long id) {
-        return ResponseUtil.success(criterionRepository.findByIdAndIsDeletedFalse(id)
-                .map(criterion -> modelMapper.map(criterion, CriterionResponseDTO.class))
-                .orElseThrow(() -> new ResourceNotFoundException("Criterion not found or deleted with id: " + id)));
+        return criterionRepository.findByIdAndIsDeletedFalse(id)
+                .map(criterion -> ResponseUtil.success(modelMapper.map(criterion, CriterionResponseDTO.class)))
+                .orElseGet(() -> ResponseUtil.notFound("Criterion not found or deleted with id: " + id));
     }
 
     @Override
@@ -75,8 +76,11 @@ public class CriterionServiceImpl implements CriterionService {
 
     @Override
     public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
-        Criterion existing = criterionRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id));
+        Optional<Criterion> optionalCriterion = criterionRepository.findByIdAndIsDeletedFalse(id);
+        if (optionalCriterion.isEmpty()) {
+            return ResponseUtil.notFound("Criterion not found with id: " + id);
+        }
+        Criterion existing = optionalCriterion.get();
         existing.setDeleted(true);
         criterionRepository.save(existing);
         return ResponseUtil.deleted("Criterion " + existing.getName() + " deleted successfully");
@@ -84,12 +88,11 @@ public class CriterionServiceImpl implements CriterionService {
 
     @Override
     public ResponseEntity<ResponseDTO<CriterionResponseDTO>> patch(Long id, CriterionRequestDTO dto) {
-        if (!criterionRepository.existsByIdAndIsDeletedFalse(id)) {
-            throw new ResourceNotFoundException("Cannot patch. Criterion not found with id: " + id);
+        Optional<Criterion> optCriterion = criterionRepository.findByIdAndIsDeletedFalse(id);
+        if (optCriterion.isEmpty()) {
+            return ResponseUtil.notFound("Criterion not found with id: " + id);
         }
-
-        Criterion existingCriterion = criterionRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Criterion not found with id: " + id));
+        Criterion existingCriterion = optCriterion.get();
 
         // update only the fields that are present in the DTO
         if (dto.getName() != null) {

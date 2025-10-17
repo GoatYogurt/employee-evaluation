@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -41,8 +42,11 @@ public class EvaluationServiceImpl implements EvaluationService {
     public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> create(EvaluationRequestDTO dto) {
         // find the evaluation cycle by ID
         Long evaluationCycleId = dto.getEvaluationCycleId();
-        EvaluationCycle evaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + evaluationCycleId));
+        Optional<EvaluationCycle> optionalEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId);
+        if (optionalEvaluationCycle.isEmpty()) {
+            return ResponseUtil.notFound("Evaluation Cycle not found with id: " + evaluationCycleId);
+        }
+        EvaluationCycle evaluationCycle = optionalEvaluationCycle.get();
 
         // check if the evaluation cycle is still active
         if (evaluationCycle.getStatus() == EvaluationCycleStatus.COMPLETED ||
@@ -50,12 +54,16 @@ public class EvaluationServiceImpl implements EvaluationService {
             throw new IllegalStateException("Cannot add evaluation to a completed or closed evaluation cycle.");
         }
 
-        Project project = projectRepository.findByIdAndIsDeletedFalse(dto.getProjectId())
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + dto.getProjectId()));
+        Optional<Project> optionalProject = projectRepository.findByIdAndIsDeletedFalse(dto.getProjectId());
+        if (optionalProject.isEmpty()) {
+            return ResponseUtil.notFound("Project not found with id: " + dto.getProjectId());
+        }
+        Project project = optionalProject.get();
 
         Evaluation e = new Evaluation();
         e.setEmployee(employeeRepository.findByIdAndIsDeletedFalse(dto.getEmployeeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + dto.getEmployeeId())));
+
         e.setEvaluationCycle(evaluationCycle);
         e.setProject(project);
         e.setTotalScore(0.0);

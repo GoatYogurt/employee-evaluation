@@ -3,6 +3,7 @@ package com.vtit.intern.controllers;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.repositories.EmployeeRepository;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.AllArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,13 +16,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/exports")
+@AllArgsConstructor
 public class ExportController {
     @Autowired
     private final EmployeeRepository employeeRepository;
-
-    public ExportController(EmployeeRepository employeeRepository) {
-        this.employeeRepository = employeeRepository;
-    }
 
     private Workbook getEmployeeWorkbook() {
         Workbook workbook = new XSSFWorkbook();
@@ -29,7 +27,7 @@ public class ExportController {
 
         Row header = sheet.createRow(0);
         header.createCell(0).setCellValue("ID");
-        header.createCell(1).setCellValue("Fullname");
+        header.createCell(1).setCellValue("Full Name");
         header.createCell(2).setCellValue("Department");
         header.createCell(4).setCellValue("Role");
         header.createCell(6).setCellValue("Username");

@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -80,5 +81,5 @@ public class EmployeeController {
             @RequestBody EmployeeRequestDTO dto
     ) {
         return employeeService.patch(id, dto);
-        }
+    }
 }

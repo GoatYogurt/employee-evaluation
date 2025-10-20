@@ -13,15 +13,19 @@ import com.vtit.intern.repositories.ProjectRepository;
 import com.vtit.intern.services.EvaluationCycleService;
 import com.vtit.intern.utils.ResponseUtil;
 import lombok.AllArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.vtit.intern.enums.EvaluationCycleStatus;
 
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -133,6 +137,12 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
                         dto.setCode(project.getCode());
                         dto.setIsOdc(project.isOdc());
                         dto.setManagerName(project.getManager() != null ? project.getManager().getFullName() : null);
+                        Set<EvaluationCycle> evaluationCycles = project.getEvaluationCycles();
+                        if (evaluationCycles != null) {
+                            dto.setEvaluationCycleIds(evaluationCycles.stream().map(EvaluationCycle::getId).collect(Collectors.toSet()));
+                        } else {
+                            dto.setEvaluationCycleIds(Set.of());
+                        }
                         dto.setCreatedAt(project.getCreatedAt());
                         dto.setUpdatedAt(project.getUpdatedAt());
                         dto.setCreatedBy(project.getCreatedBy());
@@ -179,6 +189,18 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
 
         EvaluationCycle updatedEvaluationCycle = evaluationCycleRepository.save(existingEvaluationCycle);
         return ResponseUtil.success(entityToResponse(updatedEvaluationCycle));
+    }
+
+    @Override
+    public ResponseEntity<InputStreamResource> exportEvaluationCycleReport(Long evaluationCycleId) {
+        Optional<EvaluationCycle> optionalEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId);
+        if (optionalEvaluationCycle.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // TODO: handle properly
+        }
+        EvaluationCycle evaluationCycle = optionalEvaluationCycle.get();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        return null;
     }
 
     private EvaluationCycleResponseDTO entityToResponse(EvaluationCycle evaluationCycle) {

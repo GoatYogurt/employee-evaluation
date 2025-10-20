@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
@@ -121,5 +122,10 @@ public class EvaluationCycleController {
             @RequestBody EvaluationCycleRequestDTO dto
     ) {
         return evaluationCycleService.patch(id, dto);
+    }
+
+    @GetMapping("/{id}/export")
+    public ResponseEntity<InputStreamResource> exportEvaluationCycleReport(@PathVariable @Positive(message = "ID must be a positive number") Long id) {
+        return evaluationCycleService.exportEvaluationCycleReport(id);
     }
 }

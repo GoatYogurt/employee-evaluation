@@ -1,5 +1,6 @@
 package com.vtit.intern.services.impl;
 
+import com.vtit.intern.dtos.requests.AddEmployeeToProjectRequestDTO;
 import com.vtit.intern.dtos.requests.ProjectRequestDTO;
 import com.vtit.intern.dtos.responses.EmployeeResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
@@ -182,12 +183,22 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ResponseEntity<ResponseDTO<Void>> addEmployeeToProject(Long projectId, Long employeeId) {
+    public ResponseEntity<ResponseDTO<Void>> addEmployeeToProject(AddEmployeeToProjectRequestDTO dto) {
+        Long projectId = dto.getProjectId();
+        Long employeeId = dto.getEmployeeId();
+        Long evaluationCycleId = dto.getEvaluationCycleId();
+
         Optional<Project> optionalProject = projectRepository.findByIdAndIsDeletedFalse(projectId);
         if (optionalProject.isEmpty()) {
             return ResponseUtil.notFound("Project not found with id: " + projectId);
         }
         Project project = optionalProject.get();
+
+        Optional<EvaluationCycle> optionalEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId);
+        if (optionalEvaluationCycle.isEmpty()) {
+            return ResponseUtil.notFound("Evaluation cycle not found with id: " + evaluationCycleId);
+        }
+        EvaluationCycle evaluationCycle = optionalEvaluationCycle.get();
 
         Optional<Employee> optionalEmployee = employeeRepository.findByIdAndIsDeletedFalse(employeeId);
         if (optionalEmployee.isEmpty()) {
@@ -195,29 +206,36 @@ public class ProjectServiceImpl implements ProjectService {
         }
         Employee employee = optionalEmployee.get();
 
-        Set<EvaluationCycle> evaluationCycles = project.getEvaluationCycles();
-        for (EvaluationCycle cycle : evaluationCycles) {
-            Evaluation evaluation = new Evaluation();
-            evaluation.setEmployee(employee);
-            evaluation.setEvaluationCycle(cycle);
-            evaluation.setDeleted(false);
-            evaluation.setProject(project);
-            evaluation.setTotalScore(0.0);
-            evaluationRepository.save(evaluation);
-        }
+        Evaluation evaluation = new Evaluation();
+        evaluation.setEmployee(employee);
+        evaluation.setEvaluationCycle(evaluationCycle);
+        evaluation.setDeleted(false);
+        evaluation.setProject(project);
+        evaluation.setTotalScore(0.0);
+        evaluationRepository.save(evaluation);
 
         project.getEmployees().add(employee);
         projectRepository.save(project);
-        return ResponseUtil.success("Employee added to project successfully.");
+        return ResponseUtil.success("Employee " + employee.getFullName() + " added to project " + project.getCode() + "in Evaluation Cycle " + evaluationCycle.getName() + " successfully.");
     }
 
     @Override
-    public ResponseEntity<ResponseDTO<Void>> removeEmployeeFromProject(Long projectId, Long employeeId) {
+    public ResponseEntity<ResponseDTO<Void>> removeEmployeeFromProject(AddEmployeeToProjectRequestDTO dto) {
+        Long projectId = dto.getProjectId();
+        Long employeeId = dto.getEmployeeId();
+        Long evaluationCycleId = dto.getEvaluationCycleId();
+
         Optional<Project> optionalProject = projectRepository.findByIdAndIsDeletedFalse(projectId);
         if (optionalProject.isEmpty()) {
             return ResponseUtil.notFound("Project not found with id: " + projectId);
         }
         Project project = optionalProject.get();
+
+        Optional<EvaluationCycle> optionalEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId);
+        if (optionalEvaluationCycle.isEmpty()) {
+            return ResponseUtil.notFound("Evaluation cycle not found with id: " + evaluationCycleId);
+        }
+        EvaluationCycle evaluationCycle = optionalEvaluationCycle.get();
 
         Optional<Employee> optionalEmployee = employeeRepository.findByIdAndIsDeletedFalse(employeeId);
         if (optionalEmployee.isEmpty()) {
@@ -226,14 +244,11 @@ public class ProjectServiceImpl implements ProjectService {
         Employee employee = optionalEmployee.get();
 
         project.getEmployees().remove(employee);
-        Set<EvaluationCycle> evaluationCycles = project.getEvaluationCycles();
-        for (EvaluationCycle cycle : evaluationCycles) {
-            Set<Evaluation> evaluations = evaluationRepository.findByEmployee_IdAndProject_IdAndEvaluationCycle_Id(employeeId, project.getId(), cycle.getId());
-            for (Evaluation eval : evaluations) {
-                eval.setDeleted(true);
-            }
-            evaluationRepository.saveAll(evaluations);
+        Set<Evaluation> evaluations = evaluationRepository.findByEmployee_IdAndProject_IdAndEvaluationCycle_Id(employeeId, project.getId(), evaluationCycle.getId());
+        for (Evaluation eval : evaluations) {
+            eval.setDeleted(true);
         }
+        evaluationRepository.saveAll(evaluations);
         projectRepository.save(project);
         return ResponseUtil.success("Employee removed from project successfully. Also removed associated evaluations.");
     }

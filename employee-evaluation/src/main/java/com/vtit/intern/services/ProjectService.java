@@ -1,5 +1,6 @@
 package com.vtit.intern.services;
 
+import com.vtit.intern.dtos.requests.AddEmployeeToProjectRequestDTO;
 import com.vtit.intern.dtos.requests.ProjectRequestDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.responses.ProjectResponseDTO;
@@ -17,6 +18,6 @@ public interface ProjectService {
     ResponseEntity<ResponseDTO<Void>> delete(Long id);
     ResponseEntity<ResponseDTO<Void>> addProjectToEvaluationCycle(Long projectId, Long evaluationCycleId);
     ResponseEntity<ResponseDTO<Void>> removeProjectFromEvaluationCycle(Long projectId, Long evaluationCycleId);
-    ResponseEntity<ResponseDTO<Void>> addEmployeeToProject(Long projectId, Long employeeId);
-    ResponseEntity<ResponseDTO<Void>> removeEmployeeFromProject(Long projectId, Long employeeId);
+    ResponseEntity<ResponseDTO<Void>> addEmployeeToProject(AddEmployeeToProjectRequestDTO dto);
+    ResponseEntity<ResponseDTO<Void>> removeEmployeeFromProject(AddEmployeeToProjectRequestDTO dto);
 }

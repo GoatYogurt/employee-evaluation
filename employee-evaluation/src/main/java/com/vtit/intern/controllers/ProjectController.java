@@ -1,5 +1,6 @@
 package com.vtit.intern.controllers;
 
+import com.vtit.intern.dtos.requests.AddEmployeeToProjectRequestDTO;
 import com.vtit.intern.dtos.requests.ProjectRequestDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.responses.ProjectResponseDTO;
@@ -60,18 +61,14 @@ public class ProjectController {
         return projectService.removeProjectFromEvaluationCycle(id, cycleId);
     }
 
-    @PutMapping("/{id}/add-employee/{employeeId}")
-    public ResponseEntity<ResponseDTO<Void>> addEmployeeToProject(
-            @PathVariable @Positive Long id,
-            @PathVariable @Positive Long employeeId) {
-        return projectService.addEmployeeToProject(id, employeeId);
+    @PutMapping("/add-employee")
+    public ResponseEntity<ResponseDTO<Void>> addEmployeeToProject(@RequestBody AddEmployeeToProjectRequestDTO dto) {
+        return projectService.addEmployeeToProject(dto);
     }
 
-    @PutMapping("/{id}/remove-employee/{employeeId}")
-    public ResponseEntity<ResponseDTO<Void>> removeEmployeeFromProject(
-            @PathVariable @Positive Long id,
-            @PathVariable @Positive Long employeeId) {
-        return projectService.removeEmployeeFromProject(id, employeeId);
+    @PutMapping("/remove-employee")
+    public ResponseEntity<ResponseDTO<Void>> removeEmployeeFromProject(@RequestBody AddEmployeeToProjectRequestDTO dto) {
+        return projectService.removeEmployeeFromProject(dto);
     }
 
     @PatchMapping("/{id}")

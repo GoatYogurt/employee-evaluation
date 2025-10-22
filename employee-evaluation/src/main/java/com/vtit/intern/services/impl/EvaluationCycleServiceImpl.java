@@ -198,6 +198,7 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // TODO: handle properly
         }
         EvaluationCycle evaluationCycle = optionalEvaluationCycle.get();
+        Set<Project> projects = evaluationCycle.getProjects();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         return null;

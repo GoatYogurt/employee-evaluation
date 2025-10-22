@@ -14,8 +14,5 @@ public class AddEmployeeToProjectRequestDTO {
     private Long employeeId;
 
     @NotBlank
-    private Long evaluationCycleId;
-
-    @NotBlank
     private Long projectId;
 }

@@ -11,6 +11,7 @@ import com.vtit.intern.dtos.requests.RefreshTokenRequestDTO;
 import com.vtit.intern.dtos.responses.AuthResponseDTO;
 import com.vtit.intern.services.impl.EmployeeServiceImpl;
 import com.vtit.intern.utils.JwtUtil;
+import io.jsonwebtoken.Claims;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -50,7 +51,13 @@ public class AuthController {
 
             return new AuthResponseDTO(jwtUtil.generateAccessToken(employee),
                     jwtUtil.generateRefreshToken(employee),
-                    request.getUsername());
+                    request.getUsername(),
+                    employee.getRole().name(),
+                    employee.getDepartment(),
+                    employee.getEmail(),
+                    employee.getFullName(),
+                    employee.getLevel().name(),
+                    employee.getStaffCode());
         } catch (AuthenticationException e) {
             throw new RuntimeException("Invalid username or password", e);
         }
@@ -64,7 +71,13 @@ public class AuthController {
 
         return new AuthResponseDTO(jwtUtil.generateAccessToken(employee),
                 jwtUtil.generateRefreshToken(employee),
-                dto.getUsername());
+                dto.getUsername(),
+                employee.getRole().name(),
+                employee.getDepartment(),
+                employee.getEmail(),
+                employee.getFullName(),
+                employee.getLevel().name(),
+                employee.getStaffCode());
     }
 
     @PostMapping("/refresh")
@@ -80,7 +93,13 @@ public class AuthController {
 
         String newAccessToken = jwtUtil.generateAccessToken(employee);
 
-        return new AuthResponseDTO(newAccessToken, refreshToken, username);
+        return new AuthResponseDTO(newAccessToken, refreshToken, username,
+                employee.getRole().name(),
+                employee.getDepartment(),
+                employee.getEmail(),
+                employee.getFullName(),
+                employee.getLevel().name(),
+                employee.getStaffCode());
     }
 
 

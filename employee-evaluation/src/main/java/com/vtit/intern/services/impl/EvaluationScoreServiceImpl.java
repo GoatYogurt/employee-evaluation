@@ -139,7 +139,7 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
             return ResponseUtil.notFound("Evaluation Cycle not found with id: " + evaluationCycleId);
         }
 
-        int numCriteria = criterionRepository.findAll().size();
+        int numCriteria = criterionRepository.findAllByIsDeletedFalse().size();
         if (dto.getScores().size() != numCriteria) {
             return ResponseUtil.error(HttpStatus.BAD_REQUEST, "Number of scores provided (" + dto.getScores().size() + ") does not match number of criteria (" + numCriteria + ")");
         }

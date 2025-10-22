@@ -14,5 +14,5 @@ public interface EvaluationScoreService {
     ResponseEntity<ResponseDTO<EvaluationScoreResponseDTO>> create(EvaluationScoreRequestDTO dto);
     ResponseEntity<ResponseDTO<EvaluationScoreResponseDTO>> update(Long id, EvaluationScoreRequestDTO dto);
     ResponseEntity<ResponseDTO<Void>> delete(Long id);
-    ResponseEntity<ResponseDTO<Void>> createMultiple(MultipleEvaluationScoreRequestDTO dto);
+    ResponseEntity<ResponseDTO<EvaluationResponseDTO>> createMultiple(MultipleEvaluationScoreRequestDTO dto);
 }

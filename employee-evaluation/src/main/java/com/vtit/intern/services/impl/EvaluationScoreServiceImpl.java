@@ -3,27 +3,24 @@ package com.vtit.intern.services.impl;
 import com.vtit.intern.dtos.requests.CriterionScoreRequestDTO;
 import com.vtit.intern.dtos.requests.EvaluationScoreRequestDTO;
 import com.vtit.intern.dtos.requests.MultipleEvaluationScoreRequestDTO;
+import com.vtit.intern.dtos.responses.EvaluationResponseDTO;
 import com.vtit.intern.dtos.responses.EvaluationScoreResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.responses.ResponseDTO;
-import com.vtit.intern.exceptions.ResourceNotFoundException;
-import com.vtit.intern.models.Criterion;
-import com.vtit.intern.models.Evaluation;
-import com.vtit.intern.models.EvaluationCycle;
-import com.vtit.intern.models.EvaluationScore;
-import com.vtit.intern.repositories.CriterionRepository;
-import com.vtit.intern.repositories.EvaluationRepository;
-import com.vtit.intern.repositories.EvaluationScoreRepository;
+import com.vtit.intern.models.*;
+import com.vtit.intern.repositories.*;
 import com.vtit.intern.services.EvaluationScoreService;
 import com.vtit.intern.utils.ResponseUtil;
 import lombok.AllArgsConstructor;
+import org.mariadb.jdbc.util.options.OptionAliases;
+import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.ui.ModelMap;
 
-import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,6 +31,10 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
     private final EvaluationScoreRepository evaluationScoreRepository;
     private final EvaluationRepository evaluationRepository;
     private final CriterionRepository criterionRepository;
+    private final EmployeeRepository employeeRepository;
+    private final ProjectRepository projectRepository;
+    private final EvaluationCycleRepository evaluationCycleRepository;
+    private final ModelMapper modelMapper;
 
     @Override
     public ResponseEntity<ResponseDTO<PageResponse<EvaluationScoreResponseDTO>>> getAll(
@@ -118,25 +119,77 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
     }
 
     @Override
-    public ResponseEntity<ResponseDTO<Void>> createMultiple(MultipleEvaluationScoreRequestDTO dto) {
-        Optional<Evaluation> optionalEvaluation = evaluationRepository.findByIdAndIsDeletedFalse(dto.getEvaluationId());
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> createMultiple(MultipleEvaluationScoreRequestDTO dto) {
+        Long employeeId = dto.getEmployeeId();
+        Long projectId = dto.getProjectId();
+        Long evaluationCycleId = dto.getEvaluationCycleId();
+
+        Optional<Employee> optionalEmployee = employeeRepository.findByIdAndIsDeletedFalse(employeeId);
+        if (optionalEmployee.isEmpty()) {
+            return ResponseUtil.notFound("Employee not found with id: " + employeeId);
+        }
+
+        Optional<Project> optionalProject = projectRepository.findByIdAndIsDeletedFalse(projectId);
+        if (optionalProject.isEmpty()) {
+            return ResponseUtil.notFound("Project not found with id: " + projectId);
+        }
+
+        Optional<EvaluationCycle> optionalEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId);
+        if (optionalEvaluationCycle.isEmpty()) {
+            return ResponseUtil.notFound("Evaluation Cycle not found with id: " + evaluationCycleId);
+        }
+
+        int numCriteria = criterionRepository.findAll().size();
+        if (dto.getScores().size() != numCriteria) {
+            return ResponseUtil.error(HttpStatus.BAD_REQUEST, "Number of scores provided (" + dto.getScores().size() + ") does not match number of criteria (" + numCriteria + ")");
+        }
+
+        Optional<Evaluation> optionalEvaluation = evaluationRepository.findByEmployee_IdAndProject_IdAndEvaluationCycle_IdAndIsDeletedFalse(employeeId, projectId, evaluationCycleId);
         if (optionalEvaluation.isEmpty()) {
-            return ResponseUtil.notFound("Evaluation not found with id: " + dto.getEvaluationId());
+            Evaluation evaluation = new Evaluation();
+            evaluation.setEmployee(optionalEmployee.get());
+            evaluation.setProject(optionalProject.get());
+            evaluation.setEvaluationCycle(optionalEvaluationCycle.get());
+            evaluationRepository.save(evaluation);
+
+            double totalScore = 0.0;
+            for (CriterionScoreRequestDTO scoreDTO: dto.getScores()) {
+                EvaluationScore evaluationScore = new EvaluationScore();
+                evaluationScore.setScore(scoreDTO.getScore());
+                Optional<Criterion> optionalCriterion = criterionRepository.findByIdAndIsDeletedFalse(scoreDTO.getCriterionId());
+                if (optionalCriterion.isEmpty()) {
+                    return ResponseUtil.notFound("Criterion not found with id: " + scoreDTO.getCriterionId());
+                }
+                evaluationScore.setCriterion(optionalCriterion.get());
+                evaluationScore.setEvaluation(evaluation);
+
+                evaluationScoreRepository.save(evaluationScore);
+
+                double weight = evaluationScore.getCriterion().getWeight();
+                totalScore += scoreDTO.getScore() * weight;
+            }
+            evaluation.setTotalScore(totalScore);
+            evaluationRepository.save(evaluation);
+            return ResponseUtil.created(modelMapper.map(evaluation, EvaluationResponseDTO.class));
         }
         Evaluation evaluation = optionalEvaluation.get();
+        Long evaluationId = evaluation.getId();
 
         double totalScore = 0.0;
 
         for (CriterionScoreRequestDTO scoreDTO : dto.getScores()) {
-            EvaluationScore evaluationScore = new EvaluationScore();
+            // TODO: optimize to avoid unnecessary DB calls
+            Optional<EvaluationScore> optionalEvaluationScore = evaluationScoreRepository.findByEvaluationIdAndCriterionIdAndIsDeletedFalse(evaluationId, scoreDTO.getCriterionId());
+            if (optionalEvaluationScore.isEmpty()) {
+                return ResponseUtil.error(HttpStatus.BAD_REQUEST, "EvaluationScore not found for evaluation id: " + evaluationId + " and criterion id: " + scoreDTO.getCriterionId());
+            }
+            EvaluationScore evaluationScore = optionalEvaluationScore.get();
+
             evaluationScore.setScore(scoreDTO.getScore());
             Optional<Criterion> optionalCriterion = criterionRepository.findByIdAndIsDeletedFalse(scoreDTO.getCriterionId());
             if (optionalCriterion.isEmpty()) {
                 return ResponseUtil.notFound("Criterion not found with id: " + scoreDTO.getCriterionId());
             }
-            evaluationScore.setCriterion(optionalCriterion.get());
-            evaluationScore.setEvaluation(evaluation);
-
             evaluationScoreRepository.save(evaluationScore);
 
             double weight = evaluationScore.getCriterion().getWeight();
@@ -146,7 +199,7 @@ public class EvaluationScoreServiceImpl implements EvaluationScoreService {
         evaluation.setTotalScore(totalScore);
         evaluationRepository.save(evaluation);
 
-        return ResponseUtil.created("Multiple evaluation scores for " + evaluation.getId() + " created successfully");
+        return ResponseUtil.created(modelMapper.map(evaluation, EvaluationResponseDTO.class));
     }
 
     @Override

@@ -11,6 +11,8 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 public class MultipleEvaluationScoreRequestDTO {
-    private Long evaluationId;
+    private Long employeeId;
+    private Long projectId;
+    private Long evaluationCycleId;
     private List<CriterionScoreRequestDTO> scores;
 }

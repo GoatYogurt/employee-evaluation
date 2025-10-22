@@ -46,7 +46,7 @@ public class EvaluationScoreController {
     }
 
     @PostMapping("/create-multiple")
-    public ResponseEntity<ResponseDTO<Void>> createMultiple(
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> createMultiple(
             @Valid @RequestBody MultipleEvaluationScoreRequestDTO dto
     ) {
         return evaluationScoreService.createMultiple(dto);

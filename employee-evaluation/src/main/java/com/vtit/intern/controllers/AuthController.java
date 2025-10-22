@@ -1,6 +1,7 @@
 package com.vtit.intern.controllers;
 
 import com.vtit.intern.dtos.requests.EmployeeRequestDTO;
+import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.repositories.EmployeeRepository;
@@ -10,6 +11,7 @@ import com.vtit.intern.dtos.requests.RefreshTokenRequestDTO;
 import com.vtit.intern.dtos.responses.AuthResponseDTO;
 import com.vtit.intern.services.impl.EmployeeServiceImpl;
 import com.vtit.intern.utils.JwtUtil;
+import io.jsonwebtoken.Claims;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -44,12 +46,18 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
 
-            Employee employee = employeeRepository.findByUsername(request.getUsername())
+            Employee employee = employeeRepository.findByUsernameAndIsDeletedFalse(request.getUsername())
                     .orElseThrow(() -> new RuntimeException("User not found with username: " + request.getUsername()));
 
             return new AuthResponseDTO(jwtUtil.generateAccessToken(employee),
                     jwtUtil.generateRefreshToken(employee),
-                    request.getUsername());
+                    request.getUsername(),
+                    employee.getRole().name(),
+                    employee.getDepartment(),
+                    employee.getEmail(),
+                    employee.getFullName(),
+                    employee.getLevel().name(),
+                    employee.getStaffCode());
         } catch (AuthenticationException e) {
             throw new RuntimeException("Invalid username or password", e);
         }
@@ -58,12 +66,18 @@ public class AuthController {
     @PostMapping("/register")
     public AuthResponseDTO register(@RequestBody @Valid EmployeeRequestDTO dto) {
         employeeServiceImpl.create(dto);
-        Employee employee = employeeRepository.findByUsername(dto.getUsername())
+        Employee employee = employeeRepository.findByUsernameAndIsDeletedFalse(dto.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found with username: " + dto.getUsername()));
 
         return new AuthResponseDTO(jwtUtil.generateAccessToken(employee),
                 jwtUtil.generateRefreshToken(employee),
-                dto.getUsername());
+                dto.getUsername(),
+                employee.getRole().name(),
+                employee.getDepartment(),
+                employee.getEmail(),
+                employee.getFullName(),
+                employee.getLevel().name(),
+                employee.getStaffCode());
     }
 
     @PostMapping("/refresh")
@@ -74,23 +88,28 @@ public class AuthController {
         }
 
         String username = jwtUtil.extractUsername(refreshToken);
-        Employee employee = employeeRepository.findByUsername(username)
+        Employee employee = employeeRepository.findByUsernameAndIsDeletedFalse(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         String newAccessToken = jwtUtil.generateAccessToken(employee);
 
-        return new AuthResponseDTO(newAccessToken, refreshToken, username);
+        return new AuthResponseDTO(newAccessToken, refreshToken, username,
+                employee.getRole().name(),
+                employee.getDepartment(),
+                employee.getEmail(),
+                employee.getFullName(),
+                employee.getLevel().name(),
+                employee.getStaffCode());
     }
 
 
     @PostMapping("/change-password")
-    public ResponseEntity<String> changePassword(
+    public ResponseEntity<ResponseDTO<Void>> changePassword(
             @RequestBody ChangePasswordRequestDTO changePasswordRequest,
             Authentication authentication
     ) {
         String username = authentication.getName();
         System.out.println("Changing password for user: " + username);
-        employeeServiceImpl.changePassword(username, changePasswordRequest.getOldPassword(), changePasswordRequest.getNewPassword());
-        return ResponseEntity.ok("Password changed successfully");
+        return employeeServiceImpl.changePassword(username, changePasswordRequest.getOldPassword(), changePasswordRequest.getNewPassword());
     }
 }

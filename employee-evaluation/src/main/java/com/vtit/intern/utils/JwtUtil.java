@@ -28,7 +28,9 @@ public class JwtUtil {
         claims.put("employeeId", employee.getId());
         claims.put("email", employee.getEmail());
         claims.put("department", employee.getDepartment());
-        claims.put("name", employee.getFullName());
+        claims.put("fullName", employee.getFullName());
+        claims.put("level", employee.getLevel());
+        claims.put("staffCode", employee.getStaffCode());
 
         return Jwts.builder()
                 .claims(claims)
@@ -72,7 +74,7 @@ public class JwtUtil {
     // Example usage of extractClaim method to get specific claims
     //    String role = jwtUtil.extractClaim(token, claims -> claims.get("role", String.class));
     //    Long employeeId = jwtUtil.extractClaim(token, claims -> claims.get("employeeId", Long.class));
-    public <T> T extractClaim(String token, String claimKey, Class<T> claimType) {
+    public <T> T extractAllClaims(String token, String claimKey, Class<T> claimType) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()

@@ -17,7 +17,7 @@ public class CriterionGroupRequestDTO {
     private Long id;
 
     @NotBlank(message = "Criterion Group name must is required")
-    @Size(max = 30, message = "Criterion Group name must not exceed 30 characters")
+    @Size(max = 70, message = "Criterion Group name must not exceed 70 characters")
     private String name;
 
     @Size(max = 500, message = "Description cannot exceed 500 characters")

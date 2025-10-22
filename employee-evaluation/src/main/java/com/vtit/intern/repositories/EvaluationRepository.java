@@ -1,6 +1,8 @@
 package com.vtit.intern.repositories;
 
+import com.vtit.intern.models.Employee;
 import com.vtit.intern.models.Evaluation;
+import com.vtit.intern.models.Project;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,14 +12,20 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     Page<Evaluation> findByEmployeeId(Long employeeId, Pageable pageable);
 
     @Query("SELECT e FROM Evaluation e WHERE " +
+            "e.isDeleted = false AND " +
             "(:employeeId IS NULL OR e.employee.id = :employeeId)")
     Page<Evaluation> searchEvaluations(
             @Param("employeeId") Long employeeId,
             Pageable pageable);
+
+    Optional<Evaluation> findByIdAndIsDeletedFalse(Long id);
+    Optional<Evaluation> findByEmployee_IdAndProject_IdAndEvaluationCycle_IdAndIsDeletedFalse(Long employeeId, Long projectId, Long evaluationCycleId);
 }

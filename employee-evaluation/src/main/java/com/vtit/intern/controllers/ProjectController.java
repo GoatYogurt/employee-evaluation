@@ -1,5 +1,6 @@
 package com.vtit.intern.controllers;
 
+import com.vtit.intern.dtos.requests.AddEmployeeToProjectRequestDTO;
 import com.vtit.intern.dtos.requests.ProjectRequestDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.responses.ProjectResponseDTO;
@@ -7,9 +8,7 @@ import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.dtos.searches.ProjectSearchDTO;
 import com.vtit.intern.services.ProjectService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -48,6 +47,30 @@ public class ProjectController {
         return projectService.create(dto);
     }
 
+    @PutMapping("/{id}/add-evaluation-cycle/{cycleId}")
+    public ResponseEntity<ResponseDTO<Void>> addProjectToEvaluationCycle(
+            @PathVariable @Positive Long id,
+            @PathVariable @Positive Long cycleId) {
+        return projectService.addProjectToEvaluationCycle(id, cycleId);
+    }
+
+    @PutMapping("/{id}/remove-evaluation-cycle/{cycleId}")
+    public ResponseEntity<ResponseDTO<Void>> removeProjectFromEvaluationCycle(
+            @PathVariable @Positive Long id,
+            @PathVariable @Positive Long cycleId) {
+        return projectService.removeProjectFromEvaluationCycle(id, cycleId);
+    }
+
+    @PutMapping("/add-employee")
+    public ResponseEntity<ResponseDTO<Void>> addEmployeeToProject(@RequestBody AddEmployeeToProjectRequestDTO dto) {
+        return projectService.addEmployeeToProject(dto);
+    }
+
+    @PutMapping("/remove-employee")
+    public ResponseEntity<ResponseDTO<Void>> removeEmployeeFromProject(@RequestBody AddEmployeeToProjectRequestDTO dto) {
+        return projectService.removeEmployeeFromProject(dto);
+    }
+
     @PatchMapping("/{id}")
     public ResponseEntity<ResponseDTO<ProjectResponseDTO>> patch(
             @PathVariable @Positive Long id,
@@ -56,8 +79,7 @@ public class ProjectController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable @Positive Long id) {
-        projectService.delete(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ResponseDTO<Void>> delete(@PathVariable @Positive Long id) {
+        return projectService.delete(id);
     }
 }

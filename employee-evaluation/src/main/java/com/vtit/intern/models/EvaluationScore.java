@@ -45,8 +45,6 @@ public class EvaluationScore {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-
     private boolean isDeleted = false;
-
 }
 

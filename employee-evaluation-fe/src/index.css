@@ -660,6 +660,9 @@ justify-content: center;
   background: #e0e0e0;
 }
 
+
+
+
 /* Animation popup */
 @keyframes fadeInScale {
   from {
@@ -671,4 +674,7 @@ justify-content: center;
     transform: scale(1);
   }
 }
+/* EvaluationCycleTable component styling */
 
+/* ========== Evaluate Modal ========== */
+/* ==== Modal overlay and box styling (evaluate + common) ==== */

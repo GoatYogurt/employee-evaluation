@@ -31,5 +31,7 @@ public class ProjectRequestDTO {
 
     private Boolean isDeleted = false;
     private Set<Long> employeeIds;
+
+    // this can be null, new project can have no evaluation cycle and can be set later
     private Set<Long> evaluationCycleIds;
 }

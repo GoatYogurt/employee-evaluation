@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
@@ -22,14 +23,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/evaluations")
 @Validated
+@AllArgsConstructor
 public class EvaluationController {
     private final EvaluationService evaluationService;
-    private final EmployeeRepository employeeRepository;
-
-    public EvaluationController(EvaluationService evaluationService, EmployeeRepository employeeRepository) {
-        this.evaluationService = evaluationService;
-        this.employeeRepository = employeeRepository;
-    }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PostMapping
@@ -51,22 +47,29 @@ public class EvaluationController {
                 SecurityContextHolder.getContext().getAuthentication());
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_EMPLOYEE', 'ROLE_MANAGER', 'ROLE_ADMIN')")
+    @GetMapping("/{id}")
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> getById(
+            @PathVariable @Positive(message = "Evaluation ID must be positive") Long id
+    ) {
+        return evaluationService.getById(id);
+    }
+
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    @PutMapping("/{evaluationId}")
-    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> updateEvaluation(
-            @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId,
+    @PutMapping("/{id}")
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> update(
+            @PathVariable @Positive(message = "Evaluation ID must be positive") Long id,
             @Valid @RequestBody EvaluationRequestDTO dto
     ) {
-        return evaluationService.update(evaluationId, dto);
+        return evaluationService.update(id, dto);
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @DeleteMapping("/{evaluationId}")
-    public ResponseEntity<Void> deleteEvaluation(
-            @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ResponseDTO<Void>> delete(
+            @PathVariable @Positive(message = "Evaluation ID must be positive") Long id
     ) {
-        evaluationService.delete(evaluationId);
-        return ResponseEntity.noContent().build();
+        return evaluationService.delete(id);
     }
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
@@ -80,7 +83,7 @@ public class EvaluationController {
 
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     @PatchMapping("/{evaluationId}")
-    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> patchEvaluation(
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> patch(
             @PathVariable @Positive(message = "Evaluation ID must be positive") Long evaluationId,
             @RequestBody EvaluationRequestDTO dto
     ) {

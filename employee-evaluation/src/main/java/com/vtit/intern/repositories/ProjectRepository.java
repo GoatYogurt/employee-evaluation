@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
@@ -18,7 +20,6 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             "AND (:managerName IS NULL OR LOWER(p.manager.fullName) LIKE LOWER(CONCAT('%', :managerName, '%'))) " +
             "AND (:isOdc IS NULL OR p.isOdc = :isOdc) " +
             "AND p.isDeleted = false")
-
     Page<Project> searchProjects(
             @Param("code") String code,
             @Param("managerName") String managerName,
@@ -26,5 +27,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             Pageable pageable
     );
 
-    Page<Project> findByIdIn(Iterable<Long> ids, Pageable pageable);
+    Page<Project> findByIdInAndIsDeletedFalse(Iterable<Long> ids, Pageable pageable);
+    Optional<Project> findByIdAndIsDeletedFalse(Long id);
+    Boolean existsByCodeAndIsDeletedFalse(String code);
+
 }

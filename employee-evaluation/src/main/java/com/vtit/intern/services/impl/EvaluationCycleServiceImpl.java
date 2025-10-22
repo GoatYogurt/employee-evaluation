@@ -4,70 +4,66 @@ import com.vtit.intern.dtos.requests.EvaluationCycleRequestDTO;
 import com.vtit.intern.dtos.responses.EvaluationCycleResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.responses.ProjectResponseDTO;
+import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.EvaluationCycle;
 import com.vtit.intern.models.Project;
 import com.vtit.intern.repositories.EvaluationCycleRepository;
 import com.vtit.intern.repositories.ProjectRepository;
 import com.vtit.intern.services.EvaluationCycleService;
+import com.vtit.intern.utils.ResponseUtil;
+import lombok.AllArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.vtit.intern.enums.EvaluationCycleStatus;
 
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class EvaluationCycleServiceImpl implements EvaluationCycleService {
-    @Autowired
     private final EvaluationCycleRepository evaluationCycleRepository;
-
-    @Autowired
     private final ProjectRepository projectRepository;
 
-    private EvaluationCycleServiceImpl(EvaluationCycleRepository evaluationCycleRepository, ProjectRepository projectRepository) {
-        this.evaluationCycleRepository = evaluationCycleRepository;
-        this.projectRepository = projectRepository;
-    }
-
     @Override
-    public EvaluationCycleResponseDTO create(EvaluationCycleRequestDTO dto) {
+    public ResponseEntity<ResponseDTO<EvaluationCycleResponseDTO>> create(EvaluationCycleRequestDTO dto) {
         EvaluationCycle evaluationCycle = requestToEntity(dto);
         EvaluationCycle savedEvaluationCycle = evaluationCycleRepository.save(evaluationCycle);
-        return entityToResponse(savedEvaluationCycle);
+        return ResponseUtil.created(entityToResponse(savedEvaluationCycle));
     }
 
     @Override
-    public EvaluationCycleResponseDTO get(Long id) {
-        EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
-        return entityToResponse(evaluationCycle);
+    public ResponseEntity<ResponseDTO<EvaluationCycleResponseDTO>> get(Long id) {
+        return evaluationCycleRepository.findByIdAndIsDeletedFalse(id)
+                .map(ec -> ResponseUtil.success(entityToResponse(ec)))
+                .orElseGet(() -> ResponseUtil.notFound("Evaluation Cycle not found with id: " + id));
     }
 
-//    @Override
-//    public EvaluationCycleResponseDTO update(Long id, EvaluationCycleRequestDTO dto) {
-//        EvaluationCycle existingEvaluationCycle = evaluationCycleRepository.findById(id)
-//                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
-//
-//        EvaluationCycle updatedEvaluationCycle = evaluationCycleRepository.save(existingEvaluationCycle);
-//        return EvaluationCycleMapper.entityToResponse(updatedEvaluationCycle);
-//    }
-
     @Override
-    public void delete(Long id) {
-        EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
+    public ResponseEntity<ResponseDTO<Void>> delete(Long id) {
+        Optional<EvaluationCycle> optionalEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(id);;
+        if (optionalEvaluationCycle.isEmpty()) {
+            return ResponseUtil.notFound("Evaluation Cycle not found with id: " + id);
+        }
+        EvaluationCycle evaluationCycle = optionalEvaluationCycle.get();
+
         evaluationCycle.setDeleted(true);
         evaluationCycle.getProjects().clear();
         evaluationCycleRepository.save(evaluationCycle);
+        return ResponseUtil.deleted("Evaluation Cycle " + evaluationCycle.getName() + " deleted successfully.");
     }
 
     @Override
-    public PageResponse<EvaluationCycleResponseDTO> getAllEvaluationCycles(
+    public ResponseEntity<ResponseDTO<PageResponse<EvaluationCycleResponseDTO>>> getAllEvaluationCycles(
             String name,
             String description,
             EvaluationCycleStatus status,
@@ -87,18 +83,18 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
                 .map(this::entityToResponse)
                 .collect(Collectors.toList());
 
-        return new PageResponse<>(
+        return ResponseUtil.success(new PageResponse<>(
                 content,
                 evaluationCyclePage.getNumber(),
                 evaluationCyclePage.getSize(),
                 evaluationCyclePage.getTotalElements(),
                 evaluationCyclePage.getTotalPages(),
                 evaluationCyclePage.isLast()
-        );
+        ));
     }
 
     @Override
-    public PageResponse<EvaluationCycleResponseDTO> getActiveEvaluationCycles(Pageable pageable) {
+    public ResponseEntity<ResponseDTO<PageResponse<EvaluationCycleResponseDTO>>> getActiveEvaluationCycles(Pageable pageable) {
         Page<EvaluationCycle> evaluationCyclePage = evaluationCycleRepository.searchEvaluationCycles(
                 null, // name
                 null, // description
@@ -112,24 +108,24 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
                 .map(this::entityToResponse)
                 .collect(Collectors.toList());
 
-        return new PageResponse<>(
+        return ResponseUtil.success(new PageResponse<>(
                 content,
                 evaluationCyclePage.getNumber(),
                 evaluationCyclePage.getSize(),
                 evaluationCyclePage.getTotalElements(),
                 evaluationCyclePage.getTotalPages(),
                 evaluationCyclePage.isLast()
-        );
+        ));
     }
 
     @Override
-    public PageResponse<ProjectResponseDTO> getProjectsByEvaluationCycleId(Long evaluationCycleId, Pageable pageable) {
-        Optional<EvaluationCycle> evaluationCycle = evaluationCycleRepository.findById(evaluationCycleId);
+    public ResponseEntity<ResponseDTO<PageResponse<ProjectResponseDTO>>> getProjectsByEvaluationCycleId(Long evaluationCycleId, Pageable pageable) {
+        Optional<EvaluationCycle> evaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId);
 
         if (evaluationCycle.isEmpty()) {
-            throw new ResourceNotFoundException("Evaluation Cycle not found with id: " + evaluationCycleId);
+            return ResponseUtil.notFound("Evaluation Cycle not found with id: " + evaluationCycleId);
         } else {
-            Page<Project> projectPage = projectRepository.findByIdIn(
+            Page<Project> projectPage = projectRepository.findByIdInAndIsDeletedFalse(
                     evaluationCycle.get().getProjects().stream().map(Project::getId).collect(Collectors.toSet()),
                     pageable
             );
@@ -141,6 +137,12 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
                         dto.setCode(project.getCode());
                         dto.setIsOdc(project.isOdc());
                         dto.setManagerName(project.getManager() != null ? project.getManager().getFullName() : null);
+                        Set<EvaluationCycle> evaluationCycles = project.getEvaluationCycles();
+                        if (evaluationCycles != null) {
+                            dto.setEvaluationCycleIds(evaluationCycles.stream().map(EvaluationCycle::getId).collect(Collectors.toSet()));
+                        } else {
+                            dto.setEvaluationCycleIds(Set.of());
+                        }
                         dto.setCreatedAt(project.getCreatedAt());
                         dto.setUpdatedAt(project.getUpdatedAt());
                         dto.setCreatedBy(project.getCreatedBy());
@@ -149,21 +151,24 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
                     })
                     .toList();
 
-            return new PageResponse<>(
+            return ResponseUtil.success(new PageResponse<>(
                     content,
                     projectPage.getNumber(),
                     projectPage.getSize(),
                     projectPage.getTotalElements(),
                     projectPage.getTotalPages(),
                     projectPage.isLast()
-            );
+            ));
         }
     }
 
     @Override
-    public EvaluationCycleResponseDTO patch(Long id, EvaluationCycleRequestDTO dto) {
-        EvaluationCycle existingEvaluationCycle = evaluationCycleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + id));
+    public ResponseEntity<ResponseDTO<EvaluationCycleResponseDTO>> patch(Long id, EvaluationCycleRequestDTO dto) {
+        Optional<EvaluationCycle> optionalEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(id);
+        if (optionalEvaluationCycle.isEmpty()) {
+            return ResponseUtil.notFound("Evaluation Cycle not found with id: " + id);
+        }
+        EvaluationCycle existingEvaluationCycle = optionalEvaluationCycle.get();
 
         // Update fields selectively based on non-null values in evaluationCycleDTO
         if (dto.getName() != null) {
@@ -176,22 +181,36 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
             existingEvaluationCycle.setStatus(dto.getStatus());
         }
         if (dto.getStartDate() != null) {
-            existingEvaluationCycle.setStartDate(dto.getStartDate().atStartOfDay());
+            existingEvaluationCycle.setStartDate(dto.getStartDate());
         }
         if (dto.getEndDate() != null) {
-            existingEvaluationCycle.setEndDate(dto.getEndDate().atStartOfDay());
+            existingEvaluationCycle.setEndDate(dto.getEndDate());
         }
 
         EvaluationCycle updatedEvaluationCycle = evaluationCycleRepository.save(existingEvaluationCycle);
-        return entityToResponse(updatedEvaluationCycle);
+        return ResponseUtil.success(entityToResponse(updatedEvaluationCycle));
+    }
+
+    @Override
+    public ResponseEntity<InputStreamResource> exportEvaluationCycleReport(Long evaluationCycleId) {
+        Optional<EvaluationCycle> optionalEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId);
+        if (optionalEvaluationCycle.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // TODO: handle properly
+        }
+        EvaluationCycle evaluationCycle = optionalEvaluationCycle.get();
+        Set<Project> projects = evaluationCycle.getProjects();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        return null;
     }
 
     private EvaluationCycleResponseDTO entityToResponse(EvaluationCycle evaluationCycle) {
         EvaluationCycleResponseDTO evaluationCycleResponseDTO = new EvaluationCycleResponseDTO();
+        evaluationCycleResponseDTO.setId(evaluationCycle.getId());
         evaluationCycleResponseDTO.setName(evaluationCycle.getName());
         evaluationCycleResponseDTO.setDescription(evaluationCycle.getDescription());
-        evaluationCycleResponseDTO.setStartDate(evaluationCycle.getStartDate().toLocalDate());
-        evaluationCycleResponseDTO.setEndDate(evaluationCycle.getEndDate().toLocalDate());
+        evaluationCycleResponseDTO.setStartDate(evaluationCycle.getStartDate());
+        evaluationCycleResponseDTO.setEndDate(evaluationCycle.getEndDate());
         evaluationCycleResponseDTO.setStatus(evaluationCycle.getStatus());
         evaluationCycleResponseDTO.setProjectIds(evaluationCycle.getProjects().stream().map(Project::getId).collect(Collectors.toSet()));
         evaluationCycleResponseDTO.setCreatedAt(evaluationCycle.getCreatedAt());
@@ -207,54 +226,11 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
         evaluationCycle.setId(dto.getId());
         evaluationCycle.setName(dto.getName());
         evaluationCycle.setDescription(dto.getDescription());
-        evaluationCycle.setStartDate(dto.getStartDate().atStartOfDay());
-        evaluationCycle.setEndDate(dto.getEndDate().atStartOfDay());
+        evaluationCycle.setStartDate(dto.getStartDate());
+        evaluationCycle.setEndDate(dto.getEndDate());
         evaluationCycle.setStatus(dto.getStatus());
 
         return evaluationCycle;
-    }
-
-    // total score to KI ranking
-    private String scoreToRanking(Double totalScore) {
-        if (totalScore.isNaN())
-            return "N/A";
-
-        if (totalScore < 0 || totalScore > 5) {
-            throw new IllegalArgumentException("Total score must be between 0 and 5");
-        }
-
-        if (totalScore >= 4.5) {
-            return "A+";
-        } else if (totalScore >= 3.5) {
-            return "A";
-        } else if (totalScore >= 2.5) {
-            return "B";
-        } else if (totalScore >= 2) {
-            return "C";
-        } else {
-            return "D";
-        }
-    }
-
-    private String scoreToCompletionLevel(Double totalScore) {
-        if (totalScore.isNaN())
-            return "N/A";
-
-        if (totalScore < 0 || totalScore > 5) {
-            throw new IllegalArgumentException("Total score must be between 0 and 5");
-        }
-
-        if (totalScore >= 4.5) {
-            return "Vượt xa yêu cầu";
-        } else if (totalScore >= 3.5) {
-            return "Vượt yêu cầu";
-        } else if (totalScore >= 2.5) {
-            return "Đạt yêu cầu";
-        } else if (totalScore >= 2) {
-            return "Gần đạt yêu cầu";
-        } else {
-            return "Không đạt yêu cầu";
-        }
     }
 }
 

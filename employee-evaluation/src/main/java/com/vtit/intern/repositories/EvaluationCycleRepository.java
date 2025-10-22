@@ -10,12 +10,14 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.Set;
 
 
 @Repository
 public interface EvaluationCycleRepository extends JpaRepository<EvaluationCycle, Long> {
     @Query("SELECT e FROM EvaluationCycle e WHERE " +
+            "e.isDeleted = false AND " +
             "(:name IS NULL OR LOWER(e.name) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +
             "(:description IS NULL OR LOWER(e.description) LIKE LOWER(CONCAT('%', :description, '%'))) AND " +
             "(:status IS NULL OR e.status = :status) AND " +
@@ -30,5 +32,6 @@ public interface EvaluationCycleRepository extends JpaRepository<EvaluationCycle
             Pageable pageable
     );
 
-    Set<EvaluationCycle> findByIdIn(Set<Long> ids);
+    Set<EvaluationCycle> findByIdInAndIsDeletedFalse(Set<Long> ids);
+    Optional<EvaluationCycle> findByIdAndIsDeletedFalse(Long id);
 }

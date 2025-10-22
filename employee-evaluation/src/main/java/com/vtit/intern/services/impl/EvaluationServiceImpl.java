@@ -15,52 +15,38 @@ import com.vtit.intern.repositories.*;
 import com.vtit.intern.services.EvaluationService;
 import com.vtit.intern.utils.ResponseUtil;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class EvaluationServiceImpl implements EvaluationService {
-    @Autowired
     private final EvaluationRepository evaluationRepository;
-    @Autowired
     private final EmployeeRepository employeeRepository;
-    @Autowired
-    private final CriterionRepository criterionRepository;
-    @Autowired
     private final EvaluationCycleRepository evaluationCycleRepository;
-    @Autowired
     private final ProjectRepository projectRepository;
-    @Autowired
     private final ModelMapper modelMapper;
-
-    public EvaluationServiceImpl(EvaluationRepository evaluationRepository, EmployeeRepository employeeRepository,
-                                 CriterionRepository criterionRepository, EvaluationCycleRepository evaluationCycleRepository, ModelMapper modelMapper, ProjectRepository projectRepository) {
-        this.evaluationRepository = evaluationRepository;
-        this.employeeRepository = employeeRepository;
-        this.criterionRepository = criterionRepository;
-        this.modelMapper = modelMapper;
-        this.evaluationCycleRepository = evaluationCycleRepository;
-        this.projectRepository = projectRepository;
-    }
 
     @Override
     public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> create(EvaluationRequestDTO dto) {
         // find the evaluation cycle by ID
         Long evaluationCycleId = dto.getEvaluationCycleId();
-        EvaluationCycle evaluationCycle = evaluationCycleRepository.findById(evaluationCycleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + evaluationCycleId));
+        Optional<EvaluationCycle> optionalEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId);
+        if (optionalEvaluationCycle.isEmpty()) {
+            return ResponseUtil.notFound("Evaluation Cycle not found with id: " + evaluationCycleId);
+        }
+        EvaluationCycle evaluationCycle = optionalEvaluationCycle.get();
 
         // check if the evaluation cycle is still active
         if (evaluationCycle.getStatus() == EvaluationCycleStatus.COMPLETED ||
@@ -68,29 +54,31 @@ public class EvaluationServiceImpl implements EvaluationService {
             throw new IllegalStateException("Cannot add evaluation to a completed or closed evaluation cycle.");
         }
 
-        Project project = projectRepository.findById(dto.getProjectId())
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + dto.getProjectId()));
+        Optional<Project> optionalProject = projectRepository.findByIdAndIsDeletedFalse(dto.getProjectId());
+        if (optionalProject.isEmpty()) {
+            return ResponseUtil.notFound("Project not found with id: " + dto.getProjectId());
+        }
+        Project project = optionalProject.get();
 
         Evaluation e = new Evaluation();
-        e.setEmployee(employeeRepository.findById(dto.getEmployeeId())
+        e.setEmployee(employeeRepository.findByIdAndIsDeletedFalse(dto.getEmployeeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + dto.getEmployeeId())));
+
         e.setEvaluationCycle(evaluationCycle);
         e.setProject(project);
         e.setTotalScore(0.0);
-        e.setCompletionLevel(null);
-        e.setKiRanking(null);
         e.setManagerFeedback(dto.getManagerFeedback() == null ? "" : dto.getManagerFeedback());
         e.setCustomerFeedback(dto.getCustomerFeedback() == null ? "" : dto.getCustomerFeedback());
         e.setNote(dto.getNote() == null ? "" : dto.getNote());
 
         Evaluation savedEvaluation = evaluationRepository.save(e);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseUtil.success(modelMapper.map(savedEvaluation, EvaluationResponseDTO.class)));
+        return ResponseUtil.success(modelMapper.map(savedEvaluation, EvaluationResponseDTO.class));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> update(Long evaluationId, EvaluationRequestDTO dto) {
 
-        Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
+        Evaluation existingEvaluation = evaluationRepository.findByIdAndIsDeletedFalse(evaluationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
 
         // validate that the evaluation cycle is still active
@@ -105,12 +93,12 @@ public class EvaluationServiceImpl implements EvaluationService {
 //        existingEvaluation.setEvaluationDate(dto.getEvaluationDate());
 
         Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
-        return ResponseEntity.ok(ResponseUtil.success(modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class)));
+        return ResponseUtil.success(modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class));
     }
 
     @Override
-    public void delete(Long evaluationId) {
-        Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
+    public ResponseEntity<ResponseDTO<Void>> delete(Long evaluationId) {
+        Evaluation existingEvaluation = evaluationRepository.findByIdAndIsDeletedFalse(evaluationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
 
         // validate that the evaluation cycle is still active
@@ -121,15 +109,17 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         existingEvaluation.setDeleted(true);
         evaluationRepository.save(existingEvaluation);
+
+        return ResponseUtil.deleted("Evaluation with id " + existingEvaluation.getId() + " deleted successfully");
     }
 
     @Override
     @Transactional
     public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> moveEvaluationToCycle(Long evaluationId, Long newCycleId) {
-        Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
+        Evaluation existingEvaluation = evaluationRepository.findByIdAndIsDeletedFalse(evaluationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
 
-        EvaluationCycle newCycle = evaluationCycleRepository.findById(newCycleId)
+        EvaluationCycle newCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(newCycleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation Cycle not found with id: " + newCycleId));
 
         // validate that the old cycle is still active
@@ -145,48 +135,46 @@ public class EvaluationServiceImpl implements EvaluationService {
             throw new IllegalStateException("Cannot move evaluation to a completed or closed evaluation cycle.");
         }
 
-        // remove from old cycle
-//        oldCycle.removeEvaluation(existingEvaluation);
-
-        // add to new cycle
-//        newCycle.addEvaluation(existingEvaluation);
         existingEvaluation.setEvaluationCycle(newCycle);
 
         Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
         evaluationCycleRepository.save(oldCycle);
         evaluationCycleRepository.save(newCycle);
 
-        return ResponseEntity.ok(ResponseUtil.success(modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class)));
+        return ResponseUtil.success(modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class));
     }
 
     @Override
     public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> patch(Long evaluationId, EvaluationRequestDTO dto) {
-        Evaluation existingEvaluation = evaluationRepository.findById(evaluationId)
+        Evaluation existingEvaluation = evaluationRepository.findByIdAndIsDeletedFalse(evaluationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
 
-        // validate that the evaluation cycle is still active
         if (existingEvaluation.getEvaluationCycle().getStatus() == EvaluationCycleStatus.COMPLETED ||
             existingEvaluation.getEvaluationCycle().getStatus() == EvaluationCycleStatus.CANCELLED) {
             throw new IllegalStateException("Cannot patch evaluation in a completed or closed evaluation cycle.");
         }
 
-//        if (dto.getScore() != null) {
-//            existingEvaluation.setScore(dto.getScore());
-//        }
-//        if (dto.getComment() != null) {
-//            existingEvaluation.setComment(dto.getComment());
-//        }
-//        if (dto.getEvaluationDate() != null) {
-//            existingEvaluation.setEvaluationDate(dto.getEvaluationDate());
-//        }
+        String managerFeedback = trimOrNull(dto.getManagerFeedback());
+        if (managerFeedback != null) {
+            existingEvaluation.setManagerFeedback(managerFeedback);
+        }
+
+        String customerFeedback = trimOrNull(dto.getCustomerFeedback());
+        if (customerFeedback != null) {
+            existingEvaluation.setCustomerFeedback(customerFeedback);
+        }
+
+        String note = trimOrNull(dto.getNote());
+        if (note != null) {
+            existingEvaluation.setNote(note);
+        }
 
         Evaluation updatedEvaluation = evaluationRepository.save(existingEvaluation);
-        return ResponseEntity.ok(ResponseUtil.success(modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class)));
+        return ResponseUtil.success(modelMapper.map(updatedEvaluation, EvaluationResponseDTO.class));
     }
 
     @Override
-    public ResponseEntity<ResponseDTO<PageResponse<EvaluationResponseDTO>>> getEvaluations(
-            EvaluationSearchDTO dto, Pageable pageable, Authentication auth) {
+    public ResponseEntity<ResponseDTO<PageResponse<EvaluationResponseDTO>>> getEvaluations(EvaluationSearchDTO dto, Pageable pageable, Authentication auth) {
 
         // Validate score range
         if (dto != null) {
@@ -206,7 +194,7 @@ public class EvaluationServiceImpl implements EvaluationService {
         if (isEmployee(auth)) {
             // Employees can only see their own evaluations
             String username = auth.getName();
-            Employee employee = employeeRepository.findByUsername(username)
+            Employee employee = employeeRepository.findByUsernameAndIsDeletedFalse(username)
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Employee not found with username: " + username));
             employeeId = employee.getId();
@@ -228,19 +216,21 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         // Perform the search
         if (dto == null) {
-            return ResponseEntity.ok(ResponseUtil.success(searchAndMap(employeeId, null, null, null, null, null, null, pageable)));
+            return ResponseUtil.success(searchAndMap(employeeId, pageable));
         }
 
-        return ResponseEntity.ok(ResponseUtil.success(searchAndMap(
+        return ResponseUtil.success(searchAndMap(
                 employeeId,
-                dto.getCriterionId(),
-                dto.getMinScore(),
-                dto.getMaxScore(),
-                trimOrNull(dto.getComment()),
-                dto.getStartDate(),
-                dto.getEndDate(),
                 pageable
-        )));
+        ));
+    }
+
+    @Override
+    public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> getById(Long evaluationId) {
+        Evaluation evaluation = evaluationRepository.findByIdAndIsDeletedFalse(evaluationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + evaluationId));
+
+        return ResponseUtil.success(modelMapper.map(evaluation, EvaluationResponseDTO.class));
     }
 
     private boolean isEmployee(Authentication auth) {
@@ -258,8 +248,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     private PageResponse<EvaluationResponseDTO> searchAndMap(
-            Long employeeId, Long criterionId, Double minScore, Double maxScore,
-            String comment, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+            Long employeeId, Pageable pageable) {
 
         Page<Evaluation> evaluationPage = evaluationRepository.searchEvaluations(
                 employeeId, pageable);

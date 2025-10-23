@@ -15,6 +15,10 @@ const LoginForm = () => {
     try { 
       await authService.login(username, password);
       navigate("/employee-list"); 
+      // Sau khi login thành công
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userInfo", JSON.stringify(data.data)); // lưu thông tin nhân viên
+
     } catch (err) {
       setError("Invalid username or password");
     }

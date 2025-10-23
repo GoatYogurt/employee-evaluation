@@ -11,4 +11,10 @@ public enum Level {
         }
         return false;
     }
+
+    public String toDisplayString() {
+        return this.name()
+                .toLowerCase()
+                .replace("_plus", "+");
+    }
 }

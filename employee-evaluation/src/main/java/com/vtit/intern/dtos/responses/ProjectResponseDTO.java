@@ -12,7 +12,7 @@ import java.util.Set;
 public class ProjectResponseDTO {
     private Long id;
     private String code;
-    private Boolean isOdc;
+    private boolean isOdc;
     private String managerName;
     private Set<EmployeeResponseDTO> employees;
     private Set<Long> evaluationCycleIds;

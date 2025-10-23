@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
 import "./dashboard.css";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const EmployeeAddOld = () => {
+  const navigate = useNavigate();
   const [employees, setEmployees] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const projectId = queryParams.get("projectId");
+  const evaluationCycleId = queryParams.get("evaluationCycleId");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-
 
   useEffect(() => {
     if (projectId) {
@@ -20,8 +21,8 @@ const EmployeeAddOld = () => {
 
   const fetchEmployees = async () => {
     try {
-      // Lấy tất cả nhân viên
       const resAll = await fetch("http://localhost:8080/api/employees", {
+        method: "GET",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
           "Content-Type": "application/json",
@@ -30,10 +31,10 @@ const EmployeeAddOld = () => {
       const allData = await resAll.json();
       const allEmployees = allData.data?.content || [];
 
-      // Lấy danh sách nhân viên đã trong dự án
       const resProject = await fetch(
         `http://localhost:8080/api/projects/${projectId}`,
         {
+          method: "GET",
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
             "Content-Type": "application/json",
@@ -43,7 +44,6 @@ const EmployeeAddOld = () => {
       const projectData = await resProject.json();
       const projectEmployees = projectData.data?.employees || [];
 
-      // Lọc ra những nhân viên chưa có trong dự án
       const projectEmployeeIds = projectEmployees.map((e) => e.id);
       const availableEmployees = allEmployees.filter(
         (e) => !projectEmployeeIds.includes(e.id)
@@ -54,60 +54,124 @@ const EmployeeAddOld = () => {
       console.error("Fetch employees error:", error);
     }
   };
-  
 
-  const handleAddToProject = async (employeeId) => {
+    const handleAddToProject = async (employeeId) => {
+    console.log("==== Thêm nhân viên vào dự án ====");
+    console.log("projectId:", projectId);
+    console.log("evaluationCycleId:", evaluationCycleId);
+    console.log("employeeId:", employeeId);
+
+    if (!evaluationCycleId) {
+      alert("⚠ Không xác định được Evaluation Cycle. Vui lòng quay lại từ màn hình chọn chu kỳ đánh giá.");
+      return;
+    }
+
+    const payload = {
+      employeeId: Number(employeeId),
+      projectId: Number(projectId),
+      evaluationCycleId: Number(evaluationCycleId),
+    };
+
     try {
-      const res = await fetch(
-        `http://localhost:8080/api/projects/${projectId}/add-employee/${employeeId}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const res = await fetch(`http://localhost:8080/api/projects/add-employee`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
       const data = await res.json();
-      if (res.ok) {
-        alert("✅ Đã thêm nhân viên vào dự án!");
-        fetchEmployees();
-      } else {
-        alert("❌ Thêm thất bại: " + data.message);
+      console.log("Response từ API:", data);
+
+      if (!res.ok) {
+        alert("❌ Thêm thất bại: " + (data?.message || "Lỗi không xác định"));
+        return;
       }
+
+      // nếu BE trả về evaluation object trong data, ưu tiên lấy id từ đó
+      let foundEvalId = data?.data?.id ?? null;
+
+      // nếu BE không trả evaluation id, gọi API lấy evaluations và tìm bằng employee+project+cycle
+      if (!foundEvalId) {
+        try {
+          // fetch all evaluations (hoặc nếu có API filter thì gọi API filter)
+          const evalRes = await fetch(`http://localhost:8080/api/evaluations`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            },
+          });
+          if (evalRes.ok) {
+            const evalJson = await evalRes.json();
+            let evalList = [];
+            if (Array.isArray(evalJson.data)) evalList = evalJson.data;
+            else if (Array.isArray(evalJson.data?.content)) evalList = evalJson.data.content;
+            else if (Array.isArray(evalJson.content)) evalList = evalJson.content;
+
+            // tìm evaluation match theo employeeId, projectId, evaluationCycleId
+            const matched = evalList.find((e) => {
+              const eEmployeeId = e.employeeId ?? e.employee?.id;
+              const eProjectId = e.projectId ?? e.project?.id;
+              const eCycleId = e.evaluationCycleId ?? e.evaluationCycle?.id;
+              return (
+                Number(eEmployeeId) === Number(employeeId) &&
+                Number(eProjectId) === Number(projectId) &&
+                Number(eCycleId) === Number(evaluationCycleId)
+              );
+            });
+            if (matched) foundEvalId = matched.id;
+          } else {
+            console.warn("Không thể fetch evaluations để tìm evaluationId sau khi add-employee.");
+          }
+        } catch (err) {
+          console.error("Lỗi khi fetch evaluations sau add:", err);
+        }
+      }
+
+      alert("✅ Đã thêm nhân viên vào dự án thành công!");
+
+      // Navigate về trang employee-list, kèm thông tin vừa thêm (dùng để FE hiện 0.0 hoặc id tạm)
+      // truyền cả evaluationId (nếu tìm được) để EmployeeTable không báo lỗi khi edit
+      navigate(
+        `/employee-list?projectId=${projectId}&evaluationCycleId=${evaluationCycleId}`,
+        { state: { justAddedEmployeeId: Number(employeeId), justAddedEvaluationId: foundEvalId ?? null } }
+      );
+
     } catch (error) {
-      console.error("Add employee error:", error);
+      console.error("❌ Add employee error:", error);
       alert("Lỗi kết nối server!");
     }
   };
+
 
   const filteredEmployees = employees.filter((emp) =>
     emp.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-    // ✅ Phân trang
   const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentEmployees = filteredEmployees.slice(startIndex, endIndex);
 
-  // Reset lại về trang 1 khi tìm kiếm
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, employees]);
 
-
-
   return (
     <div>
-      {/* Header */}
       <div className="content-header">
-        <h1 className="header-title">
-          Thêm nhân viên vào dự án {projectId}
-        </h1>
+        <h1 className="header-title">Thêm nhân viên vào dự án {projectId}</h1>
         <div className="header-actions">
-          <Link to={`/employee-list?projectId=${projectId}`}>
+          <Link
+            to={
+              evaluationCycleId
+                ? `/employee-list?projectId=${projectId}&evaluationCycleId=${evaluationCycleId}`
+                : `/employee-list?projectId=${projectId}`
+            }
+          >
             <button className="btn btn-secondary">
               <i className="fas fa-arrow-left"></i> Quay lại
             </button>
@@ -115,7 +179,6 @@ const EmployeeAddOld = () => {
         </div>
       </div>
 
-      {/* Table Section */}
       <div className="excel-container">
         <div className="table-header">
           <h3 className="table-title">Danh sách nhân viên khả dụng</h3>
@@ -133,10 +196,10 @@ const EmployeeAddOld = () => {
           </div>
         </div>
 
-        <table className="excel-table">
+        <table width="100%" className="excel-table">
           <thead>
             <tr>
-              <th>STT</th>
+              <th width="1%">STT</th>
               <th>Mã NV</th>
               <th>Họ và tên</th>
               <th>Email</th>
@@ -147,10 +210,10 @@ const EmployeeAddOld = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredEmployees.length > 0 ? (
-              filteredEmployees.map((emp, index) => (
+            {currentEmployees.length > 0 ? (
+              currentEmployees.map((emp, index) => (
                 <tr key={emp.id}>
-                  <td>{index + 1}</td>
+                  <td>{startIndex + index + 1}</td>
                   <td>{emp.staffCode}</td>
                   <td>{emp.fullName}</td>
                   <td>{emp.email}</td>
@@ -178,7 +241,8 @@ const EmployeeAddOld = () => {
               </tr>
             )}
           </tbody>
-          {/* Pagination */}
+        </table>
+
         <div className="pagination-container">
           <div className="pagination-info">
             Hiển thị {startIndex + 1}-
@@ -218,7 +282,6 @@ const EmployeeAddOld = () => {
             </button>
           </div>
         </div>
-        </table>
       </div>
     </div>
   );

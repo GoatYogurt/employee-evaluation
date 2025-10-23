@@ -10,6 +10,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
+import java.io.IOException;
 import java.time.LocalDate;
 
 public interface EvaluationCycleService {
@@ -21,5 +22,5 @@ public interface EvaluationCycleService {
     ResponseEntity<ResponseDTO<PageResponse<EvaluationCycleResponseDTO>>> getActiveEvaluationCycles(Pageable pageable);
     ResponseEntity<ResponseDTO<PageResponse<ProjectResponseDTO>>> getProjectsByEvaluationCycleId(Long evaluationCycleId, Pageable pageable);
     ResponseEntity<ResponseDTO<EvaluationCycleResponseDTO>> patch(Long id, EvaluationCycleRequestDTO evaluationCycleRequestDTO);
-    ResponseEntity<InputStreamResource> exportEvaluationCycleReport(Long evaluationCycleId);
+    ResponseEntity<InputStreamResource> exportEvaluationCycleReport(Long evaluationCycleId) throws IOException;
 }

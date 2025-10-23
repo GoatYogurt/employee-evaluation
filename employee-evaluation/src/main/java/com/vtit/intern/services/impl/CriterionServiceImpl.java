@@ -35,7 +35,7 @@ public class CriterionServiceImpl implements CriterionService {
     public ResponseEntity<ResponseDTO<PageResponse<CriterionResponseDTO>>> getAllCriteria(String name, String description, Double minWeight, Double maxWeight, Pageable pageable) {
         String searchName = name != null ? name.trim() : null;
         String searchDescription = description != null ? description.trim() : null;
-        Double searchMinWeight = minWeight != null ? minWeight : 0.0;
+        Double searchMinWeight = minWeight != null ? minWeight : -1.0;
         Double searchMaxWeight = maxWeight != null ? maxWeight : Double.MAX_VALUE;
 
         Page<Criterion> criterionPage = criterionRepository.searchCriteria(

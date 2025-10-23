@@ -62,42 +62,48 @@ const CriterionTable = () => {
   };
 
   // Fetch Criteria
-  const fetchCriteria = async () => {
-    try {
-      const res = await fetch('http://localhost:8080/api/criteria', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken') || localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-      });
+    const fetchCriteria = async () => {
+      try {
+        const res = await fetch('http://localhost:8080/api/criteria', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken') || localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          },
+        });
 
-      if (!res.ok) {
-        console.error('❌ API Error:', res.status);
-        return;
+        if (!res.ok) {
+          console.error('❌ API Error:', res.status);
+          return;
+        }
+
+        const data = await res.json();
+        const list = data.content || data.data?.content || [];
+
+        const normalized = list.map((c) => {
+          const groupId = c.groupId || null;
+          const group = criterionGroups.find((g) => g.id === groupId);
+
+          return {
+            id: c.id,
+            name: c.name,
+            description: c.description,
+            weight: c.weight !== undefined && c.weight !== null ? Number(c.weight) : 0,
+            criterionGroupId: groupId,
+            criterionGroupName: group ? group.name : 'N/A',
+            createdAt: c.createdAt,
+            updatedAt: c.updatedAt,
+            createdBy: c.createdBy,
+            updatedBy: c.updatedBy,
+          };
+        });
+
+        setCriteria(normalized);
+      } catch (error) {
+        console.error('❌ Failed to fetch criteria:', error);
       }
+    };
 
-      const data = await res.json();
-      const list = data.content || data.data?.content || []; // ✅ FIX: lấy đúng content
-
-      // ✅ Chuẩn hoá dữ liệu
-      const normalized = list.map((c) => ({
-        id: c.id || c.criterionId, // ✅ FIX: bảo đảm có id
-        name: c.name,
-        description: c.description,
-        weight: c.weight,
-        criterionGroupId: c.groupId || c.criterionGroupId || c.criterionGroup?.id || null, // ✅ FIX
-        criterionGroupName:
-          criterionGroups.find(
-            (g) => g.id === (c.groupId || c.criterionGroupId || c.criterionGroup?.id)
-          )?.name || 'N/A',
-      }));
-
-      setCriteria(normalized);
-    } catch (error) {
-      console.error('❌ Failed to fetch criteria:', error);
-    }
-  };
 
   // Lọc theo search + group
   const filteredCriteria = criteria.filter((criterion) => {
@@ -105,6 +111,17 @@ const CriterionTable = () => {
     const matchesGroup = !selectedGroupId || criterion.criterionGroupId == selectedGroupId;
     return matchesSearch && matchesGroup;
   });
+
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  };
 
   // Phân trang
   const totalPages = Math.ceil(filteredCriteria.length / itemsPerPage);
@@ -202,6 +219,7 @@ const CriterionTable = () => {
 
       setCriteria((prev) => prev.filter((criterion) => criterion.id !== id));
       setDeleteMessage('✅ Xóa tiêu chí thành công!');
+      fetchCriteria();
     } catch (err) {
       console.error(err);
       setDeleteMessage('❌ Xóa tiêu chí thất bại!');
@@ -260,17 +278,18 @@ const CriterionTable = () => {
             <button className="btn btn-warning" onClick={fetchCriteria}>
               <i className="fas fa-sync-alt"></i> Làm mới
             </button>
+            
           </div>
         </div>
 
-        <table className="excel-table">
+        <table className="excel-table" style={{width: "100%", tableLayout: "fixed" }}>
           <thead>
             <tr>
-              <th>STT</th>
-              <th>Thao tác</th>
-              <th>Tên tiêu chí</th>
-              <th>Mô tả</th>
-              <th>Trọng số</th>
+              <th style={{ width: "2%" }}>STT</th>
+              <th style={{ width: "20%" }}>Tên tiêu chí</th>
+              <th style={{ width: "20%" }}>Mô tả</th>
+              <th style={{ width: "20%" }}>Trọng số</th>
+              <th style={{ width: "20%" }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -278,6 +297,9 @@ const CriterionTable = () => {
               currentCriteria.map((criterion, index) => (
                 <tr key={criterion.id}>
                   <td>{startIndex + index + 1}</td>
+                  <td>{criterion.name}</td>
+                  <td>{criterion.description}</td>
+                  <td>{criterion.weight}</td>
                   <td>
                     <div className="action-buttons">
                       <button
@@ -303,9 +325,6 @@ const CriterionTable = () => {
                       </button>
                     </div>
                   </td>
-                  <td>{criterion.name}</td>
-                  <td>{criterion.description}</td>
-                  <td>{criterion.weight}%</td>
                 </tr>
               ))
             ) : (
@@ -408,16 +427,16 @@ const CriterionTable = () => {
               </select>
             </div>
             <div className="form-group">
-              <label>Trọng số (%)</label>
-              <input
+              <label>Trọng số</label>
+                          <input
                 type="number"
-                min="0"
-                max="100"
-                value={selectedCriterion.weight || ''}
+                min="-1"
+                max="1"
+                value={selectedCriterion.weight ?? ''} 
                 onChange={(e) =>
                   setSelectedCriterion({
                     ...selectedCriterion,
-                    weight: parseFloat(e.target.value),
+                    weight: e.target.value === '' ? null : parseFloat(e.target.value),
                   })
                 }
               />
@@ -474,8 +493,18 @@ const CriterionTable = () => {
                 </tr>
                 <tr>
                   <td style={{ fontWeight: 'bold' }}>Trọng số</td>
-                  <td>{selectedCriterion.weight}%</td>
+                  <td>{selectedCriterion.weight}</td>
                 </tr>
+                <tr>
+                  <td style={{ fontWeight: "bold" }}>Ngày tạo</td>
+                  <td>{formatDateTime(selectedCriterion.createdAt)}</td>
+                </tr>
+                <tr>
+                  <td style={{ fontWeight: "bold" }}>Ngày cập nhật</td>
+                  <td>{formatDateTime(selectedCriterion.updatedAt)}</td>
+                </tr>
+                <tr><td style={{ fontWeight: "bold" }}>Người tạo</td><td>{selectedCriterion.createdBy}</td></tr>
+                <tr><td style={{ fontWeight: "bold" }}>Người cập nhật</td><td>{selectedCriterion.updatedBy}</td></tr>
               </tbody>
             </table>
             <button

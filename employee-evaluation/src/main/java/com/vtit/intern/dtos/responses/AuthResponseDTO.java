@@ -1,7 +1,6 @@
 package com.vtit.intern.dtos.responses;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @Getter

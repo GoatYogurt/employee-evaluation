@@ -1,12 +1,49 @@
-import '../index.css';
+import "../index.css";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import authService from "../services/authService";
+import React, { useState, useEffect, useRef } from "react";
 
 function Navigation() {
   const navigate = useNavigate();
   const location = useLocation();
-  const username = localStorage.getItem("username");
+  const [userInfo, setUserInfo] = useState({});
+  const [showPopup, setShowPopup] = useState(false);
+  const popupRef = useRef(null);
 
+  // ✅ Load thông tin user từ localStorage và cập nhật khi thay đổi
+  useEffect(() => {
+    const loadUserInfo = () => {
+      const userData = {
+        staffCode: localStorage.getItem("staffCode"),
+        fullName: localStorage.getItem("fullName"),
+        email: localStorage.getItem("email"),
+        department: localStorage.getItem("department"),
+        role: localStorage.getItem("role"),
+        level: localStorage.getItem("level"),
+        username: localStorage.getItem("username"),
+      };
+      setUserInfo(userData);
+    };
+
+    loadUserInfo();
+    window.addEventListener("storage", loadUserInfo);
+    return () => window.removeEventListener("storage", loadUserInfo);
+  }, []);
+
+  // ✅ Đóng popup khi click ra ngoài
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (popupRef.current && !popupRef.current.contains(event.target)) {
+        setShowPopup(false);
+      }
+    }
+    if (showPopup) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showPopup]);
+
+  // ✅ Logout
   const handleLogout = (e) => {
     e.preventDefault();
     authService.logout();
@@ -18,58 +55,74 @@ function Navigation() {
     { path: "/employee-list", icon: "fa-users", label: "Nhân viên" },
     { path: "/criterion-group-list", icon: "fa-layer-group", label: "Nhóm tiêu chí" },
     { path: "/criterion-list", icon: "fa-clipboard-list", label: "Tiêu chí" },
-    { path: "/project-list", icon: "fa-solid fa-diagram-project", label: "Dự án" },
+    { path: "/project-list", icon: "fa-diagram-project", label: "Dự án" },
     { path: "/evaluation-cycle-list", icon: "fa-chart-bar", label: "Chu kỳ đánh giá" },
   ];
 
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
+  const isActive = (path) => location.pathname === path;
 
   return (
     <div className="sidebar-nav">
-      {/* Logo */}
-
       <div className="brand-logo">Viettel</div>
-      
-      {/* Navigation Items */}
+
       {navItems.map((item) => (
         <Link
           key={item.path}
           to={item.path}
-          className={`nav-icon ${isActive(item.path) ? 'active' : ''}`}
+          className={`nav-icon ${isActive(item.path) ? "active" : ""}`}
           title={item.label}
         >
           <i className={`fas ${item.icon}`}></i>
         </Link>
       ))}
 
-      {/* User Info */}
-      {username && (
-        <div className="user-info">
-          <div className="user-avatar" title={username}>
-            {username.charAt(0).toUpperCase()}
+      {/* Avatar luôn hiển thị */}
+      <div
+        className="user-info"
+        onClick={() => setShowPopup(!showPopup)}
+        style={{ cursor: "pointer", marginTop: "auto", textAlign: "center" }}
+      >
+        <div className="user-avatar" title={userInfo.username || "User"}>
+          {userInfo.username ? userInfo.username.charAt(0).toUpperCase() : "?"}
+        </div>
+      </div>
+
+      {showPopup && (
+        <div className="user-popup" ref={popupRef}>
+          <div className="user-popup-title">Thông tin nhân viên</div>
+          <div className="user-popup-row">
+            <span className="user-popup-label">Mã NV: </span> {userInfo.staffCode || ""}
           </div>
-          
-          <button 
-            className="nav-icon" 
-            title="Đổi mật khẩu" 
-            onClick={() => navigate("/change-password")}
-            onKeyDown={(e) => e.key === 'Enter' && navigate("/change-password")}
-          >
-            <i className="fas fa-lock"></i>
-          </button>
-          
-          <button 
-            className="nav-icon" 
-            title="Đăng xuất" 
-            onClick={handleLogout}
-            onKeyDown={(e) => e.key === 'Enter' && handleLogout(e)}
-          >
-            <i className="fas fa-sign-out-alt"></i>
-          </button>
-          
-      
+          <div className="user-popup-row">
+            <span className="user-popup-label">Họ và tên: </span> {userInfo.fullName || ""}
+          </div>
+          <div className="user-popup-row">
+            <span className="user-popup-label">Email: </span> {userInfo.email || ""}
+          </div>
+          <div className="user-popup-row">
+            <span className="user-popup-label">Phòng/Ban: </span> {userInfo.department || ""}
+          </div>
+          <div className="user-popup-row">
+            <span className="user-popup-label">Chức vụ: </span> {userInfo.role || ""}
+          </div>
+          <div className="user-popup-row">
+            <span className="user-popup-label">Cấp bậc: </span> {userInfo.level || ""}
+          </div>
+
+          <div className="user-popup-actions">
+            <button
+              className="user-popup-btn"
+              onClick={() => {
+                setShowPopup(false);
+                navigate("/change-password");
+              }}
+            >
+              Đổi mật khẩu
+            </button>
+            <button className="user-popup-btn logout" onClick={handleLogout}>
+              Đăng xuất
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -77,4 +130,3 @@ function Navigation() {
 }
 
 export default Navigation;
-

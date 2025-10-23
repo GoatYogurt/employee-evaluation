@@ -2,7 +2,10 @@ package com.vtit.intern.utils;
 
 import com.vtit.intern.dtos.responses.ResponseDTO;
 import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 public class ResponseUtil {
@@ -83,5 +86,13 @@ public class ResponseUtil {
                 .code(status.value())
                 .message(message)
                 .build());
+    }
+
+    public static ResponseEntity<InputStreamResource> downloadFile(String fileName, InputStreamResource resource) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
     }
 }

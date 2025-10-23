@@ -27,7 +27,7 @@
   flex-direction: column;
   gap: 20px;
   align-items: center;
-  
+  justify-content: space-between;
 }
 
 .nav-icon {
@@ -160,6 +160,7 @@
 .btn-warning {
   background-color: #fff;
   color: #000;
+  flex-wrap: nowrap; 
 
 }
 
@@ -207,7 +208,7 @@
   font-size: 14px;
 }
 
-.excel-table {
+/* .excel-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
@@ -239,7 +240,45 @@
 
 .excel-table tr:hover td {
   background-color: #e9ecef;
+} */
+
+.excel-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #dee2e6;
 }
+
+.excel-table th,
+.excel-table td {
+  border: 1px solid #dee2e6;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: middle;
+  transition: background-color 0.2s ease;
+}
+
+/* Khi hover toàn hàng */
+.excel-table tr:hover td {
+  background-color: #f8f9fa;
+}
+
+/* Loại bỏ outline của ô khi đang chỉnh */
+.excel-table td[contenteditable="true"]:focus {
+  outline: none; /* nền nhẹ khi đang nhập */
+}
+
+.editable-cell {
+  min-width: 160px;
+  cursor: text;
+  background-color: transparent;
+  white-space: pre-wrap;
+  word-break: break-word;
+  vertical-align: top;
+  padding: 4px 6px;
+}
+
+
+
 
 .btn-primary {
   background-color: #fff;

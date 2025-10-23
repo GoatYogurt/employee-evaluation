@@ -17,6 +17,9 @@ import CriterionGroupAdd from "./pages/CriterionGroupAdd";
 import CriterionGroupView from "./pages/CriterionGroupView";
 import ProjectList from "./pages/ProjectList";
 import EmployeeAddOld from "./pages/EmployeeAddOld";
+import ProjectAddOld from "./pages/ProjectAddOld";
+import ProjectAdd from "./pages/ProjectAdd";
+import EvaluationCycleAdd from "./pages/EvaluationCycleAdd";
 
 
 function AppLayout() {
@@ -30,7 +33,6 @@ function AppLayout() {
         {/* Các route có Dashboard layout */}
         <Route path='/home' element={<Dashboard><Home /></Dashboard>} />
         <Route path='/employee-list' element={<Dashboard><EmployeeList /></Dashboard>} />
-        <Route path='/employee-view/:id' element={<Dashboard><EmployeeView /></Dashboard>} />
         <Route path="/employee-add" element={<Dashboard><EmployeeAdd /></Dashboard>} />
         <Route path="/employee-add-old" element={<Dashboard><EmployeeAddOld /></Dashboard>} />
 
@@ -42,10 +44,12 @@ function AppLayout() {
         <Route path='/criterion-group-view/:id' element={<Dashboard><CriterionGroupView /></Dashboard>} />
         <Route path="/criterion-group-add" element={<Dashboard><CriterionGroupAdd /></Dashboard>} />
 
-        <Route path='/project-list' element={<Dashboard><ProjectList /></Dashboard>}></Route>
-        {/* <Route path='/project-add' element={<Dashboard><ProjectAdd /></Dashboard>}></Route> */}
+        <Route path='/project-list' element={<Dashboard><ProjectList /></Dashboard>} />
+        <Route path='/project-add' element={<Dashboard><ProjectAdd /></Dashboard>}/>
+        <Route path="/project-add-old" element={<Dashboard><ProjectAddOld /></Dashboard>} />
 
         <Route path="/evaluation-cycle-list" element={<Dashboard><EvaluationCycleList /></Dashboard>} />
+        <Route path="/evaluation-cycle-add" element={<Dashboard><EvaluationCycleAdd /></Dashboard>} />
     </Routes>
   );
 }

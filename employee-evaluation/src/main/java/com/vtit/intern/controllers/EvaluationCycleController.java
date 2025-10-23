@@ -18,6 +18,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+
 @RestController
 @RequestMapping("/api/evaluation-cycles")
 @Validated
@@ -125,7 +127,7 @@ public class EvaluationCycleController {
     }
 
     @GetMapping("/{id}/export")
-    public ResponseEntity<InputStreamResource> exportEvaluationCycleReport(@PathVariable @Positive(message = "ID must be a positive number") Long id) {
+    public ResponseEntity<InputStreamResource> exportEvaluationCycleReport(@PathVariable @Positive(message = "ID must be a positive number") Long id) throws IOException {
         return evaluationCycleService.exportEvaluationCycleReport(id);
     }
 }

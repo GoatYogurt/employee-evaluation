@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import javax.swing.text.html.Option;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -30,5 +31,5 @@ public interface EvaluationScoreRepository extends JpaRepository<EvaluationScore
 
     Optional<EvaluationScore> findByIdAndIsDeletedFalse(Long id);
     Optional<EvaluationScore> findByEvaluationIdAndCriterionIdAndIsDeletedFalse(Long evaluationId, Long criterionId);
-
+    List<EvaluationScore> findByEvaluationIdAndIsDeletedFalse(Long evaluationId);
 }

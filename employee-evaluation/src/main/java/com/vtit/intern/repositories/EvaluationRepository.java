@@ -28,4 +28,5 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
 
     Optional<Evaluation> findByIdAndIsDeletedFalse(Long id);
     Optional<Evaluation> findByEmployee_IdAndProject_IdAndEvaluationCycle_IdAndIsDeletedFalse(Long employeeId, Long projectId, Long evaluationCycleId);
+    Set<Evaluation> findByProject_IdAndEvaluationCycle_IdAndIsDeletedFalse(Long projectId, Long evaluationCycleId);
 }

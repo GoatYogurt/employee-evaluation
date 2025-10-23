@@ -5,18 +5,18 @@ import com.vtit.intern.dtos.responses.EvaluationCycleResponseDTO;
 import com.vtit.intern.dtos.responses.PageResponse;
 import com.vtit.intern.dtos.responses.ProjectResponseDTO;
 import com.vtit.intern.dtos.responses.ResponseDTO;
-import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.*;
 import com.vtit.intern.repositories.EvaluationCycleRepository;
 import com.vtit.intern.repositories.EvaluationRepository;
 import com.vtit.intern.repositories.EvaluationScoreRepository;
 import com.vtit.intern.repositories.ProjectRepository;
 import com.vtit.intern.services.EvaluationCycleService;
+import com.vtit.intern.utils.ExcelUtil;
 import com.vtit.intern.utils.ResponseUtil;
 import lombok.AllArgsConstructor;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.InputStreamResource;
@@ -213,40 +213,57 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
         ClassPathResource resource = new ClassPathResource("templates/evaluation_cycle_export_template.xlsx");
 
         try (InputStream templateStream = resource.getInputStream();
-                Workbook workbook = new XSSFWorkbook(templateStream)) {
+                XSSFWorkbook workbook = new XSSFWorkbook(templateStream)) {
+
+            CellStyle textStyle = ExcelUtil.fullBorderCenterText(workbook, workbook.createFont());
+            CellStyle numberStyle = ExcelUtil.fullBorderRightNumber(workbook, workbook.createFont());
+
             Sheet sheet  = workbook.getSheetAt(0);
             int rowIndex = 7;
 
-            for (Project project: projects) {
-                Set<Evaluation> evaluations = evaluationRepository.findByProject_IdAndEvaluationCycle_IdAndIsDeletedFalse(project.getId(), evaluationCycleId);
+            for (Project project : projects) {
+                Set<Evaluation> evaluations = evaluationRepository
+                        .findByProject_IdAndEvaluationCycle_IdAndIsDeletedFalse(project.getId(), evaluationCycleId);
 
-                for (Evaluation evaluation: evaluations) {
-                    List<EvaluationScore> evaluationScores = evaluationScoreRepository.findByEvaluationIdAndIsDeletedFalse(evaluation.getId());
+                for (Evaluation evaluation : evaluations) {
+                    List<EvaluationScore> evaluationScores =
+                            evaluationScoreRepository.findByEvaluationIdAndIsDeletedFalse(evaluation.getId());
                     Row row = sheet.createRow(rowIndex++);
                     Employee currentEmployee = evaluation.getEmployee();
 
-                    row.createCell(0).setCellValue(rowIndex - 7);
-                    row.createCell(1).setCellValue(currentEmployee.getStaffCode());
-                    row.createCell(2).setCellValue(currentEmployee.getFullName());
-                    row.createCell(3).setCellValue(currentEmployee.getEmail());
-                    row.createCell(4).setCellValue(currentEmployee.getDepartment());
-                    row.createCell(5).setCellValue(currentEmployee.getRole().name());
-                    row.createCell(6).setCellValue(currentEmployee.getLevel().name());
-                    row.createCell(7).setCellValue(project.isOdc() ? "ODC" : "NOT ODC");
-                    row.createCell(8).setCellValue(project.getCode());
+                    // Basic employee and project info
+                    ExcelUtil.setCell(row, 0, rowIndex - 7, numberStyle);
+                    ExcelUtil.setCell(row, 1, currentEmployee.getStaffCode(), textStyle);
+                    ExcelUtil.setCell(row, 2, currentEmployee.getFullName(), textStyle);
+                    ExcelUtil.setCell(row, 3, currentEmployee.getEmail(), textStyle);
+                    ExcelUtil.setCell(row, 4, currentEmployee.getDepartment(), textStyle);
+                    ExcelUtil.setCell(row, 5, currentEmployee.getRole().name(), textStyle);
+                    ExcelUtil.setCell(row, 6, currentEmployee.getLevel().toDisplayString(), textStyle);
+                    ExcelUtil.setCell(row, 7, project.isOdc() ? "ODC" : "NOT ODC", textStyle);
+                    ExcelUtil.setCell(row, 8, project.getCode(), textStyle);
+                    ExcelUtil.setCell(row, 9, 5, numberStyle);
 
-                    for (int i = 11; i <= 17; ++i) {
-                        row.createCell(i).setCellValue(evaluationScores.get(i - 11).getScore());
+                    // Criterion scores
+                    for (int i = 10; i <= 17; ++i) {
+                        if (i == 10) {
+                            double score = evaluationScores.getFirst().getScore();
+                            ExcelUtil.setCell(row, 10, score, numberStyle);
+                            continue;
+                        }
+                        double score = evaluationScores.get(i - 11).getScore();
+                        ExcelUtil.setCell(row, i, score, numberStyle);
                     }
 
-                    row.createCell(18).setCellValue(evaluation.getTotalScore());
-                    row.createCell(19).setCellValue(evaluation.getCompletionLevel());
-                    row.createCell(20).setCellValue(evaluation.getKiRanking());
-                    row.createCell(21).setCellValue(evaluation.getManagerFeedback());
-                    row.createCell(22).setCellValue(evaluation.getCustomerFeedback());
-                    row.createCell(23).setCellValue(evaluation.getNote());
+                    // Totals and feedback
+                    ExcelUtil.setCell(row, 18, evaluation.getTotalScore(), numberStyle);
+                    ExcelUtil.setCell(row, 19, evaluation.getCompletionLevel(), textStyle);
+                    ExcelUtil.setCell(row, 20, evaluation.getKiRanking(), textStyle);
+                    ExcelUtil.setCell(row, 21, evaluation.getManagerFeedback(), textStyle);
+                    ExcelUtil.setCell(row, 22, evaluation.getCustomerFeedback(), textStyle);
+                    ExcelUtil.setCell(row, 23, evaluation.getNote(), textStyle);
                 }
             }
+
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             workbook.write(out);

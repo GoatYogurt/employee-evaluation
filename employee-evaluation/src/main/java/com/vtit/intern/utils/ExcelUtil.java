@@ -61,4 +61,16 @@ public class ExcelUtil {
         style.setFont(defaultFont);
         return style;
     }
+
+    public static void setCell(Row row, int colIndex, Object value, CellStyle style) {
+        Cell cell = row.createCell(colIndex);
+        if (value instanceof Number) {
+            cell.setCellValue(((Number) value).doubleValue());
+        } else if (value != null) {
+            cell.setCellValue(value.toString());
+        }
+        if (style != null) {
+            cell.setCellStyle(style);
+        }
+    }
 }

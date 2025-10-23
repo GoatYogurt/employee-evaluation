@@ -221,128 +221,111 @@ const EmployeeTable = () => {
     }
   };
 
-  // ------------------ FETCH EVALUATIONS ------------------
-  const fetchEvaluations = async () => {
-    try {
-      let evalCycleIdLocal = evaluationCycleIdFromUrl || null;
 
-      if (!evalCycleIdLocal && projectId) {
-        const cycleRes = await fetch(`${BASE}/evaluation-cycles/active`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-        });
+ // ------------------ FETCH EVALUATIONS ------------------
+// ------------------ FETCH EVALUATIONS (fixed) ------------------
+const fetchEvaluations = async () => {
+  try {
+    // Build URL with optional filters to increase chance get the newly created record
+    // If backend supports filtering by projectId/evaluationCycleId, include them.
+    const params = new URLSearchParams();
+    // try to get a large page size so the new record isn't paginated away
+    params.set("size", "1000");
 
-        if (cycleRes.ok) {
-          const cjson = await cycleRes.json();
-          const cycles = cjson.data?.content || [];
-          const matched = cycles.find(
-            (c) => Array.isArray(c.projectIds) && c.projectIds.map(Number).includes(Number(projectId))
-          );
-          if (matched) evalCycleIdLocal = matched.id;
-          else {
-            const activeAny = cycles.find((c) => c.status === "ACTIVE");
-            if (activeAny) evalCycleIdLocal = activeAny.id;
-            else if (cycles.length > 0) evalCycleIdLocal = cycles[0].id;
-          }
-        } else {
-          console.warn("Warning: failed to fetch evaluation-cycles/active");
-        }
-      }
+    if (projectIdFromUrl) params.set("projectId", projectIdFromUrl);
+    if (evaluationCycleIdFromUrl) params.set("evaluationCycleId", evaluationCycleIdFromUrl);
 
-      const res = await fetch(`${BASE}/evaluations`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      });
+    const url = `${BASE}/evaluations?${params.toString()}`;
 
-      if (!res.ok) {
-        const txt = await res.text();
-        console.error("Fetch evaluations failed:", res.status, txt);
-        setEvaluations([]);
-        return;
-      }
+    console.debug("Fetching evaluations from:", url);
 
-      const json = await res.json();
-      let evalList = [];
-      if (Array.isArray(json.data)) evalList = json.data;
-      else if (Array.isArray(json.data?.content)) evalList = json.data.content;
-      else if (Array.isArray(json.content)) evalList = json.content;
-      else evalList = [];
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-      // --- normalize and support nested objects (employee, project, evaluationCycle) ---
-      const normalized = evalList.map((ev) => {
-        const employeeIdRaw = ev.employeeId ?? ev.employee?.id ?? ev.employee?.employeeId;
-        const projectIdRaw = ev.projectId ?? ev.project?.id ?? ev.project?.projectId;
-        const evaluationCycleIdRaw =
-          ev.evaluationCycleId ?? ev.evaluationCycle?.id ?? ev.evaluationCycle?.evaluationCycleId;
-
-        return {
-          ...ev,
-          id: ev.id,
-          employeeId: employeeIdRaw != null ? Number(employeeIdRaw) : null,
-          projectId: projectIdRaw != null ? Number(projectIdRaw) : null,
-          evaluationCycleId: evaluationCycleIdRaw != null ? Number(evaluationCycleIdRaw) : null,
-          // keep other fields (totalScore, completionLevel, kiRanking, managerFeedback, ...)
-        };
-      });
-
-      const filtered = normalized.filter((e) => {
-        if (projectId && Number(e.projectId) !== Number(projectId)) return false;
-        if (evalCycleIdLocal && Number(e.evaluationCycleId) !== Number(evalCycleIdLocal)) return false;
-        return true;
-      });
-
-      setEvaluations(filtered);
-    } catch (err) {
-      console.error("Failed to fetch evaluations:", err);
+    if (!res.ok) {
+      const txt = await res.text();
+      console.error("Fetch evaluations failed:", res.status, txt);
       setEvaluations([]);
+      return;
     }
-  };
 
-  // ------------------ merge employees + evaluation ------------------
-  const mergedEmployees = employees.map((emp) => {
+    const json = await res.json();
+    let evalList = [];
+    if (Array.isArray(json.data)) evalList = json.data;
+    else if (Array.isArray(json.data?.content)) evalList = json.data.content;
+    else if (Array.isArray(json.content)) evalList = json.content;
+    else evalList = [];
+
+    // Normalize entries so we always have employeeId/projectId/evaluationCycleId as numbers (or null)
+    const normalized = evalList.map((ev) => {
+      const employeeIdRaw = ev.employeeId ?? ev.employee?.id;
+      const projectIdRaw = ev.projectId ?? ev.project?.id;
+      const cycleIdRaw = ev.evaluationCycleId ?? ev.evaluationCycle?.id ?? null;
+      return {
+        ...ev,
+        employeeId: employeeIdRaw != null ? Number(employeeIdRaw) : null,
+        projectId: projectIdRaw != null ? Number(projectIdRaw) : null,
+        evaluationCycleId: cycleIdRaw != null ? Number(cycleIdRaw) : null,
+      };
+    });
+
+    // Filter: chỉ giữ evaluations thuộc project nếu projectIdFromUrl có; nếu có evaluationCycleFromUrl thì ưu tiên lọc theo đó
+    const filtered = normalized.filter((e) => {
+      if (projectIdFromUrl && Number(e.projectId) !== Number(projectIdFromUrl)) return false;
+
+      if (evaluationCycleIdFromUrl) {
+        // nếu record có evaluationCycleId, so sánh; nếu record không có field này (null), vẫn giữ nó
+        if (e.evaluationCycleId != null && Number(e.evaluationCycleId) !== Number(evaluationCycleIdFromUrl)) return false;
+      }
+      return true;
+    });
+
+    // debug: giúp kiểm tra có thấy id vừa tạo hay không
+    const ids = filtered.map((x) => x.id);
+    console.debug("Evaluations fetched (filtered) count:", filtered.length, "ids:", ids);
+
+    setEvaluations(filtered);
+  } catch (err) {
+    console.error("Failed to fetch evaluations:", err);
+    setEvaluations([]);
+  }
+};
+
+
+  // ------------------ MERGE EMPLOYEES + EVALUATION ------------------
+const mergedEmployees = employees
+  .map((emp) => {
+    // chắc chắn convert id của emp sang Number để so sánh
+    const empId = emp?.id != null ? Number(emp.id) : null;
+
+    // Tìm evaluation phù hợp: ưu tiên match cả employee + project + (nếu có) evaluationCycle
     const evaluation =
       evaluations.find((e) => {
-        if (!e) return false;
-        const matchEmployee = e.employeeId != null ? Number(e.employeeId) === Number(emp.id) : false;
-        const matchProject = e.projectId != null ? Number(e.projectId) === Number(projectId) : true;
-        const matchCycle =
-          e.evaluationCycleId != null ? Number(e.evaluationCycleId) === Number(evalCycleId) : true;
-        return matchEmployee && (projectId ? matchProject : true) && (evalCycleId ? matchCycle : true);
+        const evEmpId = e.employeeId != null ? Number(e.employeeId) : null;
+        const evProjectId = e.projectId != null ? Number(e.projectId) : null;
+        const evCycleId = e.evaluationCycleId != null ? Number(e.evaluationCycleId) : null;
+
+        if (empId == null) return false;
+        if (evEmpId !== empId) return false;
+
+        // nếu có projectIdFromUrl thì bắt buộc match project
+        if (projectIdFromUrl && evProjectId !== Number(projectIdFromUrl)) return false;
+
+        // nếu có evaluationCycleIdFromUrl thì ưu tiên match cycle; 
+        // nếu evCycleId is null => không loại (giữ) — vì backend có thể trả null
+        if (evaluationCycleIdFromUrl && evCycleId != null && evCycleId !== Number(evaluationCycleIdFromUrl)) return false;
+
+        return true;
       }) ?? null;
 
-    const justAddedEmployeeId = Number(location.state?.justAddedEmployeeId);
-    const justAddedEvalId = location.state?.justAddedEvaluationId ?? null;
-    const justAddedFlag = justAddedEmployeeId && Number(justAddedEmployeeId) === Number(emp.id);
-
-    // nếu evaluation không tồn tại nhưng navigate state có evaluationId tương ứng -> tạo evaluation tạm để tránh lỗi khi edit
-    const finalEvaluation = evaluation
-      ? evaluation
-      : (justAddedFlag && justAddedEvalId)
-      ? { id: justAddedEvalId, employeeId: emp.id, projectId: projectId, evaluationCycleId: evalCycleId, totalScore: 0.0 }
-      : null;
-
-    return { ...emp, evaluation: finalEvaluation, justAdded: justAddedFlag };
+    return { ...emp, evaluation };
   })
-
-  .sort((a, b) => a.full_name.localeCompare(b.full_name, 'vi', { sensitivity: 'base' }));
-
-  //--------------------hàm format date--------------------
-  const formatDateTime = (dateString) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${hours}:${minutes} - ${day}/${month}/${year}`;
-  };
+  .sort((a, b) => (a.full_name || "").localeCompare(b.full_name || "", "vi", { sensitivity: "base" }));
 
   // ------------------ Edit handlers ------------------
   const handleEdit = (emp) => {
@@ -401,20 +384,27 @@ const EmployeeTable = () => {
   };
 
   // ------------------ Delete handler ------------------
-  const handleDelete = async (employeeId) => {
+    const handleDelete = async (employeeId) => {
     const confirmDelete = window.confirm("Bạn có chắc muốn xóa nhân viên này?");
     if (!confirmDelete) return;
 
     try {
       let response;
       if (projectId) {
-        const url = `${BASE}/projects/${projectId}/remove-employee/${employeeId}`;
+        // ✅ API mới: PUT /api/projects/remove-employee với body JSON
+        const url = `${BASE}/projects/remove-employee`;
+        const body = {
+          projectId: Number(projectId),
+          employeeId: Number(employeeId),
+        };
+
         response = await fetch(url, {
           method: "PUT",
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
             "Content-Type": "application/json",
           },
+          body: JSON.stringify(body),
         });
       } else {
         const url = `${BASE}/employees/${employeeId}`;
@@ -664,6 +654,49 @@ const EmployeeTable = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentEmployees = filteredEmployees.slice(startIndex, endIndex);
 
+  // ------------------ Export to Excel ------------------
+  const handleExportExcel = async () => {
+    const fileName = document.getElementById("fileNameInput").value || `EvaluationCycle_${evaluationCycleIdFromUrl}.xlsx`;
+
+    // Lấy token từ localStorage (thường backend trả về lúc login)
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+    try {
+      const response = await fetch(`${BASE}/evaluation-cycles/${evaluationCycleIdFromUrl}/export`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          alert("Bạn không có quyền hoặc token bị hết hạn!");
+        } else {
+          alert("Xuất file thất bại!");
+        }
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      document.getElementById("exportDialog").close();
+
+      alert("Xuất file thành công!");
+    } catch (error) {
+      console.error("Lỗi xuất file:", error);
+    }
+  };
+
+
+  // ------------------ Styles ------------------
   const editableCellStyle = {
     minWidth: "160px",
     cursor: "text",
@@ -683,11 +716,31 @@ const EmployeeTable = () => {
       <div className="content-header">
         <h1 className="header-title">{projectId ? `Danh sách nhân viên của dự án ${projectId}` : "Quản lý nhân viên"}</h1>
         <div className="header-actions">
-          {!projectId && <Link to="/employee-add"><button className="btn btn-primary"><i className="fas fa-plus"></i> Thêm nhân viên</button></Link>}
-          {isProjectMode && <Link to={`/employee-add-old?projectId=${projectId}&evaluationCycleId=${evaluationCycleIdFromUrl ?? ""}`}>
+        {!projectId && 
+        <Link to="/employee-add">
+          <button className="btn btn-primary">
+            <i className="fas fa-plus"></i> Thêm nhân viên
+          </button>
+        </Link>}
+
+        {isEvaluationMode && (<>
+            <button
+              className="btn btn-primary"
+              onClick={() => document.getElementById("exportDialog").showModal()}
+            >
+              <i className="fa-solid fa-arrow-right"></i> Xuất Excel
+            </button>
+          </>
+        )}
+
+        {isProjectMode && 
+        <Link to={`/employee-add-old?projectId=${projectId}&evaluationCycleId=${evaluationCycleIdFromUrl ?? ""}`}>
           <button className="btn btn-success"><i className="fas fa-user-plus">
-            </i> Thêm nhân viên vào dự án</button></Link>}
+            </i> Thêm nhân viên vào dự án
+          </button>
+        </Link>}
         </div>
+
       </div>
 
       <div className="excel-container">
@@ -876,6 +929,39 @@ const EmployeeTable = () => {
           </div>
         </div>
       )}
+
+        <dialog id="exportDialog" className="dialog-box">
+        <form
+          method="dialog"
+          style={{ padding: "20px", minWidth: "350px" }}
+          onSubmit={(e) => e.preventDefault()}
+        >
+          <h3>Xuất Excel</h3>
+          <label>Tên file:</label>
+          <input
+            type="text"
+            id="fileNameInput"
+            className="form-control"
+            defaultValue={`EvaluationCycle_${evaluationCycleIdFromUrl || 'Unknown'}.xlsx`}
+            style={{ marginBottom: "15px", marginTop: "5px" }}
+          />
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+            <button
+              className="btn btn-secondary"
+              onClick={() => document.getElementById("exportDialog").close()}
+            >
+              Hủy
+            </button>
+            <button
+              className="btn btn-success"
+              onClick={handleExportExcel}
+            >
+              Xác nhận xuất
+            </button>
+          </div>
+        </form>
+      </dialog>
 
     </div>
   );

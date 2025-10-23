@@ -40,3 +40,26 @@
 .read-the-docs {
   color: #888;
 }
+
+/* App wrapper to control global width/scale */
+.app-wrapper {
+  /* default styles when not overridden by inline style */
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Floating toggle button to switch modes */
+.zoom-toggle {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 9999;
+  background: #2b6cb0;
+  color: white;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+.zoom-toggle:hover { opacity: 0.95; }

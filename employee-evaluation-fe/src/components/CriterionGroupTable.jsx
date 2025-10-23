@@ -44,7 +44,10 @@ const CriterionGroupTable = () => {
       id: group.id,
       name: group.name,
       description: group.description,
-      createdDate: group.createdAt, 
+      createdAt: group.createdAt,
+      updatedAt: group.updatedAt,
+      createdBy: group.createdBy,
+      updatedBy: group.updatedBy,
       }));
       setCriterionGroups(normalized);
 
@@ -116,6 +119,17 @@ const CriterionGroupTable = () => {
     }
   };
 
+    const formatDateTime = (dateString) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  };
+
   const handleDelete = async (id) => {
     try {
       const res = await fetch(`http://localhost:8080/api/criterion-groups/${id}`, {
@@ -180,14 +194,13 @@ const CriterionGroupTable = () => {
           </div>
         </div>
 
-        <table className="excel-table">
+        <table className="excel-table" style={{ width: "100%", tableLayout: "fixed" }}>
           <thead>
             <tr>
-              <th>STT</th>
-              <th>Tên nhóm tiêu chí</th>
-              <th>Mô tả</th>
-              <th>Ngày tạo</th>
-              <th>Thao tác</th>
+              <th style={{ width: "25%" }}>STT</th>
+              <th style={{ width: "25%" }}>Tên nhóm tiêu chí</th>
+              <th style={{ width: "25%" }}>Mô tả</th>
+              <th style={{ width: "25%" }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -197,11 +210,11 @@ const CriterionGroupTable = () => {
                   <td>{startIndex + index + 1}</td>
                   <td>{group.name}</td>
                   <td>{group.description}</td>
-                  <td>
+                  {/* <td>
                     {group.createdDate
                       ? new Date(group.createdDate).toLocaleDateString('vi-VN')
                       : 'N/A'}
-                  </td>
+                  </td> */}
                   <td>
                     <div className="action-buttons">
                       <button
@@ -356,7 +369,7 @@ const CriterionGroupTable = () => {
       )}
 
       {/* View Modal */}
-      {showViewModal && selectedCriterionGroup && (
+      {showViewModal && selectedCriterionGroup && ( 
         <div className="modal-overlay">
           <div className="modal">
             <h3>Thông tin nhóm tiêu chí</h3>
@@ -372,12 +385,14 @@ const CriterionGroupTable = () => {
                 </tr>
                 <tr>
                   <td style={{ fontWeight: "bold" }}>Ngày tạo</td>
-                  <td>
-                    {selectedCriterionGroup.createdDate
-                      ? new Date(selectedCriterionGroup.createdDate).toLocaleDateString('vi-VN')
-                      : 'N/A'}
-                  </td>
+                  <td>{formatDateTime(selectedCriterionGroup.createdAt)}</td>
                 </tr>
+                <tr>
+                  <td style={{ fontWeight: "bold" }}>Ngày cập nhật</td>
+                  <td>{formatDateTime(selectedCriterionGroup.updatedAt)}</td>
+                </tr>
+                <tr><td style={{ fontWeight: "bold" }}>Người tạo</td><td>{selectedCriterionGroup.createdBy}</td></tr>
+                <tr><td style={{ fontWeight: "bold" }}>Người cập nhật</td><td>{selectedCriterionGroup.updatedBy}</td></tr>
               </tbody>
             </table>
             <button

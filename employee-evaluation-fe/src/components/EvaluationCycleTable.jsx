@@ -79,6 +79,17 @@ const EvaluationCycleTable = () => {
     setShowViewModal(true);
   };
 
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  };
+
   const handleEdit = (cycle) => {
     setSelectedCycle({ ...cycle });
     setShowEditModal(true);
@@ -172,7 +183,7 @@ const EvaluationCycleTable = () => {
       <div className="content-header">
         <h1 className="header-title">Quản lý kỳ đánh giá</h1>
         <div className="header-actions">
-          <Link to="/evaluationcycle-add">
+          <Link to="/evaluation-cycle-add">
             <button className="btn btn-primary">
               <i className="fas fa-plus"></i> Thêm kỳ đánh giá
             </button>
@@ -197,14 +208,15 @@ const EvaluationCycleTable = () => {
           </div>
         </div>
 
-        <table className="excel-table">
+        <table className="excel-table" style={{width: "100%", tableLayout: "fixed" }}>
           <thead>
             <tr>
-              <th>STT</th>
-              <th>Tên kỳ đánh giá</th>
-              <th>Ngày bắt đầu</th>
-              <th>Ngày kết thúc</th>
-              <th>Thao tác</th>
+              <th style={{ width: "2%" }}>STT</th>
+              <th style={{ width: "5%" }}>Tên kỳ đánh giá</th>
+              <th style={{ width: "5%" }}>Ngày bắt đầu</th>
+              <th style={{ width: "5%" }}>Ngày kết thúc</th>
+              <th style={{ width: "5%" }}>Status</th>
+              <th style={{ width: "10%" }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -215,6 +227,7 @@ const EvaluationCycleTable = () => {
                   <td>{c.name}</td>
                   <td>{c.startDate}</td>
                   <td>{c.endDate}</td>
+                  <td>{c.status}</td>
                   <td>
                     <div className="action-buttons">
                       <button
@@ -296,72 +309,85 @@ const EvaluationCycleTable = () => {
         </div>
       </div>
 
-      {/* Edit Modal */}
       {showEditModal && selectedCycle && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h3>Sửa kỳ đánh giá</h3>
-            <div className="form-group">
-              <label>Tên kỳ</label>
-              <input
-                type="text"
-                value={selectedCycle.name || ""}
-                onChange={(e) => setSelectedCycle({ ...selectedCycle, name: e.target.value })}
-              />
-            </div>
-            <div className="form-group">
-              <label>Mô tả</label>
-              <input
-                type="text"
-                value={selectedCycle.description || ""}
-                onChange={(e) => setSelectedCycle({ ...selectedCycle, description: e.target.value })}
-              />
-            </div>
-            <div className="form-group">
-              <label>Trạng thái</label>
-              <input
-                type="text"
-                value={selectedCycle.status || ""}
-                onChange={(e) => setSelectedCycle({ ...selectedCycle, status: e.target.value })}
-              />
-            </div>
-            <div className="form-group">
-              <label>Ngày bắt đầu</label>
-              <input
-                type="date"
-                value={selectedCycle.startDate || ""}
-                onChange={(e) =>
-                  setSelectedCycle({
-                    ...selectedCycle,
-                    startDate: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="form-group">
-              <label>Ngày kết thúc</label>
-              <input
-                type="date"
-                value={selectedCycle.endDate || ""}
-                onChange={(e) =>
-                  setSelectedCycle({
-                    ...selectedCycle,
-                    endDate: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="modal-actions">
-              <button className="btn btn-primary" onClick={handleEditConfirm}>
-                Xác nhận
-              </button>
-              <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
-                Hủy
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+  <div className="modal-overlay">
+    <div className="modal">
+      <h3>Sửa kỳ đánh giá</h3>
+
+      <div className="form-group">
+        <label>Tên kỳ</label>
+        <input
+          type="text"
+          value={selectedCycle.name || ""}
+          onChange={(e) =>
+            setSelectedCycle({ ...selectedCycle, name: e.target.value })
+          }
+        />
+      </div>
+
+      <div className="form-group">
+        <label>Mô tả</label>
+        <input
+          type="text"
+          value={selectedCycle.description || ""}
+          onChange={(e) =>
+            setSelectedCycle({ ...selectedCycle, description: e.target.value })
+          }
+        />
+      </div>
+
+      <div className="form-group">
+        <label>Trạng thái (status)</label>
+        <select
+          value={selectedCycle.status || "ACTIVE"}
+          onChange={(e) =>
+            setSelectedCycle({ ...selectedCycle, status: e.target.value })
+          }
+        >
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="CANCELLED">CANCELLED</option>
+          <option value="COMPLETED">COMPLETED</option>
+          <option value="NOT_STARTED">NOT_STARTED</option>
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label>Ngày bắt đầu</label>
+        <input
+          type="date"
+          value={selectedCycle.startDate || ""}
+          onChange={(e) =>
+            setSelectedCycle({ ...selectedCycle, startDate: e.target.value })
+          }
+        />
+      </div>
+
+      <div className="form-group">
+        <label>Ngày kết thúc</label>
+        <input
+          type="date"
+          value={selectedCycle.endDate || ""}
+          onChange={(e) =>
+            setSelectedCycle({ ...selectedCycle, endDate: e.target.value })
+          }
+        />
+      </div>
+
+      <div className="modal-actions">
+        <button className="btn btn-primary" onClick={handleEditConfirm}>
+          Xác nhận
+        </button>
+        <button
+          className="btn btn-secondary"
+          onClick={() => setShowEditModal(false)}
+        >
+          Hủy
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {/* Delete Modal */}
       {showDeleteModal && (
@@ -402,6 +428,16 @@ const EvaluationCycleTable = () => {
                   <td style={{ fontWeight: "bold" }}>Ngày kết thúc</td>
                   <td>{selectedCycle.endDate}</td>
                 </tr>
+                             <tr>
+                  <td style={{ fontWeight: "bold" }}>Ngày tạo</td>
+                  <td>{formatDateTime(selectedCycle.createdAt)}</td>
+                </tr>
+                <tr>
+                  <td style={{ fontWeight: "bold" }}>Ngày cập nhật</td>
+                  <td>{formatDateTime(selectedCycle.updatedAt)}</td>
+                </tr>
+                <tr><td style={{ fontWeight: "bold" }}>Người tạo</td><td>{selectedCycle.createdBy}</td></tr>
+                <tr><td style={{ fontWeight: "bold" }}>Người cập nhật</td><td>{selectedCycle.updatedBy}</td></tr>
               </tbody>
             </table>
             <button className="btn btn-secondary" onClick={() => setShowViewModal(false)}>

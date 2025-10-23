@@ -1,49 +1,170 @@
-import React, { useEffect, useState } from "react";
+// EmployeeTable.jsx
+import React, { useEffect, useState, useRef } from "react";
 import "../index.css";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
+const BASE = "http://localhost:8080/api";
+
+const EditableCell = ({ evaluation, field, updateEvaluationField, style, title }) => {
+  // Nếu không có evaluation (chưa có bản đánh giá) -> render td không editable
+  if (!evaluation || !evaluation.id) {
+    return (
+      <td style={{ ...(style || {}), minWidth: 120 }} title="Chưa có bản đánh giá">
+        {evaluation?.[field] ?? ""}
+      </td>
+    );
+  }
+
+  const initial = evaluation?.[field] ?? "";
+  const [editing, setEditing] = useState(false);
+  const [isComposing, setIsComposing] = useState(false);
+  const savingRefLocal = useRef(false);
+  const tdRef = useRef(null);
+
+  // Khi evaluation thay đổi từ bên ngoài (ví dụ fetch mới), cập nhật nội dung trong td
+  useEffect(() => {
+    if (!tdRef.current) return;
+    // nếu đang chỉnh sửa hoặc đang composition thì không overwrite nội dung
+    if (editing || isComposing) return;
+    tdRef.current.textContent = initial;
+  }, [initial, editing, isComposing]);
+
+  const saveIfChanged = async (newValue) => {
+    const evaluationId = evaluation?.id;
+    if (!evaluationId) {
+      alert("⚠ Không thể lưu: Evaluation ID không tồn tại.");
+      return;
+    }
+    const trimmedNew = (newValue ?? "").trim();
+    const currentRemote = evaluation?.[field] ?? "";
+    if (trimmedNew === (currentRemote ?? "").trim()) return;
+    if (savingRefLocal.current) return;
+    try {
+      savingRefLocal.current = true;
+      await updateEvaluationField(evaluationId, field, trimmedNew);
+    } finally {
+      savingRefLocal.current = false;
+    }
+  };
+
+  const handleCompositionStart = () => {
+    setIsComposing(true);
+  };
+
+  const handleCompositionEnd = async (e) => {
+    setIsComposing(false);
+    // sau khi composition kết thúc, lưu giá trị
+    const target = e.currentTarget;
+    if (!target) return;
+    const newValue = (target.textContent || "").trim();
+    setEditing(false);
+    await saveIfChanged(newValue);
+  };
+
+  const handleKeyDown = async (e) => {
+    if (isComposing) return; // không xử lý khi đang gõ dấu
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const target = e.currentTarget;
+      if (!target) return;
+      const newValue = (target.textContent || "").trim();
+      setEditing(false);
+      await saveIfChanged(newValue);
+      try { target.blur(); } catch {}
+    }
+  };
+
+  const handleBlur = async (e) => {
+    if (isComposing) return; // tránh lưu khi đang gõ IME
+    const target = e.currentTarget;
+    if (!target) return;
+    const newValue = (target.textContent || "").trim();
+    setEditing(false);
+    await saveIfChanged(newValue);
+  };
+
+  // onInput chỉ cập nhật nội dung nội bộ (không re-render nội dung từ state)
+  const handleInput = (e) => {
+    // nothing here that forces React to re-render the content; keep it minimal
+    // we can still read value from e.currentTarget.textContent when needed
+  };
+
+  return (
+    <td
+      ref={tdRef}
+      contentEditable
+      suppressContentEditableWarning
+      onCompositionStart={handleCompositionStart}
+      onCompositionEnd={handleCompositionEnd}
+      onFocus={(e) => {
+        setEditing(true);
+        try {
+          if (e.currentTarget) e.currentTarget.dataset.oldValue = (e.currentTarget.textContent || "").trim();
+        } catch {}
+      }}
+      onInput={handleInput}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      style={{ ...(style || {}), outline: "none", cursor: "text", minWidth: 120 }}
+      title={title || "Nhấn Enter để lưu"}
+    >
+      {/* Không render {value} ở đây — để tránh controlled re-render trong khi dùng IME */}
+      {initial}
+    </td>
+  );
+};
+
 const EmployeeTable = () => {
+  // -------- state --------
   const [employees, setEmployees] = useState([]);
-  const [evaluations, setEvaluations] = useState([]); // lưu evaluation list
+  const [evaluations, setEvaluations] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
+  // modals / selected
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [deleteMessage, setDeleteMessage] = useState("");
 
   // evaluate
   const [showEvaluateModal, setShowEvaluateModal] = useState(false);
   const [criteriaList, setCriteriaList] = useState([]);
-  const [scores, setScores] = useState({}); // {criterionId: "4.5"}
+  const [scores, setScores] = useState({});
   const [showGuide, setShowGuide] = useState(null);
   const [submittingEvaluation, setSubmittingEvaluation] = useState(false);
 
+  // router / params
   const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const projectId = queryParams.get("projectId");
-
   const navigate = useNavigate();
+  const query = new URLSearchParams(location.search);
+  const evaluationCycleIdFromUrl = query.get("evaluationCycleId");
+  const projectIdFromUrl = query.get("projectId");
 
+  // determine mode
+  const source = query.get("source"); // 'project' hoặc 'evaluation'
+  const isEvaluationMode = source === "evaluation";
+  const isProjectMode = source === "project";
+
+
+  // ✅ Ép kiểu và kiểm tra chắc chắn
+  const projectId = projectIdFromUrl ? Number(projectIdFromUrl) : null;
+  const evalCycleId = evaluationCycleIdFromUrl ? Number(evaluationCycleIdFromUrl) : null;
+
+  const savingRef = useRef({}); // keys `${evaluationId}-${field}`
+
+  // ------------------ initial load ------------------
   useEffect(() => {
     fetchEmployees();
-  }, [projectId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, evaluationCycleIdFromUrl]);
 
-  // Khi employees tải xong, lấy evaluations để gộp hiển thị
-  useEffect(() => {
-    if (employees.length > 0) {
-      fetchEvaluations();
-    }
-  }, [employees]);
-
-  // ================= FETCH EMPLOYEES =================
+  // ------------------ FETCH EMPLOYEES ------------------
   const fetchEmployees = async () => {
     try {
-      let url = "http://localhost:8080/api/employees";
-      if (projectId) url = `http://localhost:8080/api/projects/${projectId}`;
+      let url = `${BASE}/employees?size=1000`;
+      if (projectId) url = `${BASE}/projects/${projectId}`;
 
       const res = await fetch(url, {
         method: "GET",
@@ -55,43 +176,83 @@ const EmployeeTable = () => {
 
       if (!res.ok) {
         const txt = await res.text();
-        console.error("API ERROR:", res.status, txt);
+        console.error("API ERROR (fetchEmployees):", res.status, txt);
+        setEmployees([]);
         return;
       }
 
       const response = await res.json();
-
       let employeesData = [];
-      if (projectId) employeesData = response.data?.employees || [];
-      else employeesData = response.data?.content || [];
 
-      const normalized = employeesData.map((emp) => ({
+      if (projectId) {
+        employeesData =
+          response.data?.employees ||
+          response.data?.data?.employees ||
+          (Array.isArray(response.data?.content) ? response.data.content[0]?.employees : null) ||
+          response.data ||
+          [];
+      } else {
+        employeesData = response.data?.content || response.data || [];
+      }
+
+      if (!Array.isArray(employeesData)) employeesData = []; // fallback
+
+      const normalized = (employeesData || []).map((emp) => ({
         id: emp.id,
-        staff_code: emp.staffCode,
-        full_name: emp.fullName,
-        email: emp.email,
-        department: emp.department,
-        role: emp.role,
-        level: emp.level,
+        staff_code: emp.staffCode ?? emp.staff_code ?? "",
+        full_name: emp.fullName ?? emp.full_name ?? "",
+        email: emp.email ?? "",
+        department: emp.department ?? "",
+        role: emp.role ?? "",
+        level: emp.level ?? "",
+        createdAt: emp.createdAt ?? "",
+        updatedAt: emp.updatedAt ?? "",
+        createdBy: emp.createdBy ?? "",
+        updatedBy: emp.updatedBy ?? "",
       }));
 
       setEmployees(normalized);
-      // reset page to 1 when data changes
       setCurrentPage(1);
-    } catch (error) {
-      console.error("Failed to fetch employees:", error);
+
+      await fetchEvaluations();
+    } catch (err) {
+      console.error("Failed to fetch employees:", err);
+      setEmployees([]);
     }
   };
 
-  // ================= FETCH EVALUATIONS =================
+  // ------------------ FETCH EVALUATIONS ------------------
   const fetchEvaluations = async () => {
     try {
-      // nếu muốn chỉ lấy theo projectId có thể thêm ?projectId=${projectId}
-      const url = projectId
-        ? `http://localhost:8080/api/evaluations?projectId=${projectId}`
-        : `http://localhost:8080/api/evaluations`;
+      let evalCycleIdLocal = evaluationCycleIdFromUrl || null;
 
-      const res = await fetch(url, {
+      if (!evalCycleIdLocal && projectId) {
+        const cycleRes = await fetch(`${BASE}/evaluation-cycles/active`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (cycleRes.ok) {
+          const cjson = await cycleRes.json();
+          const cycles = cjson.data?.content || [];
+          const matched = cycles.find(
+            (c) => Array.isArray(c.projectIds) && c.projectIds.map(Number).includes(Number(projectId))
+          );
+          if (matched) evalCycleIdLocal = matched.id;
+          else {
+            const activeAny = cycles.find((c) => c.status === "ACTIVE");
+            if (activeAny) evalCycleIdLocal = activeAny.id;
+            else if (cycles.length > 0) evalCycleIdLocal = cycles[0].id;
+          }
+        } else {
+          console.warn("Warning: failed to fetch evaluation-cycles/active");
+        }
+      }
+
+      const res = await fetch(`${BASE}/evaluations`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -102,33 +263,88 @@ const EmployeeTable = () => {
       if (!res.ok) {
         const txt = await res.text();
         console.error("Fetch evaluations failed:", res.status, txt);
+        setEvaluations([]);
         return;
       }
 
-      const data = await res.json();
+      const json = await res.json();
       let evalList = [];
-      if (Array.isArray(data.data)) evalList = data.data;
-      else if (Array.isArray(data.data?.content)) evalList = data.data.content;
-      else if (Array.isArray(data.content)) evalList = data.content;
+      if (Array.isArray(json.data)) evalList = json.data;
+      else if (Array.isArray(json.data?.content)) evalList = json.data.content;
+      else if (Array.isArray(json.content)) evalList = json.content;
+      else evalList = [];
 
-      setEvaluations(evalList);
+      // --- normalize and support nested objects (employee, project, evaluationCycle) ---
+      const normalized = evalList.map((ev) => {
+        const employeeIdRaw = ev.employeeId ?? ev.employee?.id ?? ev.employee?.employeeId;
+        const projectIdRaw = ev.projectId ?? ev.project?.id ?? ev.project?.projectId;
+        const evaluationCycleIdRaw =
+          ev.evaluationCycleId ?? ev.evaluationCycle?.id ?? ev.evaluationCycle?.evaluationCycleId;
+
+        return {
+          ...ev,
+          id: ev.id,
+          employeeId: employeeIdRaw != null ? Number(employeeIdRaw) : null,
+          projectId: projectIdRaw != null ? Number(projectIdRaw) : null,
+          evaluationCycleId: evaluationCycleIdRaw != null ? Number(evaluationCycleIdRaw) : null,
+          // keep other fields (totalScore, completionLevel, kiRanking, managerFeedback, ...)
+        };
+      });
+
+      const filtered = normalized.filter((e) => {
+        if (projectId && Number(e.projectId) !== Number(projectId)) return false;
+        if (evalCycleIdLocal && Number(e.evaluationCycleId) !== Number(evalCycleIdLocal)) return false;
+        return true;
+      });
+
+      setEvaluations(filtered);
     } catch (err) {
       console.error("Failed to fetch evaluations:", err);
+      setEvaluations([]);
     }
   };
 
-  // ================= MERGE employees + evaluation =================
+  // ------------------ merge employees + evaluation ------------------
   const mergedEmployees = employees.map((emp) => {
-    // tìm evaluation cùng employeeId & projectId (để chính xác hơn)
-    const evaluation = evaluations.find(
-      (e) =>
-        e.employeeId === emp.id &&
-        (!projectId || Number(e.projectId) === Number(projectId))
-    );
-    return { ...emp, evaluation };
-  });
+    const evaluation =
+      evaluations.find((e) => {
+        if (!e) return false;
+        const matchEmployee = e.employeeId != null ? Number(e.employeeId) === Number(emp.id) : false;
+        const matchProject = e.projectId != null ? Number(e.projectId) === Number(projectId) : true;
+        const matchCycle =
+          e.evaluationCycleId != null ? Number(e.evaluationCycleId) === Number(evalCycleId) : true;
+        return matchEmployee && (projectId ? matchProject : true) && (evalCycleId ? matchCycle : true);
+      }) ?? null;
 
-  // ================= EDIT handlers =================
+    const justAddedEmployeeId = Number(location.state?.justAddedEmployeeId);
+    const justAddedEvalId = location.state?.justAddedEvaluationId ?? null;
+    const justAddedFlag = justAddedEmployeeId && Number(justAddedEmployeeId) === Number(emp.id);
+
+    // nếu evaluation không tồn tại nhưng navigate state có evaluationId tương ứng -> tạo evaluation tạm để tránh lỗi khi edit
+    const finalEvaluation = evaluation
+      ? evaluation
+      : (justAddedFlag && justAddedEvalId)
+      ? { id: justAddedEvalId, employeeId: emp.id, projectId: projectId, evaluationCycleId: evalCycleId, totalScore: 0.0 }
+      : null;
+
+    return { ...emp, evaluation: finalEvaluation, justAdded: justAddedFlag };
+  })
+
+  .sort((a, b) => a.full_name.localeCompare(b.full_name, 'vi', { sensitivity: 'base' }));
+
+  //--------------------hàm format date--------------------
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  };
+
+  // ------------------ Edit handlers ------------------
   const handleEdit = (emp) => {
     setSelectedEmployee(emp);
     setShowEditModal(true);
@@ -136,24 +352,21 @@ const EmployeeTable = () => {
 
   const handleEditConfirm = async () => {
     try {
-      const res = await fetch(
-        `http://localhost:8080/api/employees/${selectedEmployee.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            staffCode: selectedEmployee.staff_code,
-            fullName: selectedEmployee.full_name,
-            email: selectedEmployee.email,
-            department: selectedEmployee.department,
-            role: selectedEmployee.role,
-            level: selectedEmployee.level,
-          }),
-        }
-      );
+      const res = await fetch(`${BASE}/employees/${selectedEmployee.id}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          staffCode: selectedEmployee.staff_code,
+          fullName: selectedEmployee.full_name,
+          email: selectedEmployee.email,
+          department: selectedEmployee.department,
+          role: selectedEmployee.role,
+          level: selectedEmployee.level,
+        }),
+      });
 
       if (!res.ok) {
         const err = await res.text();
@@ -164,7 +377,6 @@ const EmployeeTable = () => {
 
       const result = await res.json();
       const updatedEmp = result.data;
-
       setEmployees((prev) =>
         prev.map((emp) =>
           emp.id === updatedEmp.id
@@ -180,7 +392,6 @@ const EmployeeTable = () => {
             : emp
         )
       );
-
       alert("Sửa nhân viên thành công!");
       setShowEditModal(false);
     } catch (err) {
@@ -189,60 +400,55 @@ const EmployeeTable = () => {
     }
   };
 
-  // ================= DELETE handler =================
- const handleDelete = async (employeeId) => {
-  const confirmDelete = window.confirm("Bạn có chắc muốn xóa nhân viên này?");
-  if (!confirmDelete) return;
+  // ------------------ Delete handler ------------------
+  const handleDelete = async (employeeId) => {
+    const confirmDelete = window.confirm("Bạn có chắc muốn xóa nhân viên này?");
+    if (!confirmDelete) return;
 
-  try {
-    let response;
+    try {
+      let response;
+      if (projectId) {
+        const url = `${BASE}/projects/${projectId}/remove-employee/${employeeId}`;
+        response = await fetch(url, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        });
+      } else {
+        const url = `${BASE}/employees/${employeeId}`;
+        response = await fetch(url, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        });
+      }
 
-    // Nếu đang ở trang của project
-    if (projectId) {
-      const url = `http://localhost:8080/api/projects/${projectId}/remove-employee/${employeeId}`;
-      response = await fetch(url, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      });
-    } 
-    // Nếu là trang quản lý nhân viên tổng
-    else {
-      const url = `http://localhost:8080/api/employees/${employeeId}`;
-      response = await fetch(url, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      });
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Delete failed:", errText);
+        alert("Xóa thất bại!");
+        return;
+      }
+
+      alert("Xóa thành công!");
+      await fetchEmployees();
+      if (projectId) await fetchEvaluations();
+    } catch (err) {
+      console.error("Error deleting employee:", err);
+      alert("Có lỗi khi xóa nhân viên!");
     }
+  };
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Delete failed:", errText);
-      alert("Xóa thất bại!");
-      return;
-    }
-
-    alert("Xóa thành công!");
-    await fetchEmployees(); // load lại danh sách
-  } catch (err) {
-    console.error("Error deleting employee:", err);
-    alert("Có lỗi khi xóa nhân viên!");
-  }
-};
-
-
-  // ================= VIEW handler =================
   const handleView = (emp) => {
     setSelectedEmployee(emp);
     setShowViewModal(true);
   };
 
-  // ================= EVALUATE flow =================
+  // ------------------ Evaluate modal flow ------------------
   const handleEvaluate = async (emp) => {
     setSelectedEmployee(emp);
     setCriteriaList([]);
@@ -250,21 +456,15 @@ const EmployeeTable = () => {
     setShowGuide(null);
 
     try {
-      const res = await fetch("http://localhost:8080/api/criteria", {
+      const res = await fetch(`${BASE}/criteria`, {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}`, "Content-Type": "application/json" },
       });
-
       if (!res.ok) {
-        const txt = await res.text();
-        console.error("Failed to fetch criteria:", res.status, txt);
+        console.error("Failed to fetch criteria:", res.status, await res.text());
         alert("Không thể tải danh sách tiêu chí");
         return;
       }
-
       const json = await res.json();
       let list = [];
       if (Array.isArray(json.data?.content)) list = json.data.content;
@@ -278,7 +478,6 @@ const EmployeeTable = () => {
         description: c.description || c.guidance || "",
         weight: typeof c.weight === "number" ? c.weight : parseFloat(c.weight) || 0,
       }));
-
       const initScores = {};
       normalized.forEach((c) => (initScores[c.id] = ""));
       setCriteriaList(normalized);
@@ -298,300 +497,308 @@ const EmployeeTable = () => {
     const sanitized = String(value).replace(",", ".").trim();
     if (!/^(\d+(\.\d*)?|\.\d+)$/.test(sanitized)) return;
     const num = parseFloat(sanitized);
-    if (isNaN(num)) return;
-    if (num < 0 || num > 5) return;
+    if (isNaN(num) || num < 0 || num > 5) return;
     setScores((prev) => ({ ...prev, [criterionId]: sanitized }));
   };
 
-  const handleOpenGuide = (criterionId) => setShowGuide(criterionId);
-  const handleCloseGuide = () => setShowGuide(null);
-
-const handleSubmitEvaluation = async () => {
-  if (!selectedEmployee) return;
-
-  const filled = Object.entries(scores)
-    .filter(([_, v]) => v !== "")
-    .map(([k, v]) => ({ criterionId: Number(k), score: Number(v) }));
-
-  if (filled.length === 0) {
-    alert("Vui lòng nhập ít nhất 1 điểm trước khi xác nhận.");
-    return;
-  }
-
-  // ✅ Lấy evaluationId từ danh sách evaluations hiện có
-  const relatedEvaluation = evaluations.find(
-    (e) =>
-      e.employeeId === selectedEmployee.id &&
-      (!projectId || Number(e.projectId) === Number(projectId))
-  );
-
-  if (!relatedEvaluation) {
-    alert("Không tìm thấy Evaluation tương ứng để lưu điểm (hãy đảm bảo nhân viên đã được thêm vào dự án).");
-    return;
-  }
-
-  const payload = {
-    evaluationId: relatedEvaluation.id,
-    scores: filled,
-  };
-
-  try {
-    setSubmittingEvaluation(true);
-    const res = await fetch("http://localhost:8080/api/evaluation-scores/create-multiple", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("Evaluation submit failed:", res.status, errText);
-      try {
-        const json = JSON.parse(errText);
-        alert(`Gửi đánh giá thất bại: ${json.message || errText}`);
-      } catch {
-        alert("Gửi đánh giá thất bại");
-      }
+  // ------------------ submit evaluation (new flow: call create-multiple directly) ------------------
+  const handleSubmitEvaluation = async () => {
+    if (!selectedEmployee) return;
+    const filled = Object.entries(scores)
+      .filter(([_, v]) => v !== "")
+      .map(([k, v]) => ({ criterionId: Number(k), score: Number(v) }));
+    if (filled.length === 0) {
+      alert("Vui lòng nhập ít nhất 1 điểm trước khi xác nhận.");
       return;
     }
 
-    const result = await res.json();
-    console.log("Evaluation submit success:", result);
-    alert("Gửi đánh giá thành công!");
-    setShowEvaluateModal(false);
-    await fetchEvaluations();
-  } catch (err) {
-    console.error("Submit evaluation error:", err);
-    alert("Có lỗi khi gửi đánh giá");
-  } finally {
-    setSubmittingEvaluation(false);
-  }
-};
+    // xác định evaluationCycleId để gửi cùng payload
+    let evalCycleIdLocal = evaluationCycleIdFromUrl || null;
 
-  // ================= FILTER + PAGINATION =================
+    if (!evalCycleIdLocal && projectId) {
+      try {
+        const cycleRes = await fetch(`${BASE}/evaluation-cycles/active`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (cycleRes.ok) {
+          const cjson = await cycleRes.json();
+          const cycles = cjson.data?.content || [];
+          const matched = cycles.find(
+            (c) => Array.isArray(c.projectIds) && c.projectIds.map(Number).includes(Number(projectId))
+          );
+          evalCycleIdLocal = matched ? matched.id : cycles[0]?.id;
+        }
+      } catch (err) {
+        console.error("Failed to fetch active cycles:", err);
+      }
+    }
+
+    if (!evalCycleIdLocal) {
+      alert("Không thể xác định kỳ đánh giá để gửi điểm. Vui lòng chọn evaluation cycle hoặc kiểm tra cấu hình.");
+      return;
+    }
+
+    const payload = {
+      employeeId: Number(selectedEmployee.id),
+      projectId: Number(projectId),
+      evaluationCycleId: Number(evalCycleIdLocal),
+      scores: filled,
+    };
+
+    try {
+      setSubmittingEvaluation(true);
+      const res = await fetch(`${BASE}/evaluation-scores/create-multiple`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}`, "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error("Evaluation submit failed:", res.status, txt);
+        try {
+          const jsonErr = JSON.parse(txt);
+          alert(`Gửi đánh giá thất bại: ${jsonErr.message || txt}`);
+        } catch {
+          alert("Gửi đánh giá thất bại");
+        }
+        return;
+      }
+
+      const json = await res.json();
+      // Theo mẫu API bạn gửi: response.data là object evaluation mới
+      const createdEvaluation = json.data ?? json; // fallback
+      if (!createdEvaluation || !createdEvaluation.id) {
+        console.warn("API trả về nhưng không có evaluation id:", createdEvaluation);
+        // để an toàn: fetch toàn bộ evaluations
+        await fetchEvaluations();
+      } else {
+        const normalized = {
+          ...createdEvaluation,
+          id: createdEvaluation.id,
+          employeeId:
+            createdEvaluation.employeeId ?? createdEvaluation.employee?.id ?? Number(selectedEmployee.id),
+          projectId: createdEvaluation.projectId ?? createdEvaluation.project?.id ?? Number(projectId),
+          evaluationCycleId:
+            createdEvaluation.evaluationCycleId ?? createdEvaluation.evaluationCycle?.id ?? Number(evalCycleIdLocal),
+        };
+        // cập nhật local state (nếu đã có evaluation cũ cho employee+cycle thì replace)
+        setEvaluations((prev) => {
+          const filtered = prev.filter(
+            (e) =>
+              !(
+                Number(e.employeeId) === Number(normalized.employeeId) &&
+                Number(e.evaluationCycleId) === Number(normalized.evaluationCycleId) &&
+                Number(e.projectId) === Number(normalized.projectId)
+              )
+          );
+          return [...filtered, normalized];
+        });
+      }
+
+      setShowEvaluateModal(false);
+    } catch (err) {
+      console.error("Submit evaluation error:", err);
+      alert("Có lỗi khi gửi đánh giá");
+    } finally {
+      setSubmittingEvaluation(false);
+    }
+  };
+
+  // ------------------ updateEvaluationField (PATCH) ------------------
+  const updateEvaluationField = async (evaluationId, field, newValue) => {
+    if (!evaluationId) {
+      alert("Không thể lưu: chưa có bản đánh giá (Evaluation) cho nhân viên này trong kỳ đánh giá hiện tại.");
+      return;
+    }
+
+    const key = `${evaluationId}-${field}`;
+    if (savingRef.current[key]) return;
+
+    try {
+      savingRef.current[key] = true;
+      const payload = { [field]: newValue };
+      const res = await fetch(`${BASE}/evaluations/${evaluationId}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}`, "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error("Update feedback failed:", txt);
+        alert("Cập nhật phản hồi thất bại!");
+        return;
+      }
+
+      // update local evaluations state
+      setEvaluations((prev) => prev.map((ev) => (ev.id === evaluationId ? { ...ev, [field]: newValue } : ev)));
+      console.log(`Updated evaluation ${evaluationId} ${field}`, newValue);
+    } catch (err) {
+      console.error("Error updating feedback:", err);
+      alert("Có lỗi khi cập nhật phản hồi!");
+    } finally {
+      savingRef.current[key] = false;
+    }
+  };
+
+  // ------------------ Filter & Pagination ------------------
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, employees.length]);
+
   const filteredEmployees = mergedEmployees.filter((emp) =>
-    emp.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    (emp.full_name || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage) || 1;
+  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / itemsPerPage));
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [totalPages, currentPage]);
+
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentEmployees = filteredEmployees.slice(startIndex, endIndex);
 
-  const refreshAll = async () => {
-    await fetchEmployees();
-    // fetchEvaluations will be called after employees loaded by effect
+  const editableCellStyle = {
+    minWidth: "160px",
+    cursor: "text",
+    outline: "none",
+    backgroundColor: "transparent",
+    padding: "6px 8px",
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+    verticalAlign: "top",
+    border: "1px solid #e6e6e6",
+    borderCollapse: "collapse",
   };
 
+  // ------------------ Render ------------------
   return (
     <div>
-      {/* Header */}
       <div className="content-header">
-        <h1 className="header-title">
-          {projectId ? `Danh sách nhân viên của dự án ${projectId}` : "Quản lý nhân viên"}
-        </h1>
-
+        <h1 className="header-title">{projectId ? `Danh sách nhân viên của dự án ${projectId}` : "Quản lý nhân viên"}</h1>
         <div className="header-actions">
-          {!projectId && (
-            <Link to="/employee-add">
-              <button className="btn btn-primary">
-                <i className="fas fa-plus"></i> Thêm nhân viên
-              </button>
-            </Link>
-          )}
-
-          {projectId && (
-            <Link to={`/employee-add-old?projectId=${projectId}`}>
-              <button className="btn btn-success">
-                <i className="fas fa-user-plus"></i> Thêm nhân viên vào dự án
-              </button>
-            </Link>
-          )}
+          {!projectId && <Link to="/employee-add"><button className="btn btn-primary"><i className="fas fa-plus"></i> Thêm nhân viên</button></Link>}
+          {isProjectMode && <Link to={`/employee-add-old?projectId=${projectId}&evaluationCycleId=${evaluationCycleIdFromUrl ?? ""}`}>
+          <button className="btn btn-success"><i className="fas fa-user-plus">
+            </i> Thêm nhân viên vào dự án</button></Link>}
         </div>
       </div>
 
-      {/* Table */}
       <div className="excel-container">
         <div className="table-header">
           <h3 className="table-title">{projectId ? "Danh sách nhân viên thuộc dự án" : "Danh sách nhân viên"}</h3>
           <div className="table-controls">
-            <input
-              type="text"
-              placeholder="Điền tên nhân viên"
-              className="search-box"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <button className="btn btn-warning" onClick={refreshAll}>
-              <i className="fas fa-sync-alt"></i> Làm mới
-            </button>
+            <input type="text" placeholder="Điền tên nhân viên" className="search-box" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            <button className="btn btn-warning" onClick={() => { fetchEmployees(); fetchEvaluations(); }}><i className="fas fa-sync-alt"></i> Làm mới</button>
           </div>
         </div>
 
-        <table className="excel-table">
-          <thead>
-            <tr>
-              <th>STT</th>
-              <th>Mã NV</th>
-              <th>Họ và tên</th>
-              <th>Email</th>
-              <th>Phòng/Ban</th>
-              <th>Chức vụ</th>
-              <th>Cấp bậc</th>
-              <th>Tổng điểm</th>
-              <th>Mức độ hoàn thành</th>
-              <th>Xếp hạng KI</th>
-              <th>Phản hồi Quản Lý</th>
-              <th>Phản hồi Khách Hàng</th>
-              <th>Ghi chú</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentEmployees.length > 0 ? (
-              currentEmployees.map((emp, index) => (
-                <tr key={emp.id}>
-                  <td>{startIndex + index + 1}</td>
-                  <td>{emp.staff_code}</td>
-                  <td>{emp.full_name}</td>
-                  <td>{emp.email}</td>
-                  <td>{emp.department}</td>
-                  <td>{emp.role}</td>
-                  <td>{emp.level}</td>
-                  <td>{emp.evaluation?.totalScore ?? "-"}</td>
-                  <td>{emp.evaluation?.completionLevel ?? "-"}</td>
-                  <td>{emp.evaluation?.kiRanking ?? "-"}</td>
-                  <td>{emp.evaluation?.managerFeedback ?? "-"}</td>
-                  <td>{emp.evaluation?.customerFeedback ?? "-"}</td>
-                  <td>{emp.evaluation?.note ?? "-"}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="btn btn-sm btn-edit" title="Sửa" onClick={() => handleEdit(emp)}>
-                        <i className="fas fa-edit"></i>
-                      </button>
-                      <button className="btn btn-sm btn-delete" title="Xóa" onClick={() => handleDelete(emp.id)}>
-                        <i className="fas fa-trash"></i>
-                      </button>
-                      <button className="btn btn-sm btn-view" title="Xem chi tiết" onClick={() => handleView(emp)}>
-                        <i className="fas fa-eye"></i>
-                      </button>
-
-                      {projectId && (
-                        <button className="btn btn-sm btn-primary" title="Đánh giá" onClick={() => handleEvaluate(emp)}>
-                          <i className="fas fa-star"></i>
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
+        <div style={{ maxHeight: "600px", overflowY: "auto", overflowX: "auto", border: "1px solid #ccc", borderRadius: 6 }}>
+          <table className="excel-table" style={{ width: "200%", tableLayout: "fixed" }}>
+            <thead>
               <tr>
-                <td colSpan="14" style={{ textAlign: "center", padding: "20px" }}>
-                  Không tìm thấy nhân viên nào.
-                </td>
+                <th style={{ width: "1%" }}>STT</th>
+                <th style={{ width: "2%" }}>Mã NV</th>
+                <th style={{ width: "8%" }}>Họ và tên</th>
+                <th style={{ width: "8%" }}>Email</th>
+                <th style={{ width: "6%" }}>Phòng/Ban</th>
+                <th style={{ width: "8%" }}>Chức vụ</th>
+                <th style={{ width: "8.5%" }}>Cấp bậc</th>
+                {isEvaluationMode && <>
+                  <th>Tổng điểm</th>
+                  <th>Mức độ hoàn thành</th>
+                  <th>Xếp hạng KI</th>
+                  <th>Phản hồi Quản Lý</th>
+                  <th>Phản hồi Khách Hàng</th>
+                  <th>Ghi chú</th>
+                </>}
+                <th style={{ width: "12.5%" }}>Thao tác</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {currentEmployees.length > 0 ? currentEmployees.map((emp, idx) => {
+                const evaluation = emp.evaluation ?? null;
+                return (
+                  <tr key={emp.id}>
+                    <td>{startIndex + idx + 1}</td>
+                    <td>{emp.staff_code}</td>
+                    <td>{emp.full_name}</td>
+                    <td>{emp.email}</td>
+                    <td>{emp.department}</td>
+                    <td>{emp.role}</td>
+                    <td>{emp.level}</td>
 
-        {/* Pagination */}
+                    {isEvaluationMode && <>
+                      <td>{evaluation?.totalScore ?? "-"}</td>
+                      <td>{evaluation?.completionLevel ?? "Chưa đánh giá"}</td>
+                      <td>{evaluation?.kiRanking ?? "-"}</td>
+
+                      <EditableCell evaluation={evaluation} field="managerFeedback" updateEvaluationField={updateEvaluationField} style={editableCellStyle} title="Nhấn Enter để lưu manager feedback" />
+                      <EditableCell evaluation={evaluation} field="customerFeedback" updateEvaluationField={updateEvaluationField} style={editableCellStyle} title="Nhấn Enter để lưu customer feedback" />
+                      <EditableCell evaluation={evaluation} field="note" updateEvaluationField={updateEvaluationField} style={editableCellStyle} title="Nhấn Enter để lưu note" />
+                    </>}
+
+                    <td>
+                      <div className="action-buttons">
+                        <button className="btn btn-sm btn-edit" title="Sửa" onClick={() => handleEdit(emp)}><i className="fas fa-edit" /></button>
+                        <button className="btn btn-sm btn-delete" title="Xóa" onClick={() => handleDelete(emp.id)}><i className="fas fa-trash" /></button>
+                        <button className="btn btn-sm btn-view" title="Xem chi tiết" onClick={() => handleView(emp)}><i className="fas fa-eye" /></button>
+                        {isEvaluationMode && <button className="btn btn-sm btn-primary" title="Đánh giá" onClick={() => handleEvaluate(emp)}><i className="fas fa-star" /></button>}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              }) : (
+                <tr>
+                  <td colSpan={projectId ? 14 : 8} style={{ textAlign: "center", padding: "20px" }}>Không tìm thấy nhân viên nào.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
         <div className="pagination-container">
           <div className="pagination-info">
-            Hiển thị {Math.min(filteredEmployees.length, startIndex + 1)}-{Math.min(endIndex, filteredEmployees.length)} trong tổng số {filteredEmployees.length} nhân viên
+            Hiển thị {filteredEmployees.length === 0 ? 0 : `${startIndex + 1}-${Math.min(endIndex, filteredEmployees.length)}`} trong tổng số {filteredEmployees.length} nhân viên
           </div>
           <div className="pagination-controls">
-            <button className="pagination-btn" onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} disabled={currentPage === 1}>
-              ‹ Trước
-            </button>
+            <button className="pagination-btn" onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} disabled={currentPage === 1}>‹ Trước</button>
             {Array.from({ length: totalPages }, (_, i) => {
               const pageNum = i + 1;
-              return (
-                <button key={pageNum} className={`pagination-btn ${currentPage === pageNum ? "active" : ""}`} onClick={() => setCurrentPage(pageNum)}>
-                  {pageNum}
-                </button>
-              );
+              return <button key={pageNum} className={`pagination-btn ${currentPage === pageNum ? "active" : ""}`} onClick={() => setCurrentPage(pageNum)}>{pageNum}</button>;
             })}
-            <button className="pagination-btn" onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>
-              Sau ›
-            </button>
+            <button className="pagination-btn" onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>Sau ›</button>
           </div>
         </div>
       </div>
-
-      {/* =================== MODALS =================== */}
 
       {/* Edit Modal */}
       {showEditModal && selectedEmployee && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>Sửa nhân viên</h3>
-
-            <div className="form-group">
-              <label>Mã NV</label>
-              <input type="text" value={selectedEmployee.staff_code || ""} onChange={(e) => setSelectedEmployee({ ...selectedEmployee, staff_code: e.target.value })} />
-            </div>
-
-            <div className="form-group">
-              <label>Họ và tên</label>
-              <input type="text" value={selectedEmployee.full_name || ""} onChange={(e) => setSelectedEmployee({ ...selectedEmployee, full_name: e.target.value })} />
-            </div>
-
-            <div className="form-group">
-              <label>Email</label>
-              <input type="email" value={selectedEmployee.email || ""} onChange={(e) => setSelectedEmployee({ ...selectedEmployee, email: e.target.value })} />
-            </div>
-
-            <div className="form-group">
-              <label>Phòng/Ban</label>
-              <input type="text" value={selectedEmployee.department || ""} onChange={(e) => setSelectedEmployee({ ...selectedEmployee, department: e.target.value })} />
-            </div>
-
-            <div className="form-group">
-              <label>Chức vụ (Role)</label>
+            <div className="form-group"><label>Mã NV</label><input type="text" value={selectedEmployee.staff_code || ""} onChange={(e) => setSelectedEmployee({ ...selectedEmployee, staff_code: e.target.value })} /></div>
+            <div className="form-group"><label>Họ và tên</label><input type="text" value={selectedEmployee.full_name || ""} onChange={(e) => setSelectedEmployee({ ...selectedEmployee, full_name: e.target.value })} /></div>
+            <div className="form-group"><label>Email</label><input type="email" value={selectedEmployee.email || ""} onChange={(e) => setSelectedEmployee({ ...selectedEmployee, email: e.target.value })} /></div>
+            <div className="form-group"><label>Phòng/Ban</label><input type="text" value={selectedEmployee.department || ""} onChange={(e) => setSelectedEmployee({ ...selectedEmployee, department: e.target.value })} /></div>
+            <div className="form-group"><label>Chức vụ (Role)</label>
               <select value={selectedEmployee.role || "DEV"} onChange={(e) => setSelectedEmployee({ ...selectedEmployee, role: e.target.value })}>
-                <option value="PGDTT">PGDTT</option>
-                <option value="ADMIN">ADMIN</option>
-                <option value="PM">PM</option>
-                <option value="DEV">DEV</option>
-                <option value="TESTER">TESTER</option>
-                <option value="BA">BA</option>
-                <option value="UIUX">UIUX</option>
-                <option value="AI">AI</option>
-                <option value="DATA">DATA</option>
-                <option value="QA">QA</option>
-                <option value="VHKT">VHKT</option>
-                <option value="MKT">MKT</option>
+                <option value="PGDTT">PGDTT</option><option value="ADMIN">ADMIN</option><option value="PM">PM</option><option value="DEV">DEV</option><option value="TESTER">TESTER</option><option value="BA">BA</option><option value="UIUX">UIUX</option><option value="AI">AI</option><option value="DATA">DATA</option><option value="QA">QA</option><option value="VHKT">VHKT</option><option value="MKT">MKT</option>
               </select>
             </div>
-
-            <div className="form-group">
-              <label>Cấp bậc (Level)</label>
+            <div className="form-group"><label>Cấp bậc (Level)</label>
               <select value={selectedEmployee.level || "FRESHER"} onChange={(e) => setSelectedEmployee({ ...selectedEmployee, level: e.target.value })}>
-                <option value="FRESHER">FRESHER</option>
-                <option value="JUNIOR">JUNIOR</option>
-                <option value="JUNIOR_PLUS">JUNIOR_PLUS</option>
-                <option value="MIDDLE">MIDDLE</option>
-                <option value="MIDDLE_PLUS">MIDDLE_PLUS</option>
-                <option value="SENIOR">SENIOR</option>
+                <option value="FRESHER">FRESHER</option><option value="JUNIOR">JUNIOR</option><option value="JUNIOR_PLUS">JUNIOR_PLUS</option><option value="MIDDLE">MIDDLE</option><option value="MIDDLE_PLUS">MIDDLE_PLUS</option><option value="SENIOR">SENIOR</option>
               </select>
             </div>
-
             <button className="btn btn-primary" onClick={handleEditConfirm}>Xác nhận</button>
             <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>Hủy</button>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Modal */}
-      {showDeleteModal && (
-        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{deleteMessage}</h3>
-            <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>Đóng</button>
           </div>
         </div>
       )}
@@ -601,16 +808,24 @@ const handleSubmitEvaluation = async () => {
         <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>Thông tin nhân viên</h3>
-            <table className="excel-table">
-              <tbody style={{ border: "none", color: "#000" }}>
-                <tr><td style={{ fontWeight: "bold" }}>Mã NV</td><td>{selectedEmployee.staff_code}</td></tr>
-                <tr><td style={{ fontWeight: "bold" }}>Họ và tên</td><td>{selectedEmployee.full_name}</td></tr>
-                <tr><td style={{ fontWeight: "bold" }}>Email</td><td>{selectedEmployee.email}</td></tr>
-                <tr><td style={{ fontWeight: "bold" }}>Phòng/Ban</td><td>{selectedEmployee.department}</td></tr>
-                <tr><td style={{ fontWeight: "bold" }}>Chức vụ</td><td>{selectedEmployee.role}</td></tr>
-                <tr><td style={{ fontWeight: "bold" }}>Cấp bậc</td><td>{selectedEmployee.level}</td></tr>
-              </tbody>
-            </table>
+            <table className="excel-table"><tbody style={{ border: "none", color: "#000" }}>
+              <tr><td style={{ fontWeight: "bold" }}>Mã NV</td><td>{selectedEmployee.staff_code}</td></tr>
+              <tr><td style={{ fontWeight: "bold" }}>Họ và tên</td><td>{selectedEmployee.full_name}</td></tr>
+              <tr><td style={{ fontWeight: "bold" }}>Email</td><td>{selectedEmployee.email}</td></tr>
+              <tr><td style={{ fontWeight: "bold" }}>Phòng/Ban</td><td>{selectedEmployee.department}</td></tr>
+              <tr><td style={{ fontWeight: "bold" }}>Chức vụ</td><td>{selectedEmployee.role}</td></tr>
+              <tr><td style={{ fontWeight: "bold" }}>Cấp bậc</td><td>{selectedEmployee.level}</td></tr>
+              <tr>
+                <td style={{ fontWeight: "bold" }}>Ngày tạo</td>
+                <td>{formatDateTime(selectedEmployee.createdAt)}</td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: "bold" }}>Ngày cập nhật</td>
+                <td>{formatDateTime(selectedEmployee.updatedAt)}</td>
+              </tr>
+              <tr><td style={{ fontWeight: "bold" }}>Người tạo</td><td>{selectedEmployee.createdBy}</td></tr>
+              <tr><td style={{ fontWeight: "bold" }}>Người cập nhật</td><td>{selectedEmployee.updatedBy}</td></tr>
+            </tbody></table>
             <button className="btn btn-secondary" onClick={() => setShowViewModal(false)}>Đóng</button>
           </div>
         </div>
@@ -622,54 +837,22 @@ const handleSubmitEvaluation = async () => {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>Đánh giá nhân viên</h3>
             <p>Bạn đang đánh giá nhân viên: <strong>{selectedEmployee.full_name}</strong></p>
-
             <div style={{ marginTop: 12 }}>
-              {criteriaList.length === 0 ? (
-                <p>Không có tiêu chí.</p>
-              ) : (
-                <>
-                  <table className="excel-table" style={{ width: "100%", marginBottom: 12 }}>
-                    <thead>
-                      <tr>
-                        <th style={{ width: "45%" }}>Tên tiêu chí</th>
-                        <th style={{ width: "15%" }}>Trọng số</th>
-                        <th style={{ width: "20%" }}>Điểm (Max 5)</th>
-                        <th style={{ width: "10%" }}>Hướng dẫn</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {criteriaList.map((c) => (
-                        <tr key={c.id}>
-                          <td style={{ verticalAlign: "middle" }}>{c.name}</td>
-                          <td style={{ verticalAlign: "middle" }}>{Number(c.weight)}</td>
-                          <td style={{ verticalAlign: "middle" }}>
-                            <input
-                              type="text"
-                              className="search-box"
-                              style={{ width: 120 }}
-                              placeholder="Không quá 5"
-                              value={scores[c.id] ?? ""}
-                              onChange={(e) => handleScoreChange(c.id, e.target.value)}
-                            />
-                          </td>
-                          <td style={{ verticalAlign: "middle" }}>
-                            <button className="btn btn-sm btn-view" title="Hướng dẫn" onClick={() => handleOpenGuide(c.id)}>
-                              <i className="fas fa-info-circle"></i>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </>
+              {criteriaList.length === 0 ? <p>Không có tiêu chí.</p> : (
+                <table className="excel-table" style={{ width: "100%", marginBottom: 12 }}>
+                  <thead><tr><th>Tên tiêu chí</th><th>Trọng số</th><th>Điểm (Max 5)</th><th>Hướng dẫn</th></tr></thead>
+                  <tbody>
+                    {criteriaList.map(c => (<tr key={c.id}><td>{c.name}</td><td>{Number(c.weight)}</td>
+                      <td><input className="search-box" style={{ width: 120 }} placeholder={Math.abs(c.weight) === 1 ? "0-0.5" : "0-5"} value={scores[c.id] ?? ""} onChange={(e) => handleScoreChange(c.id, e.target.value)} /></td>
+                      <td><button className="btn btn-sm btn-view" title="Hướng dẫn" onClick={() => setShowGuide(c.id)}><i className="fas fa-info-circle" /></button></td>
+                    </tr>))}
+                  </tbody>
+                </table>
               )}
             </div>
-
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <button className="btn btn-secondary" onClick={() => setShowEvaluateModal(false)}>Hủy</button>
-              <button className="btn btn-primary" onClick={handleSubmitEvaluation} disabled={submittingEvaluation}>
-                {submittingEvaluation ? "Đang gửi..." : "Xác nhận"}
-              </button>
+              <button className="btn btn-primary" onClick={handleSubmitEvaluation} disabled={submittingEvaluation}>{submittingEvaluation ? "Đang gửi..." : "Xác nhận"}</button>
             </div>
           </div>
         </div>
@@ -677,22 +860,23 @@ const handleSubmitEvaluation = async () => {
 
       {/* Guide popup */}
       {showGuide && (
-        <div className="modal-overlay" onClick={handleCloseGuide}>
+        <div className="modal-overlay" onClick={() => setShowGuide(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h4>Hướng dẫn tiêu chí</h4>
             <div style={{ marginTop: 8 }}>
               {(() => {
-                const c = criteriaList.find((x) => x.id === showGuide);
+                const c = criteriaList.find(x => x.id === showGuide);
                 if (!c) return <p>Không tìm thấy tiêu chí.</p>;
                 return <p style={{ whiteSpace: "pre-wrap" }}>{c.description || "Không có hướng dẫn"}</p>;
               })()}
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
-              <button className="btn btn-secondary" onClick={handleCloseGuide}>Đóng</button>
+              <button className="btn btn-secondary" onClick={() => setShowGuide(null)}>Đóng</button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };

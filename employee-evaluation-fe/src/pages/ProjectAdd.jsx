@@ -1,68 +1,137 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../index.css';
+import './dashboard.css';
 
 function ProjectAdd() {
-    const [formData, setFormData] = useState({
-        code: '',
-        isOdc: '',
-        managerId: ''
-    });
-    const [error, setError] = useState('');
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const res = await fetch('http://localhost:8080/api/projects', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify(formData)
-            });
+  // ✅ Dữ liệu dự án
+  const [project, setProject] = useState({
+    code: '',
+    isOdc: false,
+    managerId: '',
+  });
 
-            if (!res.ok) throw new Error('❌ Thêm dự án thất bại!');
-            alert('✅ Thêm dự án thành công!');
-            navigate('/project-list');
-        } catch (err) {
-            setError(err.message);
-        }
+  // ✅ Danh sách nhân viên PM
+  const [managers, setManagers] = useState([]);
+
+  // ✅ Lỗi hiển thị (nếu có)
+  const [error, setError] = useState('');
+
+  // ✅ Lấy danh sách nhân viên có role = PM
+  useEffect(() => {
+    const fetchManagers = async () => {
+      try {
+        const res = await fetch('http://localhost:8080/api/employees', {
+          headers: {
+            Authorization: 'Bearer ' + localStorage.getItem('token'),
+          },
+        });
+        if (!res.ok) throw new Error('Không thể lấy danh sách nhân viên');
+        const data = await res.json();
+
+        // ✅ Lọc chỉ lấy những người có role === 'PM'
+        const pmList = data.data?.content?.filter(
+          (emp) => emp.role === 'PM'
+        ) || [];
+
+        setManagers(pmList);
+      } catch (err) {
+        console.error('Lỗi khi tải danh sách PM:', err);
+        setError('Không thể tải danh sách PM');
+      }
     };
+    fetchManagers();
+  }, []);
 
-    return (
-        <div style={{ maxWidth: 500, margin: '0 auto', padding: 20 }}>
-            <h2>Thêm dự án mới</h2>
-            {error && <div style={{ color: 'red' }}>{error}</div>}
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setProject((prev) => ({
+      ...prev,
+      [name]: name === 'isOdc' ? value === 'true' : value,
+    }));
+  };
 
-            <form onSubmit={handleSubmit}>
-                <label>Mã dự án:</label>
-                <input
-                    required
-                    value={formData.code}
-                    onChange={e => setFormData({ ...formData, code: e.target.value })}
-                />
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('http://localhost:8080/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + localStorage.getItem('token'),
+        },
+        body: JSON.stringify(project),
+      });
 
-                <label>Loại dự án (ODC/Onsite):</label>
-                <input
-                    required
-                    value={formData.isOdc}
-                    onChange={e => setFormData({ ...formData, isOdc: e.target.value })}
-                />
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Lỗi API: ${res.status} - ${text}`);
+      }
 
-                <label>Quản lý :</label>
-                <input
-                    required
-                    value={formData.manangerName}
-                    onChange={e => setFormData({ ...formData, manangerName: e.target.value })}
-                />
+      alert('✅ Thêm dự án thành công!');
+      navigate('/project-list?added=true');
+    } catch (err) {
+      console.error('❌ Lỗi khi thêm dự án:', err);
+      alert('Không thể thêm dự án');
+    }
+  };
 
-                <button type="submit" className="btn btn-primary">Thêm</button>
-                <button type="button" className="btn btn-secondary" onClick={() => navigate('/project-list')}>
-                    Hủy
-                </button>
-            </form>
+  return (
+    <div style={{ maxWidth: 500, margin: '0 auto', padding: 20 }}>
+      <h2>Thêm dự án mới</h2>
+      {error && <div style={{ color: 'red' }}>{error}</div>}
+
+      <form onSubmit={handleSubmit}>
+        <label>Mã dự án:</label>
+        <input
+          name="code"
+          required
+          value={project.code}
+          onChange={handleChange}
+        />
+
+        <label>Loại dự án:</label>
+        <select
+          name="isOdc"
+          required
+          value={project.isOdc}
+          onChange={handleChange}
+        >
+          <option value={true}>ODC</option>
+          <option value={false}>NOT ODC</option>
+        </select>
+
+        <label>Quản lý:</label>
+        <select
+          name="managerId"
+          required
+          value={project.managerId}
+          onChange={handleChange}
+        >
+          <option value="">Chọn Quản lý (PM)</option>
+          {managers.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.fullName} ({m.email})
+            </option>
+          ))}
+        </select>
+
+        <div style={{ marginTop: 15 }}>
+          <button type="submit" className="btn btn-primary" style={{ marginRight: 10 }}>
+            Thêm
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => navigate('/project-list')}
+          >
+            Hủy
+          </button>
         </div>
-    );
-};
+      </form>
+    </div>
+  );
+}
+
+export default ProjectAdd;

@@ -145,7 +145,7 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
                         ProjectResponseDTO dto = new ProjectResponseDTO();
                         dto.setId(project.getId());
                         dto.setCode(project.getCode());
-                        dto.setIsOdc(project.isOdc());
+                        dto.setOdc(project.isOdc());
                         dto.setManagerName(project.getManager() != null ? project.getManager().getFullName() : null);
                         Set<EvaluationCycle> evaluationCycles = project.getEvaluationCycles();
                         if (evaluationCycles != null) {

@@ -1,8 +1,7 @@
+// ProjectTable.jsx
 import React, { useEffect, useState } from "react";
 import "../index.css";
-import { useNavigate, Link } from "react-router-dom";
-import { useLocation } from "react-router-dom";
-
+import { useNavigate, Link, useLocation } from "react-router-dom";
 
 const ProjectTable = () => {
   const [projects, setProjects] = useState([]);
@@ -10,118 +9,149 @@ const ProjectTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
-  const navigate = useNavigate();
-
-  // popup state
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
-  const [deleteMessage, setDeleteMessage] = useState("");
 
+  const [managers, setManagers] = useState([]);
+
+  const navigate = useNavigate();
   const location = useLocation();
+
+  // === CONTEXT DETECTION ===
+  // We allow two ways to determine "source":
+  // 1) query param `source=project` or `source=evaluation`
+  // 2) or via pathname containing 'evaluation' (fallback)
   const queryParams = new URLSearchParams(location.search);
   const evaluationCycleId = queryParams.get("evaluationCycleId");
+  const explicitSource = queryParams.get("source"); // optional: 'project' or 'evaluation'
+  const pathname = location.pathname || "";
 
+  const isFromEvaluation =
+    explicitSource === "evaluation" ||
+    pathname.toLowerCase().includes("evaluation") ||
+    Boolean(evaluationCycleId); // if there's an evaluationCycleId, likely from evaluation context
 
+  const isFromProject =
+    explicitSource === "project" ||
+    (!explicitSource && !isFromEvaluation); // default to project when not explicit
+
+  // ===================== FETCH PROJECTS & MANAGERS =====================
   useEffect(() => {
     fetchProjects();
-  }, []);
+    fetchManagers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [evaluationCycleId, explicitSource, location.pathname]);
 
-const fetchProjects = async () => {
-  try {
-    let url = "http://localhost:8080/api/projects";
-
-    // ✅ SỬA 1: dùng evaluationCycleId thay vì cycleId
-    if (evaluationCycleId) {
-      url = `http://localhost:8080/api/evaluation-cycles/${evaluationCycleId}/projects`;
-    }
-
-    const res = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("API ERROR:", res.status, errorText);
-      return;
-    }
-
-    const response = await res.json();
-    console.log("API RESPONSE:", response);
-
-    let projectsData = [];
-
-    if (evaluationCycleId) {
-      
-      projectsData = response.data?.content || [];
-    } else {
-      projectsData = response.data?.content || [];
-    }
-
-    const normalized = projectsData.map((p) => ({
-      id: p.id,
-      code: p.code,
-      isOdc: p.isOdc,
-      managerName: p.managerName,
-      employees: p.employees || [],
-      createdAt: p.createdAt,
-      updatedAt: p.updatedAt,
-      createdBy: p.createdBy,
-      updatedBy: p.updatedBy,
-    }));
-
-    setProjects(normalized);
-  } catch (error) {
-    console.error("Failed to fetch projects:", error);
-  }
-};
-
-  // tìm kiếm
-  const filteredProjects = projects.filter((p) =>
-    p.code?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // phân trang
-  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProjects = filteredProjects.slice(startIndex, endIndex);
-
-  // === HANDLERS ===
-  const handleView = (project) => {
-    setSelectedProject(project);
-    setShowViewModal(true);
-  };
-
-  const handleEdit = (project) => {
-    setSelectedProject(project);
-    setShowEditModal(true);
-  };
-
-  const handleDelete = async (id) => {
+  const fetchProjects = async () => {
     try {
-      const res = await fetch(`http://localhost:8080/api/projects/${id}`, {
-        method: "DELETE",
+      let url = "http://localhost:8080/api/projects";
+
+      // If evaluationCycleId present, backend may support listing projects for that cycle
+      if (evaluationCycleId) {
+        url = `http://localhost:8080/api/evaluation-cycles/${evaluationCycleId}/projects`;
+      }
+
+      const res = await fetch(url, {
+        method: "GET",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
           "Content-Type": "application/json",
         },
       });
 
-      if (!res.ok) throw new Error("Delete failed");
+      if (!res.ok) {
+        console.error("❌ Fetch projects failed:", res.status, await res.text());
+        return;
+      }
 
-      setProjects((prev) => prev.filter((p) => p.id !== id));
-      setDeleteMessage("✅ Xóa dự án thành công!");
-    } catch (err) {
-      console.error(err);
-      setDeleteMessage("❌ Xóa dự án thất bại!");
+      const response = await res.json();
+      console.log("📦 API RESPONSE:", response);
+
+      const projectsData = response.data?.content || response.data || [];
+
+      const normalized = (projectsData || []).map((p) => ({
+        id: p.id,
+        code: p.code,
+        isOdc: p.isOdc,
+        managerName: p.managerName,
+        managerId: p.managerId ?? null,
+        employees: p.employees || [],
+        evaluationCycleIds: Array.isArray(p.evaluationCycleIds)
+          ? p.evaluationCycleIds
+          : p.evaluationCycleIds
+          ? [p.evaluationCycleIds]
+          : [],
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+        createdBy: p.createdBy,
+        updatedBy: p.updatedBy,
+      }));
+
+      setProjects(normalized);
+    } catch (error) {
+      console.error("🔥 Error fetching projects:", error);
     }
-    setShowDeleteModal(true);
+  };
+
+  const fetchManagers = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/employees", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        console.error("❌ Fetch managers failed:", res.status, await res.text());
+        return;
+      }
+
+      const response = await res.json();
+      const allEmployees = response.data || response;
+
+      const pmList = Array.isArray(allEmployees)
+        ? allEmployees.filter((emp) => emp.role === "PM")
+        : [];
+
+      setManagers(pmList || []);
+    } catch (error) {
+      console.error("🔥 Error fetching managers:", error);
+    }
+  };
+
+  // ===================== SEARCH & PAGINATION =====================
+  const filteredProjects = projects.filter((p) =>
+    p.code?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProjects = filteredProjects.slice(startIndex, endIndex);
+
+  // ===================== HANDLERS =====================
+  const handleView = (project) => {
+    setSelectedProject(project);
+    setShowViewModal(true);
+  };
+
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  };
+
+  const handleEdit = (project) => {
+    setSelectedProject(project);
+    setShowEditModal(true);
   };
 
   const handleEditConfirm = async () => {
@@ -138,6 +168,7 @@ const fetchProjects = async () => {
             code: selectedProject.code,
             isOdc: selectedProject.isOdc,
             managerName: selectedProject.managerName,
+            managerId: selectedProject.managerId ?? null,
           }),
         }
       );
@@ -145,48 +176,119 @@ const fetchProjects = async () => {
       if (!res.ok) {
         const errMsg = await res.text();
         console.error("Update failed:", errMsg);
-        alert("Sửa dự án thất bại!");
+        alert("❌ Sửa dự án thất bại!");
         return;
       }
 
-      const updated = await res.json();
-
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.id === updated.id
-            ? {
-                ...p,
-                code: updated.code,
-                isOdc: updated.isOdc,
-                managerName: updated.managerName,
-              }
-            : p
-        )
-      );
-
       alert("✅ Sửa dự án thành công!");
       setShowEditModal(false);
+      fetchProjects();
     } catch (err) {
-      console.error(err);
+      console.error("Error:", err);
       alert("❌ Có lỗi khi sửa dự án!");
     }
   };
 
-  const handleViewEmployees = (projectId) => {
-    navigate(`/employee-list?projectId=${projectId}`);
+  const handleDelete = async (projectId) => {
+    const confirmDelete = window.confirm("Bạn có chắc muốn xóa dự án này?");
+    if (!confirmDelete) return;
+
+    try {
+      let response;
+
+      if (evaluationCycleId) {
+        response = await fetch(
+          `http://localhost:8080/api/projects/${projectId}/remove-evaluation-cycle/${evaluationCycleId}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      } else {
+        response = await fetch(`http://localhost:8080/api/projects/${projectId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        });
+      }
+
+      if (!response.ok) {
+        console.error("Delete failed:", await response.text());
+        alert("❌ Xóa thất bại!");
+        return;
+      }
+
+      alert("✅ Xóa thành công!");
+      fetchProjects();
+    } catch (err) {
+      console.error("Error deleting project:", err);
+      alert("❌ Có lỗi khi xóa dự án!");
+    }
   };
 
+  /**
+   * Navigate to employee list for a project.
+   * Behavior changes depending on source (project vs evaluation).
+   *
+   * - From ProjectList: go to /employee-list?projectId=...
+   * - From EvaluationList: go to /employee-list?projectId=...&evaluationCycleId=...&source=evaluation
+   *
+   * The EmployeeList page should read `source` and `evaluationCycleId` to decide whether
+   * to show "Thêm nhân viên" or "Đánh giá nhân viên".
+   */
+  const handleViewEmployees = (project) => {
+    const projectId = project.id;
+    if (isFromEvaluation) {
+      // prefer evaluationCycleId from URL; else try project's evaluationCycleIds[0]
+      const evalIdFromUrl = evaluationCycleId;
+      const evalToUse =
+        evalIdFromUrl ||
+        (project?.evaluationCycleIds && project.evaluationCycleIds.length > 0
+          ? project.evaluationCycleIds[0]
+          : null);
+
+      if (evalToUse != null) {
+        navigate(
+          `/employee-list?projectId=${projectId}&evaluationCycleId=${String(
+            evalToUse
+          )}&source=evaluation`
+        );
+      } else {
+        // If no eval id, still pass source=evaluation so FE can show evaluation flow
+        navigate(`/employee-list?projectId=${projectId}&source=evaluation`);
+      }
+    } else {
+      // Standard project flow: allow add employees to project
+      navigate(`/employee-list?projectId=${projectId}&source=project`);
+    }
+  };
+
+  // ===================== RENDER =====================
   return (
     <div>
       {/* Header */}
       <div className="content-header">
         <h1 className="header-title">Quản lý dự án</h1>
         <div className="header-actions">
-          <Link to="/project-add">
-            <button className="btn btn-primary">
-              <i className="fas fa-plus"></i> Thêm dự án
-            </button>
-          </Link>
+          {isFromEvaluation ? (
+            // When in evaluation context, allow adding project into evaluation cycle
+            <Link to={`/project-add-old?evaluationCycleId=${evaluationCycleId || ""}&source=evaluation`}>
+              <button className="btn btn-success">
+                <i className="fas fa-folder-plus"></i> Thêm vào kỳ đánh giá
+              </button>
+            </Link>
+          ) : (
+            <Link to="/project-add">
+              <button className="btn btn-primary">
+                <i className="fas fa-plus"></i> Thêm dự án
+              </button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -208,14 +310,14 @@ const fetchProjects = async () => {
           </div>
         </div>
 
-        <table className="excel-table">
+        <table className="excel-table" style={{ width: "100%", tableLayout: "fixed" }}>
           <thead>
             <tr>
-              <th>STT</th>
-              <th>Mã dự án</th>
-              <th>ODC</th>
-              <th>Quản lý</th>
-              <th>Thao tác</th>
+              <th style={{ width: "2%" }}>STT</th>
+              <th style={{ width: "8%" }}>Mã dự án</th>
+              <th style={{ width: "4%" }}>ODC</th>
+              <th style={{ width: "20%" }}>Quản lý</th>
+              <th style={{ width: "20%" }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -249,10 +351,12 @@ const fetchProjects = async () => {
                       >
                         <i className="fas fa-eye"></i>
                       </button>
+
+                      {/* Xem nhân viên: behavior thay đổi theo ngữ cảnh (project vs evaluation) */}
                       <button
                         className="btn btn-sm btn-primary"
-                        title="Xem nhân viên"
-                        onClick={() => handleViewEmployees(p.id)}
+                        title={isFromEvaluation ? "Xem nhân viên (đánh giá)" : "Xem nhân viên (quản lý/add)"}
+                        onClick={() => handleViewEmployees(p)}
                       >
                         <i className="fas fa-users"></i>
                       </button>
@@ -271,50 +375,46 @@ const fetchProjects = async () => {
         </table>
 
         {/* Pagination */}
-        <div className="pagination-container">
-          <div className="pagination-info">
-            Hiển thị {startIndex + 1}-
-            {Math.min(endIndex, filteredProjects.length)} trong tổng số{" "}
-            {filteredProjects.length} dự án
+        {totalPages >= 1 && (
+          <div className="pagination-container">
+            <div className="pagination-info">
+              Hiển thị {startIndex + 1}-
+              {Math.min(endIndex, filteredProjects.length)} trong tổng số{" "}
+              {filteredProjects.length} dự án
+            </div>
+            <div className="pagination-controls">
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                ‹ Trước
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <button
+                    key={pageNum}
+                    className={`pagination-btn ${currentPage === pageNum ? "active" : ""}`}
+                    onClick={() => setCurrentPage(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Sau ›
+              </button>
+            </div>
           </div>
-          <div className="pagination-controls">
-            <button
-              className="pagination-btn"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              ‹ Trước
-            </button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNum = i + 1;
-              return (
-                <button
-                  key={pageNum}
-                  className={`pagination-btn ${
-                    currentPage === pageNum ? "active" : ""
-                  }`}
-                  onClick={() => setCurrentPage(pageNum)}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-            <button
-              className="pagination-btn"
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-            >
-              Sau ›
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* =================== MODALS =================== */}
-
-      {/* Edit Modal */}
       {showEditModal && selectedProject && (
         <div className="modal-overlay">
           <div className="modal">
@@ -348,26 +448,29 @@ const fetchProjects = async () => {
               </select>
             </div>
             <div className="form-group">
-              <label>Quản lý</label>
-              <input
-                type="text"
-                value={selectedProject.managerName || ""}
+              <label>Quản lý:</label>
+              <select
+                name="managerId"
+                required
+                value={selectedProject.managerId || ""}
                 onChange={(e) =>
-                  setSelectedProject({
-                    ...selectedProject,
-                    managerName: e.target.value,
-                  })
+                  setSelectedProject({ ...selectedProject, managerId: e.target.value })
                 }
-              />
+              >
+                <option value="">Chọn Quản lý (PM)</option>
+                {managers.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.fullName} ({m.email})
+                  </option>
+                ))}
+              </select>
             </div>
+
             <div className="modal-actions">
               <button className="btn btn-primary" onClick={handleEditConfirm}>
                 Xác nhận
               </button>
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowEditModal(false)}
-              >
+              <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
                 Hủy
               </button>
             </div>
@@ -375,22 +478,6 @@ const fetchProjects = async () => {
         </div>
       )}
 
-      {/* Delete Modal */}
-      {showDeleteModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h3>{deleteMessage}</h3>
-            <button
-              className="btn btn-secondary"
-              onClick={() => setShowDeleteModal(false)}
-            >
-              Đóng
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* View Modal */}
       {showViewModal && selectedProject && (
         <div className="modal-overlay">
           <div className="modal">
@@ -411,30 +498,23 @@ const fetchProjects = async () => {
                 </tr>
                 <tr>
                   <td style={{ fontWeight: "bold" }}>Ngày tạo</td>
-                  <td>
-                    {selectedProject.createdAt
-                      ? new Date(selectedProject.createdAt).toLocaleDateString(
-                          "vi-VN"
-                        )
-                      : "N/A"}
-                  </td>
+                  <td>{formatDateTime(selectedProject.createdAt)}</td>
                 </tr>
                 <tr>
                   <td style={{ fontWeight: "bold" }}>Ngày cập nhật</td>
-                  <td>
-                    {selectedProject.updatedAt
-                      ? new Date(selectedProject.updatedAt).toLocaleDateString(
-                          "vi-VN"
-                        )
-                      : "N/A"}
-                  </td>
+                  <td>{formatDateTime(selectedProject.updatedAt)}</td>
+                </tr>
+                <tr>
+                  <td style={{ fontWeight: "bold" }}>Người tạo</td>
+                  <td>{selectedProject.createdBy}</td>
+                </tr>
+                <tr>
+                  <td style={{ fontWeight: "bold" }}>Người cập nhật</td>
+                  <td>{selectedProject.updatedBy}</td>
                 </tr>
               </tbody>
             </table>
-            <button
-              className="btn btn-secondary"
-              onClick={() => setShowViewModal(false)}
-            >
+            <button className="btn btn-secondary" onClick={() => setShowViewModal(false)}>
               Đóng
             </button>
           </div>

@@ -8,19 +8,24 @@ function CriterionAdd() {
   const [description, setDescription] = useState('');
   const [weight, setWeight] = useState('');
   const [criterionGroups, setCriterionGroups] = useState([]);
-  const [criterionGroupId, setCriterionGroupId] = useState('');
+  const [groupId, setGroupId] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     // Lấy danh sách nhóm tiêu chí
     fetch('http://localhost:8080/api/criterion-groups', {
+      method: 'GET',
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`
       }
     })
       .then(res => res.json())
-      .then(data => setCriterionGroups(data.content || []))
-      .catch(err => console.error(err));
+      .then(data => {
+        console.log("Criterion group API response:", data);
+        // ✅ Sửa lại cho đúng cấu trúc JSON của backend
+        setCriterionGroups(data.data?.content || []);
+      })
+      .catch(err => console.error("Fetch error:", err));
   }, []);
 
   const handleSubmit = (e) => {
@@ -30,7 +35,7 @@ function CriterionAdd() {
       name,
       description,
       weight: parseFloat(weight),
-      criterionGroupId: parseInt(criterionGroupId)
+      groupId: parseInt(groupId)
     };
 
     fetch('http://localhost:8080/api/criteria', {
@@ -79,8 +84,8 @@ function CriterionAdd() {
           <label>Nhóm tiêu chí:</label>
           <select
             required
-            value={criterionGroupId}
-            onChange={e => setCriterionGroupId(e.target.value)}
+            value={groupId}
+            onChange={e => setGroupId(e.target.value)}
           >
             <option value="">-- Chọn nhóm --</option>
             {criterionGroups.map(g => (
@@ -92,11 +97,11 @@ function CriterionAdd() {
         </div>
 
         <div className="form-group">
-          <label>Trọng số (%):</label>
+          <label>Trọng số:</label>
           <input
             type="number"
-            min="0"
-            max="100"
+            min="-1"
+            max="1"
             required
             value={weight}
             onChange={e => setWeight(e.target.value)}

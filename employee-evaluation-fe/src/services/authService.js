@@ -3,11 +3,25 @@ import axiosClient from "./axiosClient";
 
 const login = async (username, password) => {
   const res = await axiosClient.post("/auth/login", { username, password });
-  if (res.data.accessToken) localStorage.setItem("token", res.data.accessToken);
-  if (res.data.refreshToken) localStorage.setItem("refreshToken", res.data.refreshToken);
-  if (res.data.username) localStorage.setItem("username", res.data.username);
-  return res.data;
+  const data = res.data;
+
+  // ✅ Lưu token
+  if (data.accessToken) localStorage.setItem("token", data.accessToken);
+  if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
+
+  // ✅ Lưu thông tin user trực tiếp từ response
+  localStorage.setItem("username", data.username || "");
+  localStorage.setItem("staffCode", data.staffCode || "");
+  localStorage.setItem("fullName", data.fullName || "");
+  localStorage.setItem("email", data.email || "");
+  localStorage.setItem("department", data.department || "");
+  localStorage.setItem("role", data.role || "");
+  localStorage.setItem("level", data.level || "");
+
+  return data;
 };
+
+
 
 const register = async ({ fullName, staffCode, username, email, password, department, role, level }) => {
   const res = await axiosClient.post("/auth/register", { fullName, staffCode, username, email, password, department, role, level});

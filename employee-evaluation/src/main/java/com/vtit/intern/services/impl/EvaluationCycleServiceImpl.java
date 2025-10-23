@@ -215,7 +215,7 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
         try (InputStream templateStream = resource.getInputStream();
                 XSSFWorkbook workbook = new XSSFWorkbook(templateStream)) {
 
-            CellStyle textStyle = ExcelUtil.fullBorderCenterText(workbook, workbook.createFont());
+            CellStyle textStyle = ExcelUtil.fullBorderLeftText(workbook, workbook.createFont());
             CellStyle numberStyle = ExcelUtil.fullBorderRightNumber(workbook, workbook.createFont());
 
             Sheet sheet  = workbook.getSheetAt(0);

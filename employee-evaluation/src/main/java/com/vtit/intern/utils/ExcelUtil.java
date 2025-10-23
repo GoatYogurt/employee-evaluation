@@ -37,7 +37,7 @@ public class ExcelUtil {
         return style;
     }
 
-    public static CellStyle fullBorderCenterText(XSSFWorkbook workbook, Font defaultFont) {
+    public static CellStyle fullBorderLeftText(XSSFWorkbook workbook, Font defaultFont) {
         CellStyle style = workbook.createCellStyle();
 
         style.setBorderTop(BorderStyle.THIN);
@@ -50,7 +50,7 @@ public class ExcelUtil {
         style.setRightBorderColor(IndexedColors.BLACK.getIndex());
 
         style.setVerticalAlignment(VerticalAlignment.CENTER);
-        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setAlignment(HorizontalAlignment.LEFT);
 
         style.setWrapText(true);
 

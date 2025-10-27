@@ -31,7 +31,9 @@ const RegisterForm = () => {
       });
       setShowSuccessPopup(true);
     } catch (err) {
+      toast.error("Đăng ký thất bại. Vui lòng thử lại.");
       setError("Đăng ký thất bại. Vui lòng thử lại.");
+
     }
   };
 
@@ -121,7 +123,7 @@ const RegisterForm = () => {
       {showSuccessPopup && (
         <div className="success-popup">
           <div className="success-popup-content">
-            <h3>✅ Đăng ký thành công!</h3>
+            <h3>Đăng ký thành công!</h3>
             <p>
               Chúc mừng bạn đã đăng ký tài khoản thành công. Bạn có thể đăng
               nhập ngay bây giờ.

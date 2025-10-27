@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from "react";
 import "../index.css";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useContext } from "react";
+import { ToastContext } from "../contexts/ToastProvider";
 
 const ProjectTable = () => {
   const [projects, setProjects] = useState([]);
@@ -14,6 +16,9 @@ const ProjectTable = () => {
   const [selectedProject, setSelectedProject] = useState(null);
 
   const [managers, setManagers] = useState([]);
+
+  const { toast } = useContext(ToastContext);
+
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -73,7 +78,7 @@ const ProjectTable = () => {
       const normalized = (projectsData || []).map((p) => ({
         id: p.id,
         code: p.code,
-        isOdc: p.isOdc,
+        isOdc: p.isOdc === true || p.isOdc === "true" || p.odc === true || p.odc === 1,
         managerName: p.managerName,
         managerId: p.managerId ?? null,
         employees: p.employees || [],
@@ -89,12 +94,15 @@ const ProjectTable = () => {
       }));
 
       setProjects(normalized);
+
+      console.log("📌 FULL EMPLOYEE RESPONSE:", response);
+
     } catch (error) {
       console.error("🔥 Error fetching projects:", error);
     }
   };
 
-  const fetchManagers = async () => {
+    const fetchManagers = async () => {
     try {
       const res = await fetch("http://localhost:8080/api/employees", {
         method: "GET",
@@ -110,17 +118,25 @@ const ProjectTable = () => {
       }
 
       const response = await res.json();
-      const allEmployees = response.data || response;
+      console.log("📌 FULL EMPLOYEE RESPONSE:", response);
+
+      // Kiểm tra nơi chứa data
+      const allEmployees = response.data?.content || response.data || response || [];
+      console.log("✅ Danh sách nhân viên chuẩn hoá:", allEmployees);
 
       const pmList = Array.isArray(allEmployees)
-        ? allEmployees.filter((emp) => emp.role === "PM")
+        ? allEmployees.filter((emp) =>
+            emp.role?.toString().trim().toUpperCase().includes("PM")
+          )
         : [];
 
-      setManagers(pmList || []);
+      console.log("✨ Danh sách PM:", pmList);
+      setManagers(pmList);
     } catch (error) {
       console.error("🔥 Error fetching managers:", error);
     }
   };
+
 
   // ===================== SEARCH & PAGINATION =====================
   const filteredProjects = projects.filter((p) =>
@@ -176,16 +192,16 @@ const ProjectTable = () => {
       if (!res.ok) {
         const errMsg = await res.text();
         console.error("Update failed:", errMsg);
-        alert("❌ Sửa dự án thất bại!");
+        toast.error("❌ Sửa dự án thất bại!");
         return;
       }
 
-      alert("✅ Sửa dự án thành công!");
+      toast.success("Sửa dự án thành công!");
       setShowEditModal(false);
       fetchProjects();
     } catch (err) {
       console.error("Error:", err);
-      alert("❌ Có lỗi khi sửa dự án!");
+      toast.error("Có lỗi khi sửa dự án!");
     }
   };
 
@@ -223,28 +239,18 @@ const ProjectTable = () => {
         return;
       }
 
-      alert("✅ Xóa thành công!");
+      toast.success("Xóa thành công!");
       fetchProjects();
     } catch (err) {
       console.error("Error deleting project:", err);
-      alert("❌ Có lỗi khi xóa dự án!");
+      toast.error("Có lỗi khi xóa dự án!");
     }
   };
 
-  /**
-   * Navigate to employee list for a project.
-   * Behavior changes depending on source (project vs evaluation).
-   *
-   * - From ProjectList: go to /employee-list?projectId=...
-   * - From EvaluationList: go to /employee-list?projectId=...&evaluationCycleId=...&source=evaluation
-   *
-   * The EmployeeList page should read `source` and `evaluationCycleId` to decide whether
-   * to show "Thêm nhân viên" or "Đánh giá nhân viên".
-   */
+
   const handleViewEmployees = (project) => {
     const projectId = project.id;
     if (isFromEvaluation) {
-      // prefer evaluationCycleId from URL; else try project's evaluationCycleIds[0]
       const evalIdFromUrl = evaluationCycleId;
       const evalToUse =
         evalIdFromUrl ||
@@ -259,12 +265,10 @@ const ProjectTable = () => {
           )}&source=evaluation`
         );
       } else {
-        // If no eval id, still pass source=evaluation so FE can show evaluation flow
         navigate(`/employee-list?projectId=${projectId}&source=evaluation`);
       }
     } else {
-      // Standard project flow: allow add employees to project
-      navigate(`/employee-list?projectId=${projectId}&source=project`);
+        navigate(`/employee-list?projectId=${projectId}&source=project`);
     }
   };
 

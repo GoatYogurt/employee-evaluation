@@ -28,7 +28,7 @@ const ChangePasswordForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form className="change-password-form" onSubmit={handleSubmit}>
       <h2>Change Password</h2>
 
       {error && <p style={{ color: "red" }}>{error}</p>}

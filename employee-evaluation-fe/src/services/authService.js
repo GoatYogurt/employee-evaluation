@@ -2,25 +2,30 @@
 import axiosClient from "./axiosClient";
 
 const login = async (username, password) => {
-  const res = await axiosClient.post("/auth/login", { username, password });
-  const data = res.data;
+  try {
+    const res = await axiosClient.post("/auth/login", { username, password });
+    const data = res.data;
 
-  // ✅ Lưu token
-  if (data.accessToken) localStorage.setItem("token", data.accessToken);
-  if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
+    if (!data.accessToken) {
+      throw new Error("Invalid token");
+    }
 
-  // ✅ Lưu thông tin user trực tiếp từ response
-  localStorage.setItem("username", data.username || "");
-  localStorage.setItem("staffCode", data.staffCode || "");
-  localStorage.setItem("fullName", data.fullName || "");
-  localStorage.setItem("email", data.email || "");
-  localStorage.setItem("department", data.department || "");
-  localStorage.setItem("role", data.role || "");
-  localStorage.setItem("level", data.level || "");
+    localStorage.setItem("token", data.accessToken);
+    if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
 
-  return data;
+    localStorage.setItem("username", data.username || "");
+    localStorage.setItem("staffCode", data.staffCode || "");
+    localStorage.setItem("fullName", data.fullName || "");
+    localStorage.setItem("email", data.email || "");
+    localStorage.setItem("department", data.department || "");
+    localStorage.setItem("role", data.role || "");
+    localStorage.setItem("level", data.level || "");
+
+    return data;
+  } catch (error) {
+    throw error.response?.data?.message || "Login failed";
+  }
 };
-
 
 
 const register = async ({ fullName, staffCode, username, email, password, department, role, level }) => {

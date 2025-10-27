@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import "./dashboard.css";
 import { Link, useLocation } from "react-router-dom";
+import { useContext } from "react";
+import { ToastContext } from "../contexts/ToastProvider";
 
 const ProjectAddOld = () => {
   const [projects, setProjects] = useState([]);
@@ -10,17 +12,17 @@ const ProjectAddOld = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const evaluationCycleId = queryParams.get("evaluationCycleId");
+  
+  const { toast } = useContext(ToastContext);
 
-  // ✅ Hàm fetchProjects — tách riêng ra ngoài useEffect
   const fetchProjects = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("❌ Token không tồn tại. Vui lòng đăng nhập lại!");
+        toast.error("❌ Token không tồn tại. Vui lòng đăng nhập lại!");
         return;
       }
 
-      // 🟢 Lấy tất cả dự án
       const resAll = await fetch("http://localhost:8080/api/projects", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -30,7 +32,6 @@ const ProjectAddOld = () => {
       const allRes = await resAll.json();
       const allProjects = allRes?.data?.content || [];
 
-      // 🟢 Lấy dự án đã thuộc chu kỳ đánh giá
       const resExisting = await fetch(
         `http://localhost:8080/api/evaluation-cycles/${evaluationCycleId}/projects`,
         {
@@ -43,7 +44,6 @@ const ProjectAddOld = () => {
       const existRes = await resExisting.json();
       const existingProjects = existRes?.data?.content || [];
 
-      // 🟢 Lọc ra các dự án chưa thuộc chu kỳ này
       const existingIds = existingProjects.map((p) => Number(p.id));
       const availableProjects = allProjects.filter(
         (p) => !existingIds.includes(Number(p.id))
@@ -52,18 +52,16 @@ const ProjectAddOld = () => {
       setProjects(availableProjects);
     } catch (error) {
       console.error("Fetch projects error:", error);
-      alert("❌ Không thể tải danh sách dự án!");
+      toast.error("Không thể tải danh sách dự án!");
     }
   };
 
-  // ✅ Tải dữ liệu khi component mount hoặc evaluationCycleId đổi
   useEffect(() => {
     if (evaluationCycleId) {
       fetchProjects();
     }
   }, [evaluationCycleId]);
 
-  // ✅ Thêm dự án vào evaluation cycle
   const handleAddToCycle = async (projectId) => {
     try {
       const res = await fetch(
@@ -79,25 +77,24 @@ const ProjectAddOld = () => {
 
       const data = await res.json();
       if (res.ok) {
-        alert("✅ Đã thêm dự án vào chu kỳ đánh giá!");
+        toast.success("Đã thêm dự án vào chu kỳ đánh giá!");
         fetchProjects(); // Làm mới danh sách
       } else {
-        alert("❌ Thêm thất bại: " + (data.message || "Lỗi không xác định"));
+        toast.error("Thêm thất bại: " + (data.message || "Lỗi không xác định"));
       }
     } catch (error) {
       console.error("Add project error:", error);
-      alert("❌ Lỗi kết nối server!");
+      toast.error("Lỗi kết nối server!");
     }
   };
 
-  // ✅ Lọc dự án theo tìm kiếm
+
   const filteredProjects = projects.filter(
     (p) =>
       p.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.managerName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // ✅ Phân trang
+  
   const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;

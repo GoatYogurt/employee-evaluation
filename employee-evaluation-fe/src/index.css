@@ -1,6 +1,18 @@
 .user-info {
   /* ...existing code... */
 }
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;         
+  height: 140vh;                                 
+  padding: 80 0;
+  position: relative;
+}
+
+
 .user-info {
   position: relative;
   display: flex;
@@ -8,12 +20,14 @@
   align-items: center;
   z-index: 100;
 }
+
 .user-popup {
-  position: absolute;
-  top: 60px;
-  right: 24px;
+  position: fixed;
+  bottom: 30px;        /* Nằm phía trên avatar một chút */
+  left: 80px;  
   background: #fff;
   color: #111;
+  font-weight: bold;
   border-radius: 12px;
   box-shadow: 0 0 10px rgba(0,0,0,0.15);
   border: 1.5px solid #eee;
@@ -23,22 +37,47 @@
   font-size: 1rem;
   animation: fadeInScale 0.2s;
 }
-.user-popup {
-  position: fixed;
-  top: 24px;
-  right: 32px;
-  background: #fff;
-  color: #111;
-  border-radius: 12px;
-  box-shadow: 0 0 16px rgba(0,0,0,0.18);
-  border: 1.5px solid #eee;
-  min-width: 260px;
-  max-width: 90vw;
-  z-index: 9999;
-  padding: 18px 20px 16px 20px;
-  font-size: 1rem;
-  animation: fadeInScale 0.2s;
+
+
+.user-popup-title {
+  margin-bottom: 6px;
 }
+
+.user-popup-row {
+  margin-bottom: 8px;
+}
+
+.user-popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.user-popup-btn {
+  background-color: #fff;
+  color: red;
+  border: 2px solid red;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+}
+
+.user-popup-btn:hover {
+  background-color: red;
+  color: #fff;  
+}
+
+.user-popup-btn-logout {
+  background-color: red;
+  color: #fff;  
+}
+
+.user-popup-btn-logout:hover {
+  background-color: #fff;
+  color: red;  
+  border: 2px solid red;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+}
+
 .criterion-table {
   background: #fff !important;
   color: #111 !important;
@@ -309,20 +348,28 @@ body {
 .main-text{
   text-align: center;
   color: red;
+  width:  400px;
+  justify-content: center;
+  align-items: center;
+  margin: 20px auto 0 auto;
+  padding: 10px 0;
+  border-radius: 12px;
+  height: 125px;
 }
 
 .login-form {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08);
-  max-width: 400px;
-  margin: 60px auto;
-  padding: 40px 32px 32px 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+  max-width: 400px !important;
+  width: 90% !important;
+  margin: 80px auto !important;   /* căn giữa theo chiều ngang */
+  background: #fff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08) !important;
+  padding: 40px 32px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 18px !important;
+  align-items: center !important;  /* căn giữa nội dung */
 }
-
 .login-form h2 {
   color: #1A2233;
   font-size: 2rem;
@@ -808,7 +855,7 @@ justify-content: center;
 
 
 /* Animation popup */
-@keyframes fadeInScale {
+/* @keyframes fadeInScale {
   from {
     opacity: 0;
     transform: scale(0.8);
@@ -817,8 +864,57 @@ justify-content: center;
     opacity: 1;
     transform: scale(1);
   }
-}
+} */
 /* EvaluationCycleTable component styling */
 
 /* ========== Evaluate Modal ========== */
 /* ==== Modal overlay and box styling (evaluate + common) ==== */
+
+
+/*------------------------------------------export file styling ------------------------------------------*/
+.dialog-container{
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 0;
+}
+
+.dialog-box {
+  margin: 0;
+}
+
+.dialog-text {
+  display: "flex";
+  justify-content: "flex-end";
+  gap: "10px";
+
+}
+
+
+/*------------------------------------------import file styling ------------------------------------------*/
+.dialog-modal {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 0;
+  color: #000;
+  border: none;
+  height: 250px;
+  width: 300px;
+  border-radius: 10px;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+  margin-right: 6px;
+}
+
+.search-file {
+  margin-left: 8px;
+  border: 1px solid #000;
+  background-color: #2E2D2A;
+  color: #fff;
+}

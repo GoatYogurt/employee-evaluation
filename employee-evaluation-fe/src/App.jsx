@@ -20,6 +20,7 @@ import EmployeeAddOld from "./pages/EmployeeAddOld";
 import ProjectAddOld from "./pages/ProjectAddOld";
 import ProjectAdd from "./pages/ProjectAdd";
 import EvaluationCycleAdd from "./pages/EvaluationCycleAdd";
+import { ToastProvider } from "./contexts/ToastProvider";
 
 
 function AppLayout() {
@@ -57,7 +58,9 @@ function AppLayout() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AppLayout />
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>
     </BrowserRouter>
   );
 }

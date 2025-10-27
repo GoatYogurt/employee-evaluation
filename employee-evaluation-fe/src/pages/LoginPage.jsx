@@ -8,10 +8,10 @@ const LoginPage = () => {
     <div className="login-page">
       <div className="main-text">
         <h1>VIETTEL</h1>
-        <h3>Employee Evaluation System</h3>
+        <h3>Employee Evaluation KI System</h3>
       </div>
 
-      <div className="login-form">
+      <div className="login-form-wrapper">
           <LoginForm />
       </div>
     </div>

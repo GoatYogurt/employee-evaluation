@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import "./dashboard.css";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { ToastContext } from "../contexts/ToastProvider";
 
 const EmployeeAddOld = () => {
   const navigate = useNavigate();
@@ -11,6 +13,9 @@ const EmployeeAddOld = () => {
   const projectId = queryParams.get("projectId");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+
+ const { toast } = useContext(ToastContext);
+
 
   useEffect(() => {
     if (projectId) {
@@ -62,7 +67,7 @@ const EmployeeAddOld = () => {
     console.log("employeeId:", employeeId);
 
     if (!projectId) {
-      alert("❌ Không xác định được dự án. Vui lòng quay lại trang trước.");
+      toast.error("Không xác định được dự án. Vui lòng quay lại trang trước.");
       return;
     }
 
@@ -88,19 +93,15 @@ const EmployeeAddOld = () => {
       console.log("Response từ API:", data);
 
       if (!res.ok || data.code !== 200) {
-        alert("❌ Thêm thất bại: " + (data?.message || "Lỗi không xác định"));
+        toast.error("Thêm thất bại: " + (data?.message || "Lỗi không xác định"));
         return;
       }
 
-      alert("✅ Đã thêm nhân viên vào dự án thành công!");
-
-      // 🔁 Sau khi thêm xong, quay lại danh sách nhân viên trong dự án
-      navigate(`/employee-list?source=project&projectId=${projectId}`, {
-        state: { justAddedEmployeeId: Number(employeeId) },
-      });
+      toast.success("Đã thêm nhân viên vào dự án thành công!");
+      fetchEmployees(); // Làm mới danh sách
     } catch (error) {
-      console.error("❌ Add employee error:", error);
-      alert("Lỗi kết nối server!");
+      console.error("Add employee error:", error);
+      toast.error("Lỗi kết nối server!");
     }
   };
 

@@ -20,6 +20,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/employees")
@@ -81,5 +84,15 @@ public class EmployeeController {
             @RequestBody EmployeeRequestDTO dto
     ) {
         return employeeService.patch(id, dto);
+    }
+
+    @GetMapping("/template")
+    public ResponseEntity<InputStreamResource> downloadTemplate() throws IOException {
+        return employeeService.downloadTemplate();
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<ResponseDTO<Void>> importEmployees(@RequestParam("file") MultipartFile file) throws IOException {
+        return employeeService.importEmployees(file);
     }
 }

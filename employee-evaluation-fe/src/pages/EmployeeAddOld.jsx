@@ -9,7 +9,6 @@ const EmployeeAddOld = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const projectId = queryParams.get("projectId");
-  const evaluationCycleId = queryParams.get("evaluationCycleId");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
@@ -19,6 +18,7 @@ const EmployeeAddOld = () => {
     }
   }, [projectId]);
 
+  // 🔹 Lấy danh sách nhân viên chưa thuộc dự án
   const fetchEmployees = async () => {
     try {
       const resAll = await fetch("http://localhost:8080/api/employees", {
@@ -29,7 +29,7 @@ const EmployeeAddOld = () => {
         },
       });
       const allData = await resAll.json();
-      const allEmployees = allData.data?.content || [];
+      const allEmployees = allData.data?.content || allData.data || [];
 
       const resProject = await fetch(
         `http://localhost:8080/api/projects/${projectId}`,
@@ -55,98 +55,56 @@ const EmployeeAddOld = () => {
     }
   };
 
-    const handleAddToProject = async (employeeId) => {
+  // 🔹 Thêm nhân viên vào dự án (API mới)
+  const handleAddToProject = async (employeeId) => {
     console.log("==== Thêm nhân viên vào dự án ====");
     console.log("projectId:", projectId);
-    console.log("evaluationCycleId:", evaluationCycleId);
     console.log("employeeId:", employeeId);
 
-    if (!evaluationCycleId) {
-      alert("⚠ Không xác định được Evaluation Cycle. Vui lòng quay lại từ màn hình chọn chu kỳ đánh giá.");
+    if (!projectId) {
+      alert("❌ Không xác định được dự án. Vui lòng quay lại trang trước.");
       return;
     }
 
     const payload = {
       employeeId: Number(employeeId),
       projectId: Number(projectId),
-      evaluationCycleId: Number(evaluationCycleId),
     };
 
     try {
-      const res = await fetch(`http://localhost:8080/api/projects/add-employee`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        `http://localhost:8080/api/projects/add-employee`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const data = await res.json();
       console.log("Response từ API:", data);
 
-      if (!res.ok) {
+      if (!res.ok || data.code !== 200) {
         alert("❌ Thêm thất bại: " + (data?.message || "Lỗi không xác định"));
         return;
       }
 
-      // nếu BE trả về evaluation object trong data, ưu tiên lấy id từ đó
-      let foundEvalId = data?.data?.id ?? null;
-
-      // nếu BE không trả evaluation id, gọi API lấy evaluations và tìm bằng employee+project+cycle
-      if (!foundEvalId) {
-        try {
-          // fetch all evaluations (hoặc nếu có API filter thì gọi API filter)
-          const evalRes = await fetch(`http://localhost:8080/api/evaluations`, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-              "Content-Type": "application/json",
-            },
-          });
-          if (evalRes.ok) {
-            const evalJson = await evalRes.json();
-            let evalList = [];
-            if (Array.isArray(evalJson.data)) evalList = evalJson.data;
-            else if (Array.isArray(evalJson.data?.content)) evalList = evalJson.data.content;
-            else if (Array.isArray(evalJson.content)) evalList = evalJson.content;
-
-            // tìm evaluation match theo employeeId, projectId, evaluationCycleId
-            const matched = evalList.find((e) => {
-              const eEmployeeId = e.employeeId ?? e.employee?.id;
-              const eProjectId = e.projectId ?? e.project?.id;
-              const eCycleId = e.evaluationCycleId ?? e.evaluationCycle?.id;
-              return (
-                Number(eEmployeeId) === Number(employeeId) &&
-                Number(eProjectId) === Number(projectId) &&
-                Number(eCycleId) === Number(evaluationCycleId)
-              );
-            });
-            if (matched) foundEvalId = matched.id;
-          } else {
-            console.warn("Không thể fetch evaluations để tìm evaluationId sau khi add-employee.");
-          }
-        } catch (err) {
-          console.error("Lỗi khi fetch evaluations sau add:", err);
-        }
-      }
-
       alert("✅ Đã thêm nhân viên vào dự án thành công!");
 
-      // Navigate về trang employee-list, kèm thông tin vừa thêm (dùng để FE hiện 0.0 hoặc id tạm)
-      // truyền cả evaluationId (nếu tìm được) để EmployeeTable không báo lỗi khi edit
-      navigate(
-        `/employee-list?projectId=${projectId}&evaluationCycleId=${evaluationCycleId}`,
-        { state: { justAddedEmployeeId: Number(employeeId), justAddedEvaluationId: foundEvalId ?? null } }
-      );
-
+      // 🔁 Sau khi thêm xong, quay lại danh sách nhân viên trong dự án
+      navigate(`/employee-list?source=project&projectId=${projectId}`, {
+        state: { justAddedEmployeeId: Number(employeeId) },
+      });
     } catch (error) {
       console.error("❌ Add employee error:", error);
       alert("Lỗi kết nối server!");
     }
   };
 
-
+  // 🔍 Lọc và phân trang
   const filteredEmployees = employees.filter((emp) =>
     emp.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -165,13 +123,7 @@ const EmployeeAddOld = () => {
       <div className="content-header">
         <h1 className="header-title">Thêm nhân viên vào dự án {projectId}</h1>
         <div className="header-actions">
-          <Link
-            to={
-              evaluationCycleId
-                ? `/employee-list?projectId=${projectId}&evaluationCycleId=${evaluationCycleId}`
-                : `/employee-list?projectId=${projectId}`
-            }
-          >
+          <Link to={`/employee-list?source=project&projectId=${projectId}`}>
             <button className="btn btn-secondary">
               <i className="fas fa-arrow-left"></i> Quay lại
             </button>
@@ -245,8 +197,7 @@ const EmployeeAddOld = () => {
 
         <div className="pagination-container">
           <div className="pagination-info">
-            Hiển thị {startIndex + 1}-
-            {Math.min(endIndex, filteredEmployees.length)} trong tổng số{" "}
+            Hiển thị {filteredEmployees.length === 0 ? 0 : `${startIndex + 1}-${Math.min(endIndex, filteredEmployees.length)}`} trong tổng số{" "}
             {filteredEmployees.length} nhân viên
           </div>
           <div className="pagination-controls">

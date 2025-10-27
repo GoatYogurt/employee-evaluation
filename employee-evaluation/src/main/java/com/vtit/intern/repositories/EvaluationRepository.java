@@ -36,8 +36,14 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
         COUNT(DISTINCT pe.employee_id) AS total_assigned,
         COUNT(DISTINCT ev.employee_id) AS total_evaluated
     FROM project_employee pe
+    JOIN project p 
+        ON p.id = pe.project_id 
+        AND p.is_deleted = false
     JOIN evaluation_cycle_project ecp 
-        ON ecp.project_id = pe.project_id
+        ON ecp.project_id = p.id
+    JOIN evaluation_cycle ec
+        ON ec.id = ecp.evaluation_cycle_id
+        AND ec.is_deleted = false
     JOIN employee e 
         ON e.id = pe.employee_id
         AND e.is_deleted = false

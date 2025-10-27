@@ -32,16 +32,21 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
 
     @Query(
             value = """
-        SELECT 
-            COUNT(DISTINCT pe.employee_id) AS total_assigned,
-            COUNT(DISTINCT ev.employee_id) AS total_evaluated
-        FROM project_employee pe
-        JOIN evaluation_cycle_project ecp ON ecp.project_id = pe.project_id
-        LEFT JOIN evaluation ev 
-            ON ev.employee_id = pe.employee_id 
-           AND ev.evaluation_cycle_id = ecp.evaluation_cycle_id
-        WHERE ecp.evaluation_cycle_id = :evaluationCycleId
-        """,
+    SELECT 
+        COUNT(DISTINCT pe.employee_id) AS total_assigned,
+        COUNT(DISTINCT ev.employee_id) AS total_evaluated
+    FROM project_employee pe
+    JOIN evaluation_cycle_project ecp 
+        ON ecp.project_id = pe.project_id
+    JOIN employee e 
+        ON e.id = pe.employee_id
+        AND e.is_deleted = false
+    LEFT JOIN evaluation ev 
+        ON ev.employee_id = pe.employee_id 
+       AND ev.evaluation_cycle_id = ecp.evaluation_cycle_id
+       AND ev.is_deleted = false
+    WHERE ecp.evaluation_cycle_id = :evaluationCycleId
+    """,
             nativeQuery = true
     )
     Object getEvaluationProgressRaw(@Param("evaluationCycleId") Long evaluationCycleId);

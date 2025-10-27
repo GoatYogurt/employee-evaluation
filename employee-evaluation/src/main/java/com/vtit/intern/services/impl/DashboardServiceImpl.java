@@ -35,8 +35,8 @@ public class DashboardServiceImpl implements DashboardService {
         EvaluatedEmployeesResponseDTO responseDTO = new EvaluatedEmployeesResponseDTO();
         responseDTO.setCycleName(evaluationCycle.getName());
         responseDTO.setTotalCount(totalAssigned);
-        responseDTO.setNotEvaluatedCount(totalEvaluated);
-        responseDTO.setEvaluatedCount(totalAssigned - totalEvaluated);
+        responseDTO.setEvaluatedCount(totalEvaluated);
+        responseDTO.setNotEvaluatedCount(totalAssigned - totalEvaluated);
 
         return ResponseUtil.success(responseDTO);
     }

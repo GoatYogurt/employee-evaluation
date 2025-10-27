@@ -29,4 +29,20 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     Optional<Evaluation> findByIdAndIsDeletedFalse(Long id);
     Optional<Evaluation> findByEmployee_IdAndProject_IdAndEvaluationCycle_IdAndIsDeletedFalse(Long employeeId, Long projectId, Long evaluationCycleId);
     Set<Evaluation> findByProject_IdAndEvaluationCycle_IdAndIsDeletedFalse(Long projectId, Long evaluationCycleId);
+
+    @Query(
+            value = """
+        SELECT 
+            COUNT(DISTINCT pe.employee_id) AS total_assigned,
+            COUNT(DISTINCT ev.employee_id) AS total_evaluated
+        FROM project_employee pe
+        JOIN evaluation_cycle_project ecp ON ecp.project_id = pe.project_id
+        LEFT JOIN evaluation ev 
+            ON ev.employee_id = pe.employee_id 
+           AND ev.evaluation_cycle_id = ecp.evaluation_cycle_id
+        WHERE ecp.evaluation_cycle_id = :evaluationCycleId
+        """,
+            nativeQuery = true
+    )
+    Object getEvaluationProgressRaw(@Param("evaluationCycleId") Long evaluationCycleId);
 }

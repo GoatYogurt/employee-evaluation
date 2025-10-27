@@ -27,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.vtit.intern.enums.EvaluationCycleStatus;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -264,10 +265,9 @@ public class EvaluationCycleServiceImpl implements EvaluationCycleService {
                 }
             }
 
-
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             workbook.write(out);
-            InputStreamResource inputStreamResource = new InputStreamResource(new java.io.ByteArrayInputStream(out.toByteArray()));
+            InputStreamResource inputStreamResource = new InputStreamResource(new ByteArrayInputStream(out.toByteArray()));
             String fileName = "Evaluation_Cycle_Report_" + evaluationCycle.getId() + ".xlsx";
             return ResponseUtil.downloadFile(fileName, inputStreamResource);
         } catch (IOException e) {

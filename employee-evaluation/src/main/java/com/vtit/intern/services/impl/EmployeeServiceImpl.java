@@ -14,6 +14,12 @@ import com.vtit.intern.repositories.EmployeeRepository;
 import com.vtit.intern.repositories.ProjectRepository;
 import com.vtit.intern.services.EmployeeService;
 import com.vtit.intern.utils.ResponseUtil;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +27,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -189,5 +199,57 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeRepository.save(employee);
 
         return ResponseUtil.success("Password changed successfully.");
+    }
+
+    @Override
+    public ResponseEntity<InputStreamResource> downloadTemplate() throws IOException {
+        ClassPathResource resource = new ClassPathResource("templates/employee_import_template.xlsx");
+        InputStream inputStream = resource.getInputStream();
+        InputStreamResource inputStreamResource = new InputStreamResource(inputStream);
+        return ResponseUtil.downloadFile("employee_import_template.xlsx", inputStreamResource);
+    }
+
+    @Override
+    public ResponseEntity<ResponseDTO<Void>> importEmployees(MultipartFile file) throws IOException {
+        if (file.isEmpty()) {
+            return ResponseUtil.badRequest("File is empty.");
+        }
+
+        String fileName = file.getOriginalFilename();
+        if (fileName == null || !fileName.endsWith(".xlsx")) {
+            return ResponseUtil.badRequest("Invalid file format. Please upload an Excel (.xlsx) file.");
+        }
+
+        importFromExcel(file);
+        return ResponseUtil.success("Employees imported successfully.");
+    }
+
+    private void importFromExcel(MultipartFile file) throws IOException {
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            List<Employee> employeesToAdd = new ArrayList<>();
+            for (Row row: sheet) {
+                if (row.getRowNum() == 0) continue;
+                if (isRowEmpty(row)) continue;
+                Employee employee = new Employee();
+                employee.setStaffCode((int) row.getCell(0).getNumericCellValue());
+                employee.setFullName(row.getCell(1).getStringCellValue());
+                employee.setEmail(row.getCell(2).getStringCellValue());
+                employee.setDepartment(row.getCell(3).getStringCellValue());
+                employee.setRole(Role.valueOf(row.getCell(4).getStringCellValue()));
+                employee.setLevel(Level.valueOf(row.getCell(5).getStringCellValue()));
+                employeesToAdd.add(employee);
+            }
+            employeeRepository.saveAll(employeesToAdd);
+        }
+    }
+
+    private boolean isRowEmpty(Row row) {
+        for (int c = row.getFirstCellNum(); c < row.getLastCellNum(); c++) {
+            if (row.getCell(c) != null && row.getCell(c).getCellType() != org.apache.poi.ss.usermodel.CellType.BLANK) {
+                return false;
+            }
+        }
+        return true;
     }
 }

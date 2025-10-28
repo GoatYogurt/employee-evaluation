@@ -201,7 +201,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         project.getEmployees().add(employee);
         projectRepository.save(project);
-        return ResponseUtil.success("Employee " + employee.getFullName() + " added to project " + project.getCode() + "successfully.");
+        return ResponseUtil.success("Employee " + employee.getFullName() + " added to project " + project.getCode() + " successfully.");
     }
 
     @Override

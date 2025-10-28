@@ -2,11 +2,14 @@
 import React, { useEffect, useState, useRef } from "react";
 import "../index.css";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { ToastContext } from "../contexts/ToastProvider.jsx";
 
 const BASE = "http://localhost:8080/api";
 
+
+//------------------ EditableCell Component ------------------
 const EditableCell = ({ evaluation, field, updateEvaluationField, style, title }) => {
-  // Nếu không có evaluation (chưa có bản đánh giá) -> render td không editable
   if (!evaluation || !evaluation.id) {
     return (
       <td style={{ ...(style || {}), minWidth: 120 }} title="Chưa có bản đánh giá">
@@ -21,10 +24,8 @@ const EditableCell = ({ evaluation, field, updateEvaluationField, style, title }
   const savingRefLocal = useRef(false);
   const tdRef = useRef(null);
 
-  // Khi evaluation thay đổi từ bên ngoài (ví dụ fetch mới), cập nhật nội dung trong td
   useEffect(() => {
     if (!tdRef.current) return;
-    // nếu đang chỉnh sửa hoặc đang composition thì không overwrite nội dung
     if (editing || isComposing) return;
     tdRef.current.textContent = initial;
   }, [initial, editing, isComposing]);
@@ -32,7 +33,7 @@ const EditableCell = ({ evaluation, field, updateEvaluationField, style, title }
   const saveIfChanged = async (newValue) => {
     const evaluationId = evaluation?.id;
     if (!evaluationId) {
-      alert("⚠ Không thể lưu: Evaluation ID không tồn tại.");
+      toast.error("Không thể lưu: Evaluation ID không tồn tại.");
       return;
     }
     const trimmedNew = (newValue ?? "").trim();
@@ -53,7 +54,6 @@ const EditableCell = ({ evaluation, field, updateEvaluationField, style, title }
 
   const handleCompositionEnd = async (e) => {
     setIsComposing(false);
-    // sau khi composition kết thúc, lưu giá trị
     const target = e.currentTarget;
     if (!target) return;
     const newValue = (target.textContent || "").trim();
@@ -62,7 +62,7 @@ const EditableCell = ({ evaluation, field, updateEvaluationField, style, title }
   };
 
   const handleKeyDown = async (e) => {
-    if (isComposing) return; // không xử lý khi đang gõ dấu
+    if (isComposing) return;
     if (e.key === "Enter") {
       e.preventDefault();
       const target = e.currentTarget;
@@ -75,18 +75,14 @@ const EditableCell = ({ evaluation, field, updateEvaluationField, style, title }
   };
 
   const handleBlur = async (e) => {
-    if (isComposing) return; // tránh lưu khi đang gõ IME
+    if (isComposing) return;
     const target = e.currentTarget;
     if (!target) return;
     const newValue = (target.textContent || "").trim();
     setEditing(false);
     await saveIfChanged(newValue);
   };
-
-  // onInput chỉ cập nhật nội dung nội bộ (không re-render nội dung từ state)
   const handleInput = (e) => {
-    // nothing here that forces React to re-render the content; keep it minimal
-    // we can still read value from e.currentTarget.textContent when needed
   };
 
   return (
@@ -108,63 +104,71 @@ const EditableCell = ({ evaluation, field, updateEvaluationField, style, title }
       style={{ ...(style || {}), outline: "none", cursor: "text", minWidth: 120 }}
       title={title || "Nhấn Enter để lưu"}
     >
-      {/* Không render {value} ở đây — để tránh controlled re-render trong khi dùng IME */}
       {initial}
     </td>
   );
 };
 
 const EmployeeTable = () => {
-  // -------- state --------
   const [employees, setEmployees] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1); 
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
 
-  // modals / selected
+
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
-  // evaluate
   const [showEvaluateModal, setShowEvaluateModal] = useState(false);
   const [criteriaList, setCriteriaList] = useState([]);
   const [scores, setScores] = useState({});
   const [showGuide, setShowGuide] = useState(null);
   const [submittingEvaluation, setSubmittingEvaluation] = useState(false);
 
-  // router / params
+
   const location = useLocation();
   const navigate = useNavigate();
   const query = new URLSearchParams(location.search);
   const evaluationCycleIdFromUrl = query.get("evaluationCycleId");
   const projectIdFromUrl = query.get("projectId");
 
-  // determine mode
-  const source = query.get("source"); // 'project' hoặc 'evaluation'
+  const { toast } = useContext(ToastContext);
+
+  
+  const source = query.get("source");
   const isEvaluationMode = source === "evaluation";
   const isProjectMode = source === "project";
 
-
-  // ✅ Ép kiểu và kiểm tra chắc chắn
   const projectId = projectIdFromUrl ? Number(projectIdFromUrl) : null;
   const evalCycleId = evaluationCycleIdFromUrl ? Number(evaluationCycleIdFromUrl) : null;
 
-  const savingRef = useRef({}); // keys `${evaluationId}-${field}`
+  const savingRef = useRef({}); 
 
-  // ------------------ initial load ------------------
-  useEffect(() => {
-    fetchEmployees();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, evaluationCycleIdFromUrl]);
+  // ------------------ Initial fetch ------------------
+   useEffect(() => {
+    fetchEmployees(0, itemsPerPage);
+  }, [projectId, evaluationCycleIdFromUrl, itemsPerPage]);
 
-  // ------------------ FETCH EMPLOYEES ------------------
-  const fetchEmployees = async () => {
+  // ------------------ FETCH EMPLOYEES------------------
+  const fetchEmployees = async (pageIndex = 0, size = itemsPerPage) => {
     try {
-      let url = `${BASE}/employees?size=1000`;
-      if (projectId) url = `${BASE}/projects/${projectId}`;
+  
+      const params = new URLSearchParams();
+      params.set("page", String(pageIndex));
+      params.set("size", String(size));
+
+      let url = `${BASE}/employees?${params.toString()}`;
+
+      if (projectId) {
+        url = `${BASE}/projects/${projectId}?${params.toString()}`;
+      }
 
       const res = await fetch(url, {
         method: "GET",
@@ -178,24 +182,48 @@ const EmployeeTable = () => {
         const txt = await res.text();
         console.error("API ERROR (fetchEmployees):", res.status, txt);
         setEmployees([]);
+        setTotalPages(1);
+        setTotalElements(0);
         return;
       }
 
       const response = await res.json();
+
       let employeesData = [];
+      let pageInfo = {};
+
+      const payload = response.data ?? response;
 
       if (projectId) {
         employeesData =
-          response.data?.employees ||
-          response.data?.data?.employees ||
-          (Array.isArray(response.data?.content) ? response.data.content[0]?.employees : null) ||
-          response.data ||
+          payload?.employees ||
+          payload?.data?.employees ||
+          (Array.isArray(payload?.content) && payload.content[0]?.employees ? payload.content[0].employees : null) ||
+          payload?.content ||
+          payload ||
           [];
+        pageInfo = {
+          page: payload?.page ?? payload?.data?.page ?? 0,
+          size: payload?.size ?? payload?.data?.size ?? employeesData.length,
+          totalElements: payload?.totalElements ?? payload?.data?.totalElements ?? employeesData.length,
+          totalPages: payload?.totalPages ?? payload?.data?.totalPages ?? 1,
+        };
       } else {
-        employeesData = response.data?.content || response.data || [];
+        employeesData = payload?.content ?? payload?.data?.content ?? payload?.data ?? payload ?? [];
+        pageInfo = {
+          page: payload?.page ?? payload?.data?.page ?? 0,
+          size: payload?.size ?? payload?.data?.size ?? (Array.isArray(employeesData) ? employeesData.length : size),
+          totalElements: payload?.totalElements ?? payload?.data?.totalElements ?? (Array.isArray(employeesData) ? employeesData.length : 0),
+          totalPages: payload?.totalPages ?? payload?.data?.totalPages ?? 1,
+        };
       }
 
-      if (!Array.isArray(employeesData)) employeesData = []; // fallback
+      if (!Array.isArray(employeesData)) {
+        // fallback: if content is not array, try other paths, else set empty
+        if (Array.isArray(response?.data)) employeesData = response.data;
+        else if (Array.isArray(response?.content)) employeesData = response.content;
+        else employeesData = [];
+      }
 
       const normalized = (employeesData || []).map((emp) => ({
         id: emp.id,
@@ -212,24 +240,25 @@ const EmployeeTable = () => {
       }));
 
       setEmployees(normalized);
-      setCurrentPage(1);
+      setTotalPages(Number(pageInfo.totalPages ?? 1));
+      setTotalElements(Number(pageInfo.totalElements ?? (normalized.length || 0)));
+      setCurrentPage(Number(pageInfo.page ?? pageIndex) + 1);
+      setItemsPerPage(Number(pageInfo.size ?? size));
 
+      // sau khi load nhân viên, load evaluations để ghép
       await fetchEvaluations();
     } catch (err) {
       console.error("Failed to fetch employees:", err);
       setEmployees([]);
+      setTotalPages(1);
+      setTotalElements(0);
     }
   };
 
-
  // ------------------ FETCH EVALUATIONS ------------------
-// ------------------ FETCH EVALUATIONS (fixed) ------------------
 const fetchEvaluations = async () => {
   try {
-    // Build URL with optional filters to increase chance get the newly created record
-    // If backend supports filtering by projectId/evaluationCycleId, include them.
     const params = new URLSearchParams();
-    // try to get a large page size so the new record isn't paginated away
     params.set("size", "1000");
 
     if (projectIdFromUrl) params.set("projectId", projectIdFromUrl);
@@ -261,7 +290,6 @@ const fetchEvaluations = async () => {
     else if (Array.isArray(json.content)) evalList = json.content;
     else evalList = [];
 
-    // Normalize entries so we always have employeeId/projectId/evaluationCycleId as numbers (or null)
     const normalized = evalList.map((ev) => {
       const employeeIdRaw = ev.employeeId ?? ev.employee?.id;
       const projectIdRaw = ev.projectId ?? ev.project?.id;
@@ -274,18 +302,14 @@ const fetchEvaluations = async () => {
       };
     });
 
-    // Filter: chỉ giữ evaluations thuộc project nếu projectIdFromUrl có; nếu có evaluationCycleFromUrl thì ưu tiên lọc theo đó
     const filtered = normalized.filter((e) => {
       if (projectIdFromUrl && Number(e.projectId) !== Number(projectIdFromUrl)) return false;
 
       if (evaluationCycleIdFromUrl) {
-        // nếu record có evaluationCycleId, so sánh; nếu record không có field này (null), vẫn giữ nó
-        if (e.evaluationCycleId != null && Number(e.evaluationCycleId) !== Number(evaluationCycleIdFromUrl)) return false;
+      if (e.evaluationCycleId != null && Number(e.evaluationCycleId) !== Number(evaluationCycleIdFromUrl)) return false;
       }
       return true;
     });
-
-    // debug: giúp kiểm tra có thấy id vừa tạo hay không
     const ids = filtered.map((x) => x.id);
     console.debug("Evaluations fetched (filtered) count:", filtered.length, "ids:", ids);
 
@@ -300,10 +324,9 @@ const fetchEvaluations = async () => {
   // ------------------ MERGE EMPLOYEES + EVALUATION ------------------
 const mergedEmployees = employees
   .map((emp) => {
-    // chắc chắn convert id của emp sang Number để so sánh
+
     const empId = emp?.id != null ? Number(emp.id) : null;
 
-    // Tìm evaluation phù hợp: ưu tiên match cả employee + project + (nếu có) evaluationCycle
     const evaluation =
       evaluations.find((e) => {
         const evEmpId = e.employeeId != null ? Number(e.employeeId) : null;
@@ -313,11 +336,8 @@ const mergedEmployees = employees
         if (empId == null) return false;
         if (evEmpId !== empId) return false;
 
-        // nếu có projectIdFromUrl thì bắt buộc match project
         if (projectIdFromUrl && evProjectId !== Number(projectIdFromUrl)) return false;
 
-        // nếu có evaluationCycleIdFromUrl thì ưu tiên match cycle; 
-        // nếu evCycleId is null => không loại (giữ) — vì backend có thể trả null
         if (evaluationCycleIdFromUrl && evCycleId != null && evCycleId !== Number(evaluationCycleIdFromUrl)) return false;
 
         return true;
@@ -331,6 +351,17 @@ const mergedEmployees = employees
   const handleEdit = (emp) => {
     setSelectedEmployee(emp);
     setShowEditModal(true);
+  };
+
+    const formatDateTime = (dateString) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
   };
 
   const handleEditConfirm = async () => {
@@ -354,7 +385,7 @@ const mergedEmployees = employees
       if (!res.ok) {
         const err = await res.text();
         console.error("Update failed:", err);
-        alert("Sửa nhân viên thất bại!");
+        toast.error("Sửa nhân viên thất bại!");
         return;
       }
 
@@ -375,11 +406,11 @@ const mergedEmployees = employees
             : emp
         )
       );
-      alert("Sửa nhân viên thành công!");
+      toast.success("Sửa nhân viên thành công!");
       setShowEditModal(false);
     } catch (err) {
       console.error(err);
-      alert("Có lỗi khi sửa nhân viên!");
+      toast.error("Có lỗi khi sửa nhân viên!");
     }
   };
 
@@ -391,7 +422,6 @@ const mergedEmployees = employees
     try {
       let response;
       if (projectId) {
-        // ✅ API mới: PUT /api/projects/remove-employee với body JSON
         const url = `${BASE}/projects/remove-employee`;
         const body = {
           projectId: Number(projectId),
@@ -406,6 +436,7 @@ const mergedEmployees = employees
           },
           body: JSON.stringify(body),
         });
+
       } else {
         const url = `${BASE}/employees/${employeeId}`;
         response = await fetch(url, {
@@ -420,16 +451,16 @@ const mergedEmployees = employees
       if (!response.ok) {
         const errText = await response.text();
         console.error("Delete failed:", errText);
-        alert("Xóa thất bại!");
+        toast.error("Xóa thất bại!");
         return;
       }
 
-      alert("Xóa thành công!");
-      await fetchEmployees();
+      toast.success("Xóa thành công!");
+      await fetchEmployees(currentPage - 1, itemsPerPage);
       if (projectId) await fetchEvaluations();
     } catch (err) {
       console.error("Error deleting employee:", err);
-      alert("Có lỗi khi xóa nhân viên!");
+      toast.error("Có lỗi khi xóa nhân viên!");
     }
   };
 
@@ -452,7 +483,7 @@ const mergedEmployees = employees
       });
       if (!res.ok) {
         console.error("Failed to fetch criteria:", res.status, await res.text());
-        alert("Không thể tải danh sách tiêu chí");
+        toast.error("Không thể tải danh sách tiêu chí");
         return;
       }
       const json = await res.json();
@@ -475,7 +506,7 @@ const mergedEmployees = employees
       setShowEvaluateModal(true);
     } catch (err) {
       console.error("Fetch criteria error:", err);
-      alert("Có lỗi khi tải tiêu chí");
+      toast.error("Có lỗi khi tải tiêu chí");
     }
   };
 
@@ -498,7 +529,7 @@ const mergedEmployees = employees
       .filter(([_, v]) => v !== "")
       .map(([k, v]) => ({ criterionId: Number(k), score: Number(v) }));
     if (filled.length === 0) {
-      alert("Vui lòng nhập ít nhất 1 điểm trước khi xác nhận.");
+      toast.warn("Vui lòng nhập ít nhất 1 điểm trước khi xác nhận.");
       return;
     }
 
@@ -528,7 +559,7 @@ const mergedEmployees = employees
     }
 
     if (!evalCycleIdLocal) {
-      alert("Không thể xác định kỳ đánh giá để gửi điểm. Vui lòng chọn evaluation cycle hoặc kiểm tra cấu hình.");
+      toast.error("Không thể xác định kỳ đánh giá để gửi điểm. Vui lòng chọn evaluation cycle hoặc kiểm tra cấu hình.");
       return;
     }
 
@@ -552,19 +583,18 @@ const mergedEmployees = employees
         console.error("Evaluation submit failed:", res.status, txt);
         try {
           const jsonErr = JSON.parse(txt);
-          alert(`Gửi đánh giá thất bại: ${jsonErr.message || txt}`);
+          toast.error(`Gửi đánh giá thất bại: ${jsonErr.message || txt}`);
         } catch {
-          alert("Gửi đánh giá thất bại");
+          toast.error("Gửi đánh giá thất bại");
         }
         return;
       }
 
       const json = await res.json();
-      // Theo mẫu API bạn gửi: response.data là object evaluation mới
-      const createdEvaluation = json.data ?? json; // fallback
+
+      const createdEvaluation = json.data ?? json;
       if (!createdEvaluation || !createdEvaluation.id) {
         console.warn("API trả về nhưng không có evaluation id:", createdEvaluation);
-        // để an toàn: fetch toàn bộ evaluations
         await fetchEvaluations();
       } else {
         const normalized = {
@@ -576,7 +606,6 @@ const mergedEmployees = employees
           evaluationCycleId:
             createdEvaluation.evaluationCycleId ?? createdEvaluation.evaluationCycle?.id ?? Number(evalCycleIdLocal),
         };
-        // cập nhật local state (nếu đã có evaluation cũ cho employee+cycle thì replace)
         setEvaluations((prev) => {
           const filtered = prev.filter(
             (e) =>
@@ -593,7 +622,7 @@ const mergedEmployees = employees
       setShowEvaluateModal(false);
     } catch (err) {
       console.error("Submit evaluation error:", err);
-      alert("Có lỗi khi gửi đánh giá");
+      toast.error("Có lỗi khi gửi đánh giá");
     } finally {
       setSubmittingEvaluation(false);
     }
@@ -621,16 +650,15 @@ const mergedEmployees = employees
       if (!res.ok) {
         const txt = await res.text();
         console.error("Update feedback failed:", txt);
-        alert("Cập nhật phản hồi thất bại!");
+        toast.error("Cập nhật phản hồi thất bại!");
         return;
       }
 
-      // update local evaluations state
       setEvaluations((prev) => prev.map((ev) => (ev.id === evaluationId ? { ...ev, [field]: newValue } : ev)));
       console.log(`Updated evaluation ${evaluationId} ${field}`, newValue);
     } catch (err) {
       console.error("Error updating feedback:", err);
-      alert("Có lỗi khi cập nhật phản hồi!");
+      toast.error("Có lỗi khi cập nhật phản hồi!");
     } finally {
       savingRef.current[key] = false;
     }
@@ -639,26 +667,35 @@ const mergedEmployees = employees
   // ------------------ Filter & Pagination ------------------
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, employees.length]);
+  }, [searchTerm]);
+
 
   const filteredEmployees = mergedEmployees.filter((emp) =>
     (emp.full_name || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / itemsPerPage));
-  useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(totalPages);
-  }, [totalPages, currentPage]);
+  const startIndex = totalElements === 0 ? 0 : (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + (filteredEmployees.length || 0);
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentEmployees = filteredEmployees.slice(startIndex, endIndex);
+  const goToPage = (pageNum) => {
+    const pageIndex = Math.max(0, pageNum - 1);
+    fetchEmployees(pageIndex, itemsPerPage);
+  };
+
+  const goPrev = () => {
+    if (currentPage <= 1) return;
+    goToPage(currentPage - 1);
+  };
+
+  const goNext = () => {
+    if (currentPage >= totalPages) return;
+    goToPage(currentPage + 1);
+  };
+
 
   // ------------------ Export to Excel ------------------
   const handleExportExcel = async () => {
     const fileName = document.getElementById("fileNameInput").value || `EvaluationCycle_${evaluationCycleIdFromUrl}.xlsx`;
-
-    // Lấy token từ localStorage (thường backend trả về lúc login)
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 
     try {
@@ -671,9 +708,9 @@ const mergedEmployees = employees
 
       if (!response.ok) {
         if (response.status === 403) {
-          alert("Bạn không có quyền hoặc token bị hết hạn!");
+          toast.error("Bạn không có quyền hoặc token bị hết hạn!");
         } else {
-          alert("Xuất file thất bại!");
+          toast.error("Xuất file thất bại!");
         }
         return;
       }
@@ -689,9 +726,94 @@ const mergedEmployees = employees
       window.URL.revokeObjectURL(url);
       document.getElementById("exportDialog").close();
 
-      alert("Xuất file thành công!");
+      toast.success("Xuất file thành công!");
     } catch (error) {
       console.error("Lỗi xuất file:", error);
+      toast.error("Có lỗi xảy ra khi xuất file!");
+    }
+  };
+
+  //---------------------Template Excel--------------------------
+  const handleDownloadTemplate = async () => {
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+  try {
+    const response = await fetch(`${BASE}/employees/template`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      if (response.status === 403) {
+        toast.error("Bạn không có quyền hoặc token đã hết hạn!");
+      } else {
+        toast.error("Tải template thất bại!");
+      }
+      return;
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "Template_Employees.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+
+    toast.success("Tải template thành công!");
+    } catch (error) {
+      console.error("Lỗi tải template:", error);
+      toast.error("Có lỗi xảy ra khi tải file template!");
+    }
+  };
+
+
+  //----------------------Import from Excel----------------------
+  const handleImportExcel = async () => {
+  const fileInput = document.getElementById("fileImportInput");
+  const file = fileInput.files[0];
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+  if (!file) {
+    toast.error("Vui lòng chọn file Excel để import!");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await fetch(`${BASE}/employees/import`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`
+        // Không set Content-Type để fetch tự hiểu multipart/form-data
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      if (response.status === 403) {
+        toast.error("Bạn không có quyền hoặc token bị hết hạn!");
+      } else {
+        const errorMessage = await response.text();
+        toast.error(`Import thất bại: ${errorMessage}`);
+      }
+      return;
+    }
+
+    toast.success("Import thành công!");
+    document.getElementById("importDialog").close();
+    fileInput.value = ""; // clear input
+    // reload current page to reflect imported changes
+    await fetchEmployees(currentPage - 1, itemsPerPage);
+    } catch (error) {
+      console.error("Lỗi import:", error);
+      toast.error("Có lỗi xảy ra khi import file!");
     }
   };
 
@@ -716,6 +838,17 @@ const mergedEmployees = employees
       <div className="content-header">
         <h1 className="header-title">{projectId ? `Danh sách nhân viên của dự án ${projectId}` : "Quản lý nhân viên"}</h1>
         <div className="header-actions">
+        
+        {!projectId &&
+          <button
+            className="btn btn-primary"
+            onClick={() => document.getElementById("importDialog").showModal()}
+          >
+            <i class="fa-solid fa-file-import"></i>  Import Excel
+          </button>
+
+        }
+        
         {!projectId && 
         <Link to="/employee-add">
           <button className="btn btn-primary">
@@ -723,15 +856,16 @@ const mergedEmployees = employees
           </button>
         </Link>}
 
-        {isEvaluationMode && (<>
-            <button
-              className="btn btn-primary"
-              onClick={() => document.getElementById("exportDialog").showModal()}
-            >
-              <i className="fa-solid fa-arrow-right"></i> Xuất Excel
-            </button>
-          </>
-        )}
+      {isEvaluationMode && (
+        <>
+          <button
+            className="btn btn-primary"
+            onClick={() => document.getElementById("exportDialog").showModal()}
+          >
+            <i className="fa-solid fa-arrow-right"></i> Xuất Excel
+          </button>
+        </>
+      )}
 
         {isProjectMode && 
         <Link to={`/employee-add-old?projectId=${projectId}&evaluationCycleId=${evaluationCycleIdFromUrl ?? ""}`}>
@@ -748,7 +882,7 @@ const mergedEmployees = employees
           <h3 className="table-title">{projectId ? "Danh sách nhân viên thuộc dự án" : "Danh sách nhân viên"}</h3>
           <div className="table-controls">
             <input type="text" placeholder="Điền tên nhân viên" className="search-box" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-            <button className="btn btn-warning" onClick={() => { fetchEmployees(); fetchEvaluations(); }}><i className="fas fa-sync-alt"></i> Làm mới</button>
+            <button className="btn btn-warning" onClick={() => { fetchEmployees(currentPage - 1, itemsPerPage); fetchEvaluations(); }}><i className="fas fa-sync-alt"></i> Làm mới</button>
           </div>
         </div>
 
@@ -775,7 +909,7 @@ const mergedEmployees = employees
               </tr>
             </thead>
             <tbody>
-              {currentEmployees.length > 0 ? currentEmployees.map((emp, idx) => {
+              {filteredEmployees.length > 0 ? filteredEmployees.map((emp, idx) => {
                 const evaluation = emp.evaluation ?? null;
                 return (
                   <tr key={emp.id}>
@@ -818,15 +952,15 @@ const mergedEmployees = employees
 
         <div className="pagination-container">
           <div className="pagination-info">
-            Hiển thị {filteredEmployees.length === 0 ? 0 : `${startIndex + 1}-${Math.min(endIndex, filteredEmployees.length)}`} trong tổng số {filteredEmployees.length} nhân viên
+            Hiển thị {totalElements === 0 ? 0 : `${startIndex + 1}-${Math.min(endIndex, totalElements)}`} trong tổng số {totalElements} nhân viên
           </div>
           <div className="pagination-controls">
-            <button className="pagination-btn" onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} disabled={currentPage === 1}>‹ Trước</button>
+            <button className="pagination-btn" onClick={goPrev} disabled={currentPage === 1}>‹ Trước</button>
             {Array.from({ length: totalPages }, (_, i) => {
               const pageNum = i + 1;
-              return <button key={pageNum} className={`pagination-btn ${currentPage === pageNum ? "active" : ""}`} onClick={() => setCurrentPage(pageNum)}>{pageNum}</button>;
+              return <button key={pageNum} className={`pagination-btn ${currentPage === pageNum ? "active" : ""}`} onClick={() => goToPage(pageNum)}>{pageNum}</button>;
             })}
-            <button className="pagination-btn" onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>Sau ›</button>
+            <button className="pagination-btn" onClick={goNext} disabled={currentPage === totalPages}>Sau ›</button>
           </div>
         </div>
       </div>
@@ -864,6 +998,7 @@ const mergedEmployees = employees
             <table className="excel-table"><tbody style={{ border: "none", color: "#000" }}>
               <tr><td style={{ fontWeight: "bold" }}>Mã NV</td><td>{selectedEmployee.staff_code}</td></tr>
               <tr><td style={{ fontWeight: "bold" }}>Họ và tên</td><td>{selectedEmployee.full_name}</td></tr>
+              {/* <tr><td style={{ fontWeight: "bold" }}>Tên người dùng</td><td>{selectedEmployee.user_name}</td></tr> */}
               <tr><td style={{ fontWeight: "bold" }}>Email</td><td>{selectedEmployee.email}</td></tr>
               <tr><td style={{ fontWeight: "bold" }}>Phòng/Ban</td><td>{selectedEmployee.department}</td></tr>
               <tr><td style={{ fontWeight: "bold" }}>Chức vụ</td><td>{selectedEmployee.role}</td></tr>
@@ -930,38 +1065,65 @@ const mergedEmployees = employees
         </div>
       )}
 
-        <dialog id="exportDialog" className="dialog-box">
-        <form
-          method="dialog"
-          style={{ padding: "20px", minWidth: "350px" }}
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <h3>Xuất Excel</h3>
-          <label>Tên file:</label>
-          <input
-            type="text"
-            id="fileNameInput"
-            className="form-control"
-            defaultValue={`EvaluationCycle_${evaluationCycleIdFromUrl || 'Unknown'}.xlsx`}
-            style={{ marginBottom: "15px", marginTop: "5px" }}
-          />
+      {/* Export Excel Dialog */}
+      <dialog id="exportDialog" className="dialog-container">
+      <form className="dialog-box"
+        method="dialog"
+        style={{ padding: "20px", minWidth: "350px" }}
+        onSubmit={(e) => e.preventDefault()}
+      >
+        <h3>Xuất Excel</h3>
+        <label>Tên file:</label>
+        <input
+          type="text"
+          id="fileNameInput"
+          className="form-control"
+          defaultValue={`EvaluationCycle_${evaluationCycleIdFromUrl || 'Unknown'}.xlsx`}
+          style={{ marginBottom: "15px", marginTop: "5px" }}
+        />
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-            <button
-              className="btn btn-secondary"
-              onClick={() => document.getElementById("exportDialog").close()}
-            >
-              Hủy
-            </button>
-            <button
-              className="btn btn-success"
-              onClick={handleExportExcel}
-            >
-              Xác nhận xuất
-            </button>
-          </div>
-        </form>
-      </dialog>
+        <div className="dialod-text" style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+          <button
+            onClick={() => document.getElementById("exportDialog").close()}
+          >
+            Hủy
+          </button>
+          <button
+            onClick={handleExportExcel}
+          >
+            Xác nhận xuất
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    {/* import Excel Dialog */}
+   <dialog id="importDialog" className="dialog-modal">
+      <h3 style={{ marginBottom: "10px", padding: "10px" }}>Import Excel</h3>
+
+      <div style={{ marginBottom: "15px", padding: "10px" }}>
+        <button className="btn btn-primary" onClick={handleDownloadTemplate}>
+          Tải Template Chuẩn
+        </button>
+      </div>
+
+      <input
+        type="file"
+        className="search-file"
+        id="fileImportInput"
+        accept=".xlsx, .xls"
+        style={{ marginBottom: "15px", padding: "8px", width: "auto" }}
+      />
+
+      <div className="dialog-actions">
+        <button className="btn btn-primary" onClick={handleImportExcel}>
+          Nhập
+        </button>
+        <button className="btn-shutdown" onClick={() => document.getElementById("importDialog").close()}>
+          Đóng
+        </button>
+      </div>
+    </dialog>
 
     </div>
   );

@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import "../index.css";
 import { useNavigate, Link } from "react-router-dom";
+import { useContext } from "react";
+import { ToastContext } from "../contexts/ToastProvider";
+
 
 
 const EvaluationCycleTable = () => {
@@ -15,6 +18,9 @@ const EvaluationCycleTable = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCycle, setSelectedCycle] = useState(null);
   const [deleteMessage, setDeleteMessage] = useState("");
+
+
+  const { toast } = useContext(ToastContext);
 
   useEffect(() => {
     fetchEvaluationCycles();
@@ -108,12 +114,11 @@ const EvaluationCycleTable = () => {
       if (!res.ok) throw new Error("Delete failed");
 
       setCycles((prev) => prev.filter((c) => c.id !== id));
-      setDeleteMessage("Xóa kỳ đánh giá thành công!");
+      toast.success("Xóa kỳ đánh giá thành công!");
     } catch (err) {
       console.error(err);
-      setDeleteMessage("Xóa kỳ đánh giá thất bại!");
+      toast.error("Xóa kỳ đánh giá thất bại!");
     }
-    setShowDeleteModal(true);
   };
 
   const handleEditConfirm = async () => {
@@ -164,11 +169,11 @@ const EvaluationCycleTable = () => {
         )
       );
 
-      alert("Sửa kỳ đánh giá thành công!");
+      toast.success("Sửa kỳ đánh giá thành công!");
       setShowEditModal(false);
     } catch (err) {
       console.error(err);
-      alert("Có lỗi khi sửa kỳ đánh giá!");
+      toast.error("Có lỗi khi sửa kỳ đánh giá!");
     }
   };
 

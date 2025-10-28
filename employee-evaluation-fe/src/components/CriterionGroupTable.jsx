@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import '../index.css';
 import { useNavigate, Link } from 'react-router-dom';
+import { useContext } from "react";
+import { ToastContext } from "../contexts/ToastProvider";
 
 const CriterionGroupTable = () => {
   const [criterionGroups, setCriterionGroups] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+
+  const { toast } = useContext(ToastContext);
 
   // popup state
   const [showEditModal, setShowEditModal] = useState(false);
@@ -93,7 +97,7 @@ const CriterionGroupTable = () => {
       if (!res.ok) {
         const errMsg = await res.text();
         console.error("Update failed:", errMsg);
-        alert("Sửa nhóm tiêu chí thất bại!");
+        toast.error("Sửa nhóm tiêu chí thất bại!");
         return;
       }
 
@@ -111,11 +115,11 @@ const CriterionGroupTable = () => {
         )
       );
 
-      alert("Sửa nhóm tiêu chí thành công!");
+      toast.success("Sửa nhóm tiêu chí thành công!");
       setShowEditModal(false);
     } catch (err) {
       console.error(err);
-      alert("Có lỗi khi sửa nhóm tiêu chí!");
+      toast.error("Có lỗi khi sửa nhóm tiêu chí!");
     }
   };
 
@@ -143,12 +147,12 @@ const CriterionGroupTable = () => {
       if (!res.ok) throw new Error("Delete failed");
 
       setCriterionGroups((prev) => prev.filter((group) => group.id !== id));
-      setDeleteMessage("Xóa nhóm tiêu chí thành công!");
+      toast.success("Xóa nhóm tiêu chí thành công!");
+      setShowDeleteModal(false);
     } catch (err) {
       console.error(err);
-      setDeleteMessage("Xóa nhóm tiêu chí thất bại!");
+      toast.error("Xóa nhóm tiêu chí thất bại!");
     }
-    setShowDeleteModal(true);
   };
 
   const handleView = (group) => {
@@ -354,7 +358,7 @@ const CriterionGroupTable = () => {
       )}
 
       {/* Delete Modal */}
-      {showDeleteModal && (
+      {/* {showDeleteModal && (
         <div className="modal-overlay">
           <div className="modal">
             <h3>{deleteMessage}</h3>
@@ -366,7 +370,7 @@ const CriterionGroupTable = () => {
             </button>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* View Modal */}
       {showViewModal && selectedCriterionGroup && ( 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './dashboard.css';
+import { ToastContext } from "../contexts/ToastProvider";
 
 function ProjectAdd() {
   const navigate = useNavigate();
@@ -69,67 +70,73 @@ function ProjectAdd() {
         throw new Error(`Lỗi API: ${res.status} - ${text}`);
       }
 
-      alert('✅ Thêm dự án thành công!');
+      toast.success('Thêm dự án thành công!');
       navigate('/project-list?added=true');
     } catch (err) {
       console.error('❌ Lỗi khi thêm dự án:', err);
-      alert('Không thể thêm dự án');
+      toast.error('Không thể thêm dự án');
     }
   };
 
   return (
-    <div style={{ maxWidth: 500, margin: '0 auto', padding: 20 }}>
-      <h2>Thêm dự án mới</h2>
-      {error && <div style={{ color: 'red' }}>{error}</div>}
+     <div className="project-add-wrapper">
+      <div className="project-add-container">
+        <h2>Thêm dự án mới</h2>
+        {error && <div className="project-error">{error}</div>}
 
-      <form onSubmit={handleSubmit}>
-        <label>Mã dự án:</label>
-        <input
-          name="code"
-          required
-          value={project.code}
-          onChange={handleChange}
-        />
+        <form onSubmit={handleSubmit} className="project-add-form">
+          <div>
+            <label>Mã dự án:</label>
+            <input
+              name="code"
+              required
+              value={project.code}
+              onChange={handleChange}
+            />
+          </div>
 
-        <label>Loại dự án:</label>
-        <select
-          name="isOdc"
-          required
-          value={project.isOdc}
-          onChange={handleChange}
-        >
-          <option value={true}>ODC</option>
-          <option value={false}>NOT ODC</option>
-        </select>
+          <div>
+            <label>Loại dự án:</label>
+            <select
+              name="isOdc"
+              required
+              value={project.isOdc}
+              onChange={handleChange}
+            >
+              <option value={true}>ODC</option>
+              <option value={false}>NOT ODC</option>
+            </select>
+          </div>
 
-        <label>Quản lý:</label>
-        <select
-          name="managerId"
-          required
-          value={project.managerId}
-          onChange={handleChange}
-        >
-          <option value="">Chọn Quản lý (PM)</option>
-          {managers.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.fullName} ({m.email})
-            </option>
-          ))}
-        </select>
+          <div style={{ gridColumn: 'span 2' }}>
+            <label>Quản lý (PM):</label>
+            <select
+              name="managerId"
+              required
+              value={project.managerId}
+              onChange={handleChange}
+            >
+              <option value="">-- Chọn Quản lý (PM) --</option>
+              {managers.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.fullName} ({m.email})
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div style={{ marginTop: 15 }}>
-          <button type="submit" className="btn btn-primary" style={{ marginRight: 10 }}>
-            Thêm
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => navigate('/project-list')}
-          >
-            Hủy
-          </button>
-        </div>
-      </form>
+          <div className="project-add-actions">
+            <button type="submit" className="btn-primary">Thêm dự án</button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => navigate('/project-list')}
+            >
+              Hủy
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

@@ -10,7 +10,6 @@ const BASE = "http://localhost:8080/api";
 
 //------------------ EditableCell Component ------------------
 const EditableCell = ({ evaluation, field, updateEvaluationField, style, title }) => {
-  // Nếu không có evaluation (chưa có bản đánh giá) -> render td không editable
   if (!evaluation || !evaluation.id) {
     return (
       <td style={{ ...(style || {}), minWidth: 120 }} title="Chưa có bản đánh giá">
@@ -25,10 +24,8 @@ const EditableCell = ({ evaluation, field, updateEvaluationField, style, title }
   const savingRefLocal = useRef(false);
   const tdRef = useRef(null);
 
-  // Khi evaluation thay đổi từ bên ngoài (ví dụ fetch mới), cập nhật nội dung trong td
   useEffect(() => {
     if (!tdRef.current) return;
-    // nếu đang chỉnh sửa hoặc đang composition thì không overwrite nội dung
     if (editing || isComposing) return;
     tdRef.current.textContent = initial;
   }, [initial, editing, isComposing]);
@@ -57,7 +54,6 @@ const EditableCell = ({ evaluation, field, updateEvaluationField, style, title }
 
   const handleCompositionEnd = async (e) => {
     setIsComposing(false);
-    // sau khi composition kết thúc, lưu giá trị
     const target = e.currentTarget;
     if (!target) return;
     const newValue = (target.textContent || "").trim();
@@ -66,7 +62,7 @@ const EditableCell = ({ evaluation, field, updateEvaluationField, style, title }
   };
 
   const handleKeyDown = async (e) => {
-    if (isComposing) return; // không xử lý khi đang gõ dấu
+    if (isComposing) return;
     if (e.key === "Enter") {
       e.preventDefault();
       const target = e.currentTarget;
@@ -79,18 +75,14 @@ const EditableCell = ({ evaluation, field, updateEvaluationField, style, title }
   };
 
   const handleBlur = async (e) => {
-    if (isComposing) return; // tránh lưu khi đang gõ IME
+    if (isComposing) return;
     const target = e.currentTarget;
     if (!target) return;
     const newValue = (target.textContent || "").trim();
     setEditing(false);
     await saveIfChanged(newValue);
   };
-
-  // onInput chỉ cập nhật nội dung nội bộ (không re-render nội dung từ state)
   const handleInput = (e) => {
-    // nothing here that forces React to re-render the content; keep it minimal
-    // we can still read value from e.currentTarget.textContent when needed
   };
 
   return (
@@ -112,7 +104,6 @@ const EditableCell = ({ evaluation, field, updateEvaluationField, style, title }
       style={{ ...(style || {}), outline: "none", cursor: "text", minWidth: 120 }}
       title={title || "Nhấn Enter để lưu"}
     >
-      {/* Không render {value} ở đây — để tránh controlled re-render trong khi dùng IME */}
       {initial}
     </td>
   );
@@ -122,12 +113,13 @@ const EmployeeTable = () => {
   const [employees, setEmployees] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);  
-  const [itemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1); 
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
 
-  // const [pageSize, setPageSize] = useState(10);
-  // const [totalPages, setTotalPages] = useState(0);
-  // const [totalElements, setTotalElements] = useState(0);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -159,17 +151,24 @@ const EmployeeTable = () => {
 
   const savingRef = useRef({}); 
 
-  // ------------------ initial load ------------------
-  useEffect(() => {
-    fetchEmployees();
+  // ------------------ Initial fetch ------------------
+   useEffect(() => {
+    fetchEmployees(0, itemsPerPage);
+  }, [projectId, evaluationCycleIdFromUrl, itemsPerPage]);
 
-  }, [projectId, evaluationCycleIdFromUrl]);
-
-  // ------------------ FETCH EMPLOYEES ------------------
-  const fetchEmployees = async () => {
+  // ------------------ FETCH EMPLOYEES------------------
+  const fetchEmployees = async (pageIndex = 0, size = itemsPerPage) => {
     try {
-      let url = `${BASE}/employees?size=1000`;
-      if (projectId) url = `${BASE}/projects/${projectId}`;
+  
+      const params = new URLSearchParams();
+      params.set("page", String(pageIndex));
+      params.set("size", String(size));
+
+      let url = `${BASE}/employees?${params.toString()}`;
+
+      if (projectId) {
+        url = `${BASE}/projects/${projectId}?${params.toString()}`;
+      }
 
       const res = await fetch(url, {
         method: "GET",
@@ -183,30 +182,53 @@ const EmployeeTable = () => {
         const txt = await res.text();
         console.error("API ERROR (fetchEmployees):", res.status, txt);
         setEmployees([]);
+        setTotalPages(1);
+        setTotalElements(0);
         return;
       }
 
       const response = await res.json();
+
       let employeesData = [];
+      let pageInfo = {};
+
+      const payload = response.data ?? response;
 
       if (projectId) {
         employeesData =
-          response.data?.employees ||
-          response.data?.data?.employees ||
-          (Array.isArray(response.data?.content) ? response.data.content[0]?.employees : null) ||
-          response.data ||
+          payload?.employees ||
+          payload?.data?.employees ||
+          (Array.isArray(payload?.content) && payload.content[0]?.employees ? payload.content[0].employees : null) ||
+          payload?.content ||
+          payload ||
           [];
+        pageInfo = {
+          page: payload?.page ?? payload?.data?.page ?? 0,
+          size: payload?.size ?? payload?.data?.size ?? employeesData.length,
+          totalElements: payload?.totalElements ?? payload?.data?.totalElements ?? employeesData.length,
+          totalPages: payload?.totalPages ?? payload?.data?.totalPages ?? 1,
+        };
       } else {
-        employeesData = response.data?.content || response.data || [];
+        employeesData = payload?.content ?? payload?.data?.content ?? payload?.data ?? payload ?? [];
+        pageInfo = {
+          page: payload?.page ?? payload?.data?.page ?? 0,
+          size: payload?.size ?? payload?.data?.size ?? (Array.isArray(employeesData) ? employeesData.length : size),
+          totalElements: payload?.totalElements ?? payload?.data?.totalElements ?? (Array.isArray(employeesData) ? employeesData.length : 0),
+          totalPages: payload?.totalPages ?? payload?.data?.totalPages ?? 1,
+        };
       }
 
-      if (!Array.isArray(employeesData)) employeesData = []; // fallback
+      if (!Array.isArray(employeesData)) {
+        // fallback: if content is not array, try other paths, else set empty
+        if (Array.isArray(response?.data)) employeesData = response.data;
+        else if (Array.isArray(response?.content)) employeesData = response.content;
+        else employeesData = [];
+      }
 
       const normalized = (employeesData || []).map((emp) => ({
         id: emp.id,
         staff_code: emp.staffCode ?? emp.staff_code ?? "",
         full_name: emp.fullName ?? emp.full_name ?? "",
-        // user_name: emp.username ?? emp.user_name ?? "",
         email: emp.email ?? "",
         department: emp.department ?? "",
         role: emp.role ?? "",
@@ -218,18 +240,23 @@ const EmployeeTable = () => {
       }));
 
       setEmployees(normalized);
-      setCurrentPage(1);
+      setTotalPages(Number(pageInfo.totalPages ?? 1));
+      setTotalElements(Number(pageInfo.totalElements ?? (normalized.length || 0)));
+      setCurrentPage(Number(pageInfo.page ?? pageIndex) + 1);
+      setItemsPerPage(Number(pageInfo.size ?? size));
 
+      // sau khi load nhân viên, load evaluations để ghép
       await fetchEvaluations();
     } catch (err) {
       console.error("Failed to fetch employees:", err);
       setEmployees([]);
+      setTotalPages(1);
+      setTotalElements(0);
     }
   };
 
-
  // ------------------ FETCH EVALUATIONS ------------------
-  const fetchEvaluations = async () => {
+const fetchEvaluations = async () => {
   try {
     const params = new URLSearchParams();
     params.set("size", "1000");
@@ -429,7 +456,7 @@ const mergedEmployees = employees
       }
 
       toast.success("Xóa thành công!");
-      await fetchEmployees();
+      await fetchEmployees(currentPage - 1, itemsPerPage);
       if (projectId) await fetchEvaluations();
     } catch (err) {
       console.error("Error deleting employee:", err);
@@ -640,21 +667,30 @@ const mergedEmployees = employees
   // ------------------ Filter & Pagination ------------------
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, employees.length]);
+  }, [searchTerm]);
+
 
   const filteredEmployees = mergedEmployees.filter((emp) =>
     (emp.full_name || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / itemsPerPage));
-  useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(totalPages);
-  }, [totalPages, currentPage]);
+  const startIndex = totalElements === 0 ? 0 : (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + (filteredEmployees.length || 0);
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentEmployees = filteredEmployees.slice(startIndex, endIndex);
+  const goToPage = (pageNum) => {
+    const pageIndex = Math.max(0, pageNum - 1);
+    fetchEmployees(pageIndex, itemsPerPage);
+  };
 
+  const goPrev = () => {
+    if (currentPage <= 1) return;
+    goToPage(currentPage - 1);
+  };
+
+  const goNext = () => {
+    if (currentPage >= totalPages) return;
+    goToPage(currentPage + 1);
+  };
 
 
   // ------------------ Export to Excel ------------------
@@ -773,8 +809,8 @@ const mergedEmployees = employees
     toast.success("Import thành công!");
     document.getElementById("importDialog").close();
     fileInput.value = ""; // clear input
-    // Nếu cần reload danh sách sau khi import:
-    // fetchEmployees();
+    // reload current page to reflect imported changes
+    await fetchEmployees(currentPage - 1, itemsPerPage);
     } catch (error) {
       console.error("Lỗi import:", error);
       toast.error("Có lỗi xảy ra khi import file!");
@@ -846,7 +882,7 @@ const mergedEmployees = employees
           <h3 className="table-title">{projectId ? "Danh sách nhân viên thuộc dự án" : "Danh sách nhân viên"}</h3>
           <div className="table-controls">
             <input type="text" placeholder="Điền tên nhân viên" className="search-box" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-            <button className="btn btn-warning" onClick={() => { fetchEmployees(); fetchEvaluations(); }}><i className="fas fa-sync-alt"></i> Làm mới</button>
+            <button className="btn btn-warning" onClick={() => { fetchEmployees(currentPage - 1, itemsPerPage); fetchEvaluations(); }}><i className="fas fa-sync-alt"></i> Làm mới</button>
           </div>
         </div>
 
@@ -873,7 +909,7 @@ const mergedEmployees = employees
               </tr>
             </thead>
             <tbody>
-              {currentEmployees.length > 0 ? currentEmployees.map((emp, idx) => {
+              {filteredEmployees.length > 0 ? filteredEmployees.map((emp, idx) => {
                 const evaluation = emp.evaluation ?? null;
                 return (
                   <tr key={emp.id}>
@@ -916,15 +952,15 @@ const mergedEmployees = employees
 
         <div className="pagination-container">
           <div className="pagination-info">
-            Hiển thị {filteredEmployees.length === 0 ? 0 : `${startIndex + 1}-${Math.min(endIndex, filteredEmployees.length)}`} trong tổng số {filteredEmployees.length} nhân viên
+            Hiển thị {totalElements === 0 ? 0 : `${startIndex + 1}-${Math.min(endIndex, totalElements)}`} trong tổng số {totalElements} nhân viên
           </div>
           <div className="pagination-controls">
-            <button className="pagination-btn" onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} disabled={currentPage === 1}>‹ Trước</button>
+            <button className="pagination-btn" onClick={goPrev} disabled={currentPage === 1}>‹ Trước</button>
             {Array.from({ length: totalPages }, (_, i) => {
               const pageNum = i + 1;
-              return <button key={pageNum} className={`pagination-btn ${currentPage === pageNum ? "active" : ""}`} onClick={() => setCurrentPage(pageNum)}>{pageNum}</button>;
+              return <button key={pageNum} className={`pagination-btn ${currentPage === pageNum ? "active" : ""}`} onClick={() => goToPage(pageNum)}>{pageNum}</button>;
             })}
-            <button className="pagination-btn" onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>Sau ›</button>
+            <button className="pagination-btn" onClick={goNext} disabled={currentPage === totalPages}>Sau ›</button>
           </div>
         </div>
       </div>
@@ -1063,9 +1099,9 @@ const mergedEmployees = employees
 
     {/* import Excel Dialog */}
    <dialog id="importDialog" className="dialog-modal">
-      <h3 style={{ marginBottom: "10px", padding: "8px" }}>Nhập Excel Nhân Viên</h3>
+      <h3 style={{ marginBottom: "10px", padding: "10px" }}>Import Excel</h3>
 
-      <div style={{ marginBottom: "15px", padding: "8px" }}>
+      <div style={{ marginBottom: "15px", padding: "10px" }}>
         <button className="btn btn-primary" onClick={handleDownloadTemplate}>
           Tải Template Chuẩn
         </button>
@@ -1076,17 +1112,14 @@ const mergedEmployees = employees
         className="search-file"
         id="fileImportInput"
         accept=".xlsx, .xls"
-        style={{ marginBottom: "15px", padding: "8px" }}
+        style={{ marginBottom: "15px", padding: "8px", width: "auto" }}
       />
 
       <div className="dialog-actions">
         <button className="btn btn-primary" onClick={handleImportExcel}>
           Nhập
         </button>
-        <button
-          className="btn btn-shutdown"
-          onClick={() => document.getElementById("importDialog").close()}
-        >
+        <button className="btn-shutdown" onClick={() => document.getElementById("importDialog").close()}>
           Đóng
         </button>
       </div>

@@ -615,7 +615,7 @@ justify-content: center;
 
 /******************************************************** change-pass page styling **********************************************************/
 
-.change-password-page {
+/* .change-password-page {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08);
@@ -683,18 +683,65 @@ justify-content: center;
 .change-pass-function p:hover {
   color: #FF3366;
   text-decoration: underline;
+} */
+
+/* Đẩy toàn bộ form ra giữa */
+.change-password-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;         /* Full chiều cao màn hình */
+  background-color: #fff; /* màu nền nhẹ nếu muốn */
 }
 
+/* Style cho form */
+.change-password-form {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  width: 350px;
+  text-align: center;
+}
 
+.change-password-form input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+}
 
+.change-password-form button {
+  width: 100%;
+  padding: 12px;
+  background-color: #ff1744;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
 
+.change-password-form button:hover {
+  opacity: 0.9;
+}
 
+.btn-change-pass {
+  background-color: #fff !important;
+  color: red !important;
+  border:2px solid red !important;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.4) !important;
+  margin: 10px  auto 10px auto !important  ;
+}
 
-
-
-
-
-
+.back-to-home {
+  margin: 40px 20px;
+  cursor: pointer;
+  color: blue;
+}
 
 
 /* Success Popup */
@@ -897,8 +944,8 @@ justify-content: center;
   padding: 0;
   color: #000;
   border: none;
-  height: 250px;
-  width: 300px;
+  height: 280px;
+  width: 400px;
   border-radius: 10px;
   justify-content: space-between;
   align-items: baseline;
@@ -918,3 +965,144 @@ justify-content: center;
   background-color: #2E2D2A;
   color: #fff;
 }
+
+.btn-shutdown {
+  background-color: red;
+  color : #fff;
+  border-radius: 3px;
+}
+
+.btn-shutdown:hover {
+  background-color: #fff;
+  color : red;
+  border: 2px solid red;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+  transition: all 0.2s;
+}
+
+/*------------------------------------------ evaluation cycle add styling ------------------------------------------*/
+
+/* Khung bao toàn trang — căn giữa form */
+.evaluation-add-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+}
+
+/* Hộp form chính */
+.evaluation-add-container {
+  background-color: #fff;
+  padding: 40px 50px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  width: 700px;
+}
+
+/* Tiêu đề */
+.evaluation-add-container h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #333;
+  font-weight: 600;
+}
+
+/* Lưới form — 2 cột nếu đủ rộng */
+.evaluation-add-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 30px;
+}
+
+/* Label và input */
+.evaluation-add-form label {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.evaluation-add-form input,
+.evaluation-add-form select,
+.evaluation-add-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+  background-color: #fff;
+  color: #000;
+}
+
+.evaluation-add-form input:focus,
+.evaluation-add-form select:focus,
+.evaluation-add-form textarea:focus {
+  border-color: #007BFF;
+}
+
+/* Textarea chiếm toàn hàng */
+.evaluation-add-form textarea {
+  resize: none;
+  min-height: 100px;
+  grid-column: span 2;
+}
+
+/* Ngày bắt đầu & kết thúc nằm cùng hàng */
+.date-group {
+  display: flex;
+  gap: 20px;
+  grid-column: span 2;
+}
+
+.date-group div {
+  flex: 1;
+}
+
+/* Hành động nút */
+.evaluation-add-actions {
+  grid-column: span 2;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 25px;
+}
+
+/* Nút chung */
+.btn-primary,
+.btn-secondary {
+  border: 1.5px solid #e60000;
+  padding: 10px 25px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: #fff;
+  color: #e60000;
+}
+
+.btn-primary:hover {
+  background-color: #e60000;
+  color: #fff;
+}
+
+.btn-secondary {
+  background-color: #f5f5f5;
+  color: #555;
+  border-color: #ccc;
+}
+
+.btn-secondary:hover {
+  background-color: #ddd;
+}
+
+/* Thông báo lỗi */
+.evaluation-add-error {
+  color: red;
+  text-align: center;
+  margin-bottom: 15px;
+}
+

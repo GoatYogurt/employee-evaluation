@@ -9,7 +9,11 @@ const ProjectTable = () => {
   const [projects, setProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
+  // const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [totalElements, setTotalElements] = useState(0);
 
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -19,27 +23,22 @@ const ProjectTable = () => {
 
   const { toast } = useContext(ToastContext);
 
-
   const navigate = useNavigate();
   const location = useLocation();
 
-  // === CONTEXT DETECTION ===
-  // We allow two ways to determine "source":
-  // 1) query param `source=project` or `source=evaluation`
-  // 2) or via pathname containing 'evaluation' (fallback)
   const queryParams = new URLSearchParams(location.search);
   const evaluationCycleId = queryParams.get("evaluationCycleId");
-  const explicitSource = queryParams.get("source"); // optional: 'project' or 'evaluation'
+  const explicitSource = queryParams.get("source");
   const pathname = location.pathname || "";
 
   const isFromEvaluation =
     explicitSource === "evaluation" ||
     pathname.toLowerCase().includes("evaluation") ||
-    Boolean(evaluationCycleId); // if there's an evaluationCycleId, likely from evaluation context
+    Boolean(evaluationCycleId);
 
   const isFromProject =
     explicitSource === "project" ||
-    (!explicitSource && !isFromEvaluation); // default to project when not explicit
+    (!explicitSource && !isFromEvaluation);
 
   // ===================== FETCH PROJECTS & MANAGERS =====================
   useEffect(() => {
@@ -52,7 +51,6 @@ const ProjectTable = () => {
     try {
       let url = "http://localhost:8080/api/projects";
 
-      // If evaluationCycleId present, backend may support listing projects for that cycle
       if (evaluationCycleId) {
         url = `http://localhost:8080/api/evaluation-cycles/${evaluationCycleId}/projects`;
       }
@@ -66,7 +64,7 @@ const ProjectTable = () => {
       });
 
       if (!res.ok) {
-        console.error("❌ Fetch projects failed:", res.status, await res.text());
+        console.error("Fetch projects failed:", res.status, await res.text());
         return;
       }
 
@@ -95,14 +93,22 @@ const ProjectTable = () => {
 
       setProjects(normalized);
 
-      console.log("📌 FULL EMPLOYEE RESPONSE:", response);
+      // If backend provided paging metadata, capture it
+      const maybeData = response.data || {};
+      if (typeof maybeData.totalElements !== "undefined") {
+        setTotalElements(maybeData.totalElements);
+      } else {
+        // fallback to length
+        setTotalElements(normalized.length);
+      }
 
+      console.log("FULL EMPLOYEE RESPONSE:", response);
     } catch (error) {
-      console.error("🔥 Error fetching projects:", error);
+      console.error("Error fetching projects:", error);
     }
   };
 
-    const fetchManagers = async () => {
+  const fetchManagers = async () => {
     try {
       const res = await fetch("http://localhost:8080/api/employees", {
         method: "GET",
@@ -113,7 +119,7 @@ const ProjectTable = () => {
       });
 
       if (!res.ok) {
-        console.error("❌ Fetch managers failed:", res.status, await res.text());
+        console.error("Fetch managers failed:", res.status, await res.text());
         return;
       }
 
@@ -136,7 +142,6 @@ const ProjectTable = () => {
       console.error("🔥 Error fetching managers:", error);
     }
   };
-
 
   // ===================== SEARCH & PAGINATION =====================
   const filteredProjects = projects.filter((p) =>
@@ -247,7 +252,6 @@ const ProjectTable = () => {
     }
   };
 
-
   const handleViewEmployees = (project) => {
     const projectId = project.id;
     if (isFromEvaluation) {
@@ -268,7 +272,7 @@ const ProjectTable = () => {
         navigate(`/employee-list?projectId=${projectId}&source=evaluation`);
       }
     } else {
-        navigate(`/employee-list?projectId=${projectId}&source=project`);
+      navigate(`/employee-list?projectId=${projectId}&source=project`);
     }
   };
 
@@ -306,7 +310,10 @@ const ProjectTable = () => {
               placeholder="Tìm kiếm mã dự án..."
               className="search-box"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
             />
             <button className="btn btn-warning" onClick={fetchProjects}>
               <i className="fas fa-sync-alt"></i> Làm mới
@@ -379,18 +386,68 @@ const ProjectTable = () => {
         </table>
 
         {/* Pagination */}
-        {totalPages >= 1 && (
-          <div className="pagination-container">
-            <div className="pagination-info">
-              Hiển thị {startIndex + 1}-
+        {/* Hiển thị controls khi cần (khi số kết quả lớn hơn itemsPerPage) */}
+        {filteredProjects.length > 0 && (
+          <div
+            className="pagination-container"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: "16px",
+              flexWrap: "wrap",
+              gap: "10px",
+            }}
+          >
+            {/* Thông tin hiển thị */}
+            <div className="pagination-info" style={{ fontSize: "14px" }}>
+              Hiển thị {Math.min(startIndex + 1, filteredProjects.length)}-
               {Math.min(endIndex, filteredProjects.length)} trong tổng số{" "}
               {filteredProjects.length} dự án
             </div>
-            <div className="pagination-controls">
+
+            {/* Bộ chọn số dòng mỗi trang */}
+            {/* <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "14px" }}>Số dòng mỗi trang:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  const newSize = Number(e.target.value);
+                  setItemsPerPage(newSize);
+                  setPageSize(newSize);
+                  setCurrentPage(1);
+                }}
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                  background: "#fff",
+                }}
+              >
+                {[10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div> */}
+
+            {/* Nút phân trang */}
+            <div
+              className="pagination-controls"
+              style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}
+            >
               <button
                 className="pagination-btn"
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                  background: currentPage === 1 ? "#eee" : "#fff",
+                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                }}
               >
                 ‹ Trước
               </button>
@@ -401,6 +458,14 @@ const ProjectTable = () => {
                     key={pageNum}
                     className={`pagination-btn ${currentPage === pageNum ? "active" : ""}`}
                     onClick={() => setCurrentPage(pageNum)}
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                      border: "1px solid #ccc",
+                      background: currentPage === pageNum ? "#007bff" : "#fff",
+                      color: currentPage === pageNum ? "#fff" : "#000",
+                      cursor: "pointer",
+                    }}
                   >
                     {pageNum}
                   </button>
@@ -410,6 +475,13 @@ const ProjectTable = () => {
                 className="pagination-btn"
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                  background: currentPage === totalPages ? "#eee" : "#fff",
+                  cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                }}
               >
                 Sau ›
               </button>

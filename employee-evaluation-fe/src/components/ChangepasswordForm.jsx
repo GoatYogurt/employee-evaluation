@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
+import "../index.css";
+
 
 const ChangePasswordForm = () => {
   const navigate = useNavigate();
@@ -28,37 +30,35 @@ const ChangePasswordForm = () => {
   };
 
   return (
-    <form className="change-password-form" onSubmit={handleSubmit}>
-      <h2>Change Password</h2>
+    <div className="change-password-container">
+      <form className="change-password-form" onSubmit={handleSubmit}>
+      <h2>Đổi mật khẩu</h2>
 
       {error && <p style={{ color: "red" }}>{error}</p>}
       {success && <p style={{ color: "green" }}>{success}</p>}
 
       <input
         type="password"
-        placeholder="Old Password"
+        placeholder="Mật khẩu cũ"
         value={oldPassword}
         onChange={(e) => setOldPassword(e.target.value)}
         required
       />
       <input
         type="password"
-        placeholder="New Password"
+        placeholder="Mật khẩu mới"
         value={newPassword}
         onChange={(e) => setNewPassword(e.target.value)}
         required
       />
 
-      <button type="submit">Change Password</button>
+      <button className="btn-change-pass" type="submit">Xác nhận đổi</button>
 
       {/* Back to Home */}
-      <span
-        onClick={() => navigate("/home")}
-        style={{ cursor: "pointer", color: "blue", marginLeft: "10px" }}
-      >
-        Back to Home
-      </span>
+      <span className="back-to-home"
+        onClick={() => navigate("/home")}> Về trang chủ </span>
     </form>
+    </div>
   );
 };
 

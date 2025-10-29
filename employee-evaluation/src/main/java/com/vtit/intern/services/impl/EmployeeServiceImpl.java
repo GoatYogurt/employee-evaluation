@@ -7,6 +7,7 @@ import com.vtit.intern.dtos.responses.ResponseDTO;
 import com.vtit.intern.dtos.searches.EmployeeSearchDTO;
 import com.vtit.intern.enums.Level;
 import com.vtit.intern.enums.Role;
+import com.vtit.intern.exceptions.BusinessException;
 import com.vtit.intern.exceptions.ResourceNotFoundException;
 import com.vtit.intern.models.Employee;
 import com.vtit.intern.models.Project;
@@ -14,6 +15,9 @@ import com.vtit.intern.repositories.EmployeeRepository;
 import com.vtit.intern.repositories.ProjectRepository;
 import com.vtit.intern.services.EmployeeService;
 import com.vtit.intern.utils.ResponseUtil;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
+import lombok.AllArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -34,24 +38,17 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class EmployeeServiceImpl implements EmployeeService {
-    @Autowired
     private final EmployeeRepository employeeRepository;
-    @Autowired
     private final ModelMapper modelMapper;
-    @Autowired
     private final PasswordEncoder passwordEncoder;
-    @Autowired
     private final ProjectRepository projectRepository;
-
-    public EmployeeServiceImpl(EmployeeRepository employeeRepository, ProjectRepository projectRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder) {
-        this.employeeRepository = employeeRepository;
-        this.projectRepository = projectRepository;
-        this.modelMapper = modelMapper;
-        this.passwordEncoder = passwordEncoder;
-    }
+    private Validator validator;
 
     @Override
     public ResponseEntity<ResponseDTO<EmployeeResponseDTO>> getById(Long id) {
@@ -224,25 +221,50 @@ public class EmployeeServiceImpl implements EmployeeService {
         return ResponseUtil.success("Employees imported successfully.");
     }
 
-    private void importFromExcel(MultipartFile file) throws IOException {
+    private void importFromExcel(MultipartFile file) throws IOException, BusinessException {
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
-            List<Employee> employeesToAdd = new ArrayList<>();
-            for (Row row: sheet) {
+            List<EmployeeRequestDTO> employeesToAdd = new ArrayList<>();
+            List<String> errors = new ArrayList<>();
+
+            for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
                 if (isRowEmpty(row)) continue;
-                Employee employee = new Employee();
+
+                EmployeeRequestDTO employee = new EmployeeRequestDTO();
                 employee.setStaffCode((int) row.getCell(0).getNumericCellValue());
                 employee.setFullName(row.getCell(1).getStringCellValue());
                 employee.setEmail(row.getCell(2).getStringCellValue());
                 employee.setDepartment(row.getCell(3).getStringCellValue());
-                employee.setRole(Role.valueOf(row.getCell(4).getStringCellValue()));
-                employee.setLevel(Level.valueOf(row.getCell(5).getStringCellValue()));
+                employee.setRole(row.getCell(4).getStringCellValue());
+                employee.setLevel(row.getCell(5).getStringCellValue());
+                employee.setUsername(row.getCell(6).getStringCellValue());
+                employee.setPassword(passwordEncoder.encode("123456"));
+
+                Set<ConstraintViolation<EmployeeRequestDTO>> violations = validator.validate(employee);
+                if (!violations.isEmpty()) {
+                    errors.addAll(
+                            violations.stream()
+                                    .map(v -> "Row " + row.getRowNum() + ": " + v.getPropertyPath() + " " + v.getMessage())
+                                    .toList()
+                    );
+                    continue;
+                }
                 employeesToAdd.add(employee);
             }
-            employeeRepository.saveAll(employeesToAdd);
+
+            if (!errors.isEmpty()) {
+                throw new BusinessException("Validation errors", String.join("; ", errors));
+            }
+
+            employeeRepository.saveAll(
+                    employeesToAdd.stream()
+                            .map(dto -> modelMapper.map(dto, Employee.class))
+                            .toList()
+            );
         }
     }
+
 
     private boolean isRowEmpty(Row row) {
         for (int c = row.getFirstCellNum(); c < row.getLastCellNum(); c++) {

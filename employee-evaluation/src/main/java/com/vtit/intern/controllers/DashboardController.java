@@ -1,0 +1,51 @@
+package com.vtit.intern.controllers;
+
+import com.vtit.intern.dtos.dashboard.AverageScoreResponseDTO;
+import com.vtit.intern.dtos.dashboard.EmployeePerformanceResponseDTO;
+import com.vtit.intern.dtos.dashboard.EvaluatedEmployeesResponseDTO;
+import com.vtit.intern.dtos.dashboard.ScoreDistributionResponseDTO;
+import com.vtit.intern.dtos.responses.ResponseDTO;
+import com.vtit.intern.services.DashboardService;
+import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/dashboard")
+@AllArgsConstructor
+public class DashboardController {
+    private DashboardService dashboardService;
+
+    @GetMapping("/progress/{evaluationCycleId}")
+    public ResponseEntity<ResponseDTO<EvaluatedEmployeesResponseDTO>> getCycleProgress(@PathVariable Long evaluationCycleId) {
+        return dashboardService.getCycleProgress(evaluationCycleId);
+    }
+
+    @GetMapping("/distribution/{evaluationCycleId}")
+    public ResponseEntity<ResponseDTO<List<ScoreDistributionResponseDTO>>> getPerformanceDistribution(@PathVariable Long evaluationCycleId) {
+        return dashboardService.getScoreDistribution(evaluationCycleId);
+    }
+
+    @GetMapping("/top/{evaluationCycleId}")
+    public ResponseEntity<ResponseDTO<List<EmployeePerformanceResponseDTO>>> getTopEmployees(
+            @PathVariable Long evaluationCycleId,
+            @RequestParam(defaultValue = "5") int limit
+    ) {
+        return dashboardService.getTopEmployees(evaluationCycleId, limit);
+    }
+
+    @GetMapping("/bottom/{evaluationCycleId}")
+    public ResponseEntity<ResponseDTO<List<EmployeePerformanceResponseDTO>>> getBottomEmployees(
+            @PathVariable Long evaluationCycleId,
+            @RequestParam int limit
+    ) {
+        return dashboardService.getBottomEmployees(evaluationCycleId, limit);
+    }
+
+    @GetMapping("/average-scores")
+    public ResponseEntity<ResponseDTO<List<AverageScoreResponseDTO>>> getAverageScoresOverCycles() {
+        return dashboardService.getAverageScoresOverCycles();
+    }
+}

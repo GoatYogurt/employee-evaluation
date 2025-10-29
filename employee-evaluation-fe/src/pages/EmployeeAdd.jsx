@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './dashboard.css';
+import { useContext } from "react";
+import { ToastContext } from "../contexts/ToastProvider";
 
 function EmployeeAdd() {
   const navigate = useNavigate();
+  const { toast } = useContext(ToastContext);
+
   const [employee, setEmployee] = useState({
     username: '',
     fullName: '',
@@ -40,33 +44,58 @@ function EmployeeAdd() {
         throw new Error(`Lỗi API: ${res.status} - ${text}`);
       }
 
-      alert("Thêm nhân viên thành công!");
+      toast.success("Thêm nhân viên thành công!");
       navigate('/employee-list?added=true');
     } catch (err) {
-      console.error("❌ Lỗi khi thêm nhân viên:", err);
-      alert("Không thể thêm nhân viên");
+      console.error("Lỗi khi thêm nhân viên:", err);
+      toast.error("Không thể thêm nhân viên");
     }
   };
 
   return (
     <div className="employ-table">
       <h2>Thêm nhân viên mới</h2>
-      <form onSubmit={handleSubmit}>
-        <label>Username: <input name="username" value={employee.username} onChange={handleChange} /></label><br/>
-        <label>Fullname: <input name="fullName" value={employee.fullName} onChange={handleChange} /></label><br/>
-        <label>Staffcode: <input name="staffCode" value={employee.staffCode} onChange={handleChange} /></label><br/>
-        <label>Email: <input name="email" value={employee.email} onChange={handleChange} /></label><br/>
-        <label>Password: <input name="password" value={employee.password} onChange={handleChange} type="password" /></label><br/>
-        <label>Department: <input name="department" value={employee.department} onChange={handleChange} /></label><br/>
-
-        <label>Level:
-          <select name="level" value={employee.level} onChange={handleChange}>
-            {levels.map(level => (
-              <option key={level} value={level}>{level}</option>
-            ))}
-          </select>
-        </label>
-
+      <form onSubmit={handleSubmit} className="form-container">
+          <div className="form-group">
+            <label>Username:
+              <input name="username" value={employee.username} onChange={handleChange} />
+            </label>
+          </div>
+          <div className="form-group">
+            <label>Fullname:
+              <input name="fullName" value={employee.fullName} onChange={handleChange} />
+            </label>
+          </div>
+          <div className="form-group">
+            <label>Staffcode:
+              <input name="staffCode" value={employee.staffCode} onChange={handleChange} />
+            </label>
+          </div>
+          <div className="form-group">
+            <label>Email:
+              <input name="email" value={employee.email} onChange={handleChange} />
+            </label>
+          </div>
+          <div className="form-group">
+            <label>Password:
+              <input name="password" value={employee.password} onChange={handleChange} type="password" />
+            </label>
+          </div>
+          <div className="form-group">
+            <label>Department:
+              <input name="department" value={employee.department} onChange={handleChange} />
+            </label>
+          </div>
+          <div className="form-group">
+            <label>Level:
+              <select name="level" value={employee.level} onChange={handleChange}>
+                {levels.map(level => (
+                  <option key={level} value={level}>{level}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+      <div className="form-group">
         <label>Role:
           <select name="role" value={employee.role} onChange={handleChange}>
             {roles.map(role => (
@@ -74,10 +103,13 @@ function EmployeeAdd() {
             ))}
           </select>
         </label>
+      </div>
 
-        <br/>
-        <button type="submit" className="btn btn-success">Add Employee</button>
-      </form>
+      <div className="form-action">
+        <button type="submit" className="btn-add-employee">Thêm nhân viên</button>
+      </div>
+    </form>
+
     </div>
   );
 }

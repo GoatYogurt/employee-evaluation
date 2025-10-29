@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import '../index.css';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useContext } from "react";
+import { ToastContext } from "../contexts/ToastProvider";
 
 const CriterionTable = () => {
   const [criteria, setCriteria] = useState([]);
@@ -9,39 +11,37 @@ const CriterionTable = () => {
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  
+
+  const { toast } = useContext(ToastContext);
 
   const location = useLocation();
   const navigate = useNavigate();
 
-  // popup state
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCriterion, setSelectedCriterion] = useState(null);
   const [deleteMessage, setDeleteMessage] = useState('');
 
-  // ✅ Lấy groupId từ URL mỗi khi URL thay đổi
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const groupId = params.get('groupId') || '';
     setSelectedGroupId(groupId);
   }, [location.search]);
 
-  // ✅ Load dữ liệu nhóm trước, sau đó fetch tiêu chí
   useEffect(() => {
     const loadData = async () => {
       await fetchCriterionGroups();
-      await fetchCriteria(); // fetch sau khi đã có groups
+      await fetchCriteria(); 
     };
     loadData();
   }, []);
 
-  // ✅ Khi đổi groupId hoặc criterionGroups thì refetch criteria
   useEffect(() => {
     fetchCriteria();
   }, [selectedGroupId, criterionGroups]);
 
-  // Fetch Criterion Groups
   const fetchCriterionGroups = async () => {
     try {
       const res = await fetch('http://localhost:8080/api/criterion-groups', {
@@ -54,14 +54,13 @@ const CriterionTable = () => {
 
       if (res.ok) {
         const data = await res.json();
-        setCriterionGroups(data.content || data.data?.content || []); // ✅ FIX: thêm fallback
+        setCriterionGroups(data.content || data.data?.content || []); 
       }
     } catch (error) {
-      console.error('❌ Failed to fetch criterion groups:', error);
+      console.error('Failed to fetch criterion groups:', error);
     }
   };
 
-  // Fetch Criteria
     const fetchCriteria = async () => {
       try {
         const res = await fetch('http://localhost:8080/api/criteria', {
@@ -73,7 +72,7 @@ const CriterionTable = () => {
         });
 
         if (!res.ok) {
-          console.error('❌ API Error:', res.status);
+          console.error('API Error:', res.status);
           return;
         }
 
@@ -100,18 +99,18 @@ const CriterionTable = () => {
 
         setCriteria(normalized);
       } catch (error) {
-        console.error('❌ Failed to fetch criteria:', error);
+        console.error('Failed to fetch criteria:', error);
       }
     };
 
 
-  // Lọc theo search + group
   const filteredCriteria = criteria.filter((criterion) => {
     const matchesSearch = criterion.name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesGroup = !selectedGroupId || criterion.criterionGroupId == selectedGroupId;
     return matchesSearch && matchesGroup;
   });
 
+  //------------------------------- Datetime --------------------------------
   const formatDateTime = (dateString) => {
     if (!dateString) return "-";
     const date = new Date(dateString);
@@ -123,29 +122,30 @@ const CriterionTable = () => {
     return `${hours}:${minutes} - ${day}/${month}/${year}`;
   };
 
-  // Phân trang
+
   const totalPages = Math.ceil(filteredCriteria.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentCriteria = filteredCriteria.slice(startIndex, endIndex);
 
-  // Chọn nhóm tiêu chí → cập nhật URL
+
+  //------------------------------- Handlers --------------------------------
   const handleGroupChange = (e) => {
     const newGroupId = e.target.value;
     setSelectedGroupId(newGroupId);
     navigate(`/criterion-list${newGroupId ? `?groupId=${newGroupId}` : ''}`);
   };
 
-  // Sửa
+
   const handleEdit = (criterion) => {
-    console.log("✏️ Edit criterion:", criterion); // ✅ FIX: debug log
+    console.log("✏️ Edit criterion:", criterion); 
     setSelectedCriterion(criterion);
     setShowEditModal(true);
   };
 
   const handleEditConfirm = async () => {
-    if (!selectedCriterion || !selectedCriterion.id) {       // ✅ FIX: kiểm tra id trước khi call API
-      alert('❌ Không tìm thấy ID tiêu chí!');
+    if (!selectedCriterion || !selectedCriterion.id) {      
+      toast.error('Không tìm thấy ID tiêu chí!');
       return;
     }
 
@@ -167,7 +167,7 @@ const CriterionTable = () => {
       if (!res.ok) {
         const errMsg = await res.text();
         console.error(' Update failed:', errMsg);
-        alert('Sửa tiêu chí thất bại!');
+        toast.error('Sửa tiêu chí thất bại!');
         return;
       }
 
@@ -191,18 +191,19 @@ const CriterionTable = () => {
         )
       );
 
-      alert('✅ Sửa tiêu chí thành công!');
+      toast.success('Sửa tiêu chí thành công!');
       setShowEditModal(false);
+      fetchCriteria();
     } catch (err) {
       console.error(err);
-      alert('❌ Có lỗi khi sửa tiêu chí!');
+      toast.error('Có lỗi khi sửa tiêu chí!');
     }
   };
 
   // Xoá
   const handleDelete = async (id) => {
     if (!id) { // ✅ FIX: kiểm tra id
-      alert('❌ ID tiêu chí không hợp lệ!');
+      toast.error('ID tiêu chí không hợp lệ!');
       return;
     }
 
@@ -218,13 +219,12 @@ const CriterionTable = () => {
       if (!res.ok) throw new Error('Delete failed');
 
       setCriteria((prev) => prev.filter((criterion) => criterion.id !== id));
-      setDeleteMessage('✅ Xóa tiêu chí thành công!');
+      toast.success('Xóa tiêu chí thành công!');
       fetchCriteria();
     } catch (err) {
       console.error(err);
-      setDeleteMessage('❌ Xóa tiêu chí thất bại!');
+      toast.error('Xóa tiêu chí thất bại!');
     }
-    setShowDeleteModal(true);
   };
 
   const handleView = (criterion) => {
@@ -464,7 +464,7 @@ const CriterionTable = () => {
             <h3>{deleteMessage}</h3>
             <button
               className="btn btn-secondary"
-              onClick={() => setShowDeleteModal(false)}
+              onClick={() => toast.success('Success')}
             >
               Đóng
             </button>

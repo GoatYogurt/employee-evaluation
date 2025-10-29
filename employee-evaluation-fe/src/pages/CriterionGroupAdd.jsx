@@ -1,15 +1,12 @@
-// src/pages/CriterionGroupAdd.jsx
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../index.css';
+import './dashboard.css';
+import { ToastContext } from "../contexts/ToastProvider";
 
 function CriterionGroupAdd() {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    weight: 0
-  });
+  const [formData, setFormData] = useState({ name: '', description: '', weight: 0 });
   const [error, setError] = useState('');
+  const { toast } = useContext(ToastContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -24,39 +21,48 @@ function CriterionGroupAdd() {
         body: JSON.stringify(formData)
       });
 
-      if (!res.ok) throw new Error('❌ Thêm nhóm tiêu chí thất bại!');
-      alert('✅ Thêm nhóm tiêu chí thành công!');
+      if (!res.ok) throw new Error('Thêm nhóm tiêu chí thất bại!');
+      toast.success('Thêm nhóm tiêu chí thành công!');
       navigate('/criterion-group-list');
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
     }
   };
 
   return (
-    <div style={{ maxWidth: 500, margin: '0 auto', padding: 20 }}>
-      <h2>Thêm nhóm tiêu chí mới</h2>
-      {error && <div style={{ color: 'red' }}>{error}</div>}
+    <div className="criterion-form-wrapper">
+      <div className="criterion-form-container">
+        <h2>Thêm nhóm tiêu chí mới</h2>
+        {error && <div style={{ color: 'red', textAlign: 'center' }}>{error}</div>}
 
-      <form onSubmit={handleSubmit}>
-        <label>Tên nhóm:</label>
-        <input
-          required
-          value={formData.name}
-          onChange={e => setFormData({ ...formData, name: e.target.value })}
-        />
+        <form className="criterion-form" onSubmit={handleSubmit}>
+          <div>
+            <label>Tên nhóm:</label>
+            <input
+              required
+              value={formData.name}
+              onChange={e => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
 
-        <label>Mô tả:</label>
-        <textarea
-          required
-          value={formData.description}
-          onChange={e => setFormData({ ...formData, description: e.target.value })}
-        />
+          <div>
+            <label>Mô tả:</label>
+            <input
+              required
+              value={formData.description}
+              onChange={e => setFormData({ ...formData, description: e.target.value })}
+            />
+          </div>
 
-        <button type="submit" className="btn btn-primary">Thêm</button>
-        <button type="button" className="btn btn-secondary" onClick={() => navigate('/criterion-group-list')}>
-          Hủy
-        </button>
-      </form>
+          <div className="criterion-form-actions">
+            <button type="submit" className="btn-group">Thêm nhóm</button>
+            <button type="button" className="btn-group" onClick={() => navigate('/criterion-group-list')}>
+              Hủy
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

@@ -40,8 +40,17 @@ public class EvaluationServiceImpl implements EvaluationService {
 
     @Override
     public ResponseEntity<ResponseDTO<EvaluationResponseDTO>> create(EvaluationRequestDTO dto) {
-        // find the evaluation cycle by ID
+        Long employeeId = dto.getEmployeeId();
+        Long projectId = dto.getProjectId();
         Long evaluationCycleId = dto.getEvaluationCycleId();
+
+        if (evaluationRepository.findByEmployee_IdAndProject_IdAndEvaluationCycle_IdAndIsDeletedFalse(employeeId, projectId, evaluationCycleId).isPresent()) {
+            return ResponseUtil.alreadyExists("The evaluation already exists for employee ID " + employeeId +
+                    ", project ID " + projectId +
+                    ", and evaluation cycle ID " + evaluationCycleId);
+        }
+
+        // find the evaluation cycle by ID
         Optional<EvaluationCycle> optionalEvaluationCycle = evaluationCycleRepository.findByIdAndIsDeletedFalse(evaluationCycleId);
         if (optionalEvaluationCycle.isEmpty()) {
             return ResponseUtil.notFound("Evaluation Cycle not found with id: " + evaluationCycleId);

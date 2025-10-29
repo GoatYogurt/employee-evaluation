@@ -1,36 +1,35 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import "./dashboard.css";
 import { Link, useLocation } from "react-router-dom";
+import { ToastContext } from "../contexts/ToastProvider";
 
 const ProjectAddOld = () => {
   const [projects, setProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(0); // BE dùng page = 0-based
+  const [pageSize, setPageSize] = useState(5);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [loading, setLoading] = useState(false);
+
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const evaluationCycleId = queryParams.get("evaluationCycleId");
+  const { toast } = useContext(ToastContext);
 
-  // ✅ Hàm fetchProjects — tách riêng ra ngoài useEffect
+
+  // ================== FETCH PROJECTS ==================
   const fetchProjects = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("❌ Token không tồn tại. Vui lòng đăng nhập lại!");
+        toast.error("❌ Token không tồn tại. Vui lòng đăng nhập lại!");
+        setLoading(false);
         return;
       }
 
-      // 🟢 Lấy tất cả dự án
-      const resAll = await fetch("http://localhost:8080/api/projects", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const allRes = await resAll.json();
-      const allProjects = allRes?.data?.content || [];
-
-      // 🟢 Lấy dự án đã thuộc chu kỳ đánh giá
+      // Gọi API dự án đã có trong chu kỳ
       const resExisting = await fetch(
         `http://localhost:8080/api/evaluation-cycles/${evaluationCycleId}/projects`,
         {
@@ -42,28 +41,43 @@ const ProjectAddOld = () => {
       );
       const existRes = await resExisting.json();
       const existingProjects = existRes?.data?.content || [];
-
-      // 🟢 Lọc ra các dự án chưa thuộc chu kỳ này
       const existingIds = existingProjects.map((p) => Number(p.id));
+
+      // Gọi API tất cả dự án (có phân trang)
+      let url = `http://localhost:8080/api/projects?page=${currentPage}&size=${pageSize}`;
+      if (searchTerm) url += `&code=${encodeURIComponent(searchTerm)}`;
+
+      const resAll = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const allRes = await resAll.json();
+      const pageData = allRes?.data || {};
+      const allProjects = pageData?.content || [];
+
+      // Lọc bỏ các dự án đã tồn tại trong chu kỳ
       const availableProjects = allProjects.filter(
         (p) => !existingIds.includes(Number(p.id))
       );
 
       setProjects(availableProjects);
+      setTotalPages(pageData.totalPages || 0);
+      setTotalElements(pageData.totalElements || 0);
+      setLoading(false);
     } catch (error) {
       console.error("Fetch projects error:", error);
-      alert("❌ Không thể tải danh sách dự án!");
+      toast.error("Không thể tải danh sách dự án!");
+      setLoading(false);
     }
   };
 
-  // ✅ Tải dữ liệu khi component mount hoặc evaluationCycleId đổi
   useEffect(() => {
-    if (evaluationCycleId) {
-      fetchProjects();
-    }
-  }, [evaluationCycleId]);
+    if (evaluationCycleId) fetchProjects();
+  }, [evaluationCycleId, currentPage, pageSize, searchTerm]);
 
-  // ✅ Thêm dự án vào evaluation cycle
+  // ================== ADD PROJECT TO CYCLE ==================
   const handleAddToCycle = async (projectId) => {
     try {
       const res = await fetch(
@@ -79,33 +93,22 @@ const ProjectAddOld = () => {
 
       const data = await res.json();
       if (res.ok) {
-        alert("✅ Đã thêm dự án vào chu kỳ đánh giá!");
-        fetchProjects(); // Làm mới danh sách
+        toast.success("✅ Đã thêm dự án vào chu kỳ đánh giá!");
+        fetchProjects();
       } else {
-        alert("❌ Thêm thất bại: " + (data.message || "Lỗi không xác định"));
+        toast.error("❌ Thêm thất bại: " + (data.message || "Lỗi không xác định"));
       }
     } catch (error) {
       console.error("Add project error:", error);
-      alert("❌ Lỗi kết nối server!");
+      toast.error("Lỗi kết nối server!");
     }
   };
 
-  // ✅ Lọc dự án theo tìm kiếm
-  const filteredProjects = projects.filter(
-    (p) =>
-      p.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.managerName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // ✅ Phân trang
-  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProjects = filteredProjects.slice(startIndex, endIndex);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, projects]);
+  const formatDate = (date) => {
+    if (!date) return "-";
+    const d = new Date(date);
+    return d.toLocaleDateString("vi-VN");
+  };
 
   return (
     <div>
@@ -133,7 +136,10 @@ const ProjectAddOld = () => {
               placeholder="Tìm dự án..."
               className="search-box"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(0);
+              }}
             />
             <button className="btn btn-warning" onClick={fetchProjects}>
               <i className="fas fa-sync-alt"></i> Làm mới
@@ -141,88 +147,154 @@ const ProjectAddOld = () => {
           </div>
         </div>
 
-        <table width="100%" className="excel-table">
-          <thead>
-            <tr>
-              <th width="1%">STT</th>
-              <th>Mã dự án</th>
-              <th>Tên quản lý</th>
-              <th>Ngày tạo</th>
-              <th>Người tạo</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentProjects.length > 0 ? (
-              currentProjects.map((proj, index) => (
-                <tr key={proj.id}>
-                  <td>{startIndex + index + 1}</td>
-                  <td>{proj.code}</td>
-                  <td>{proj.managerName || "-"}</td>
-                  <td>
-                    {proj.createdAt
-                      ? new Date(proj.createdAt).toLocaleDateString()
-                      : "-"}
-                  </td>
-                  <td>{proj.createdBy || "-"}</td>
-                  <td>
-                    <button
-                      className="btn btn-sm btn-success"
-                      onClick={() => handleAddToCycle(proj.id)}
-                    >
-                      <i className="fas fa-folder-plus"></i> Thêm
-                    </button>
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "20px" }}>
+            Đang tải dữ liệu...
+          </div>
+        ) : (
+          <table width="100%" className="excel-table">
+            <thead>
+              <tr>
+                <th width="1%">STT</th>
+                <th>Mã dự án</th>
+                <th>Tên quản lý</th>
+                <th>Ngày tạo</th>
+                <th>Người tạo</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {projects.length > 0 ? (
+                projects.map((proj, index) => (
+                  <tr key={proj.id}>
+                    <td>{currentPage * pageSize + index + 1}</td>
+                    <td>{proj.code}</td>
+                    <td>{proj.managerName || "-"}</td>
+                    <td>{formatDate(proj.createdAt)}</td>
+                    <td>{proj.createdBy || "-"}</td>
+                    <td>
+                      <button
+                        className="btn btn-sm btn-success"
+                        onClick={() => handleAddToCycle(proj.id)}
+                      >
+                        <i className="fas fa-folder-plus"></i> Thêm
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: "center", padding: "20px" }}>
+                    Không có dự án khả dụng để thêm.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" style={{ textAlign: "center", padding: "20px" }}>
-                  Không có dự án khả dụng để thêm.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-            <div className="pagination-container">
-            <div className="pagination-info">
-                Hiển thị {startIndex + 1}-
-                {Math.min(endIndex, filteredProjects.length)} trong tổng số{" "}
-                {filteredProjects.length} dự án
+              )}
+            </tbody>
+          </table>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 0 && (
+          <div
+            className="pagination-container"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: "16px",
+              flexWrap: "wrap",
+              gap: "10px",
+            }}
+          >
+            <div className="pagination-info" style={{ fontSize: "14px" }}>
+              Trang {currentPage + 1} / {totalPages} — Tổng: {totalElements} dự án
             </div>
-            <div className="pagination-controls">
-                <button
+
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "14px" }}>Số dòng mỗi trang:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(0);
+                }}
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                  background: "#fff",
+                }}
+              >
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div
+              className="pagination-controls"
+              style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}
+            >
+              <button
                 className="pagination-btn"
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                >
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 0))}
+                disabled={currentPage === 0}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                  background: currentPage === 0 ? "#eee" : "#fff",
+                  cursor: currentPage === 0 ? "not-allowed" : "pointer",
+                }}
+              >
                 ‹ Trước
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => {
-                const pageNum = i + 1;
-                return (
-                    <button
-                    key={pageNum}
-                    className={`pagination-btn ${
-                        currentPage === pageNum ? "active" : ""
-                    }`}
-                    onClick={() => setCurrentPage(pageNum)}
-                    >
-                    {pageNum}
-                    </button>
-                );
-                })}
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => (
                 <button
+                  key={i}
+                  className={`pagination-btn ${
+                    currentPage === i ? "active" : ""
+                  }`}
+                  onClick={() => setCurrentPage(i)}
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: "6px",
+                    border: "1px solid #ccc",
+                    background: currentPage === i ? "#007bff" : "#fff",
+                    color: currentPage === i ? "#fff" : "#000",
+                    cursor: "pointer",
+                  }}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button
                 className="pagination-btn"
                 onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  setCurrentPage((p) => Math.min(p + 1, totalPages - 1))
                 }
-                disabled={currentPage === totalPages}
-                >
+                disabled={currentPage + 1 === totalPages}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                  background:
+                    currentPage + 1 === totalPages ? "#eee" : "#fff",
+                  cursor:
+                    currentPage + 1 === totalPages
+                      ? "not-allowed"
+                      : "pointer",
+                }}
+              >
                 Sau ›
-                </button>
+              </button>
             </div>
-            </div>
+          </div>
+        )}
       </div>
     </div>
   );

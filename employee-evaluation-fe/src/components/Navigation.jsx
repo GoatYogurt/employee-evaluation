@@ -30,7 +30,6 @@ function Navigation() {
     return () => window.removeEventListener("storage", loadUserInfo);
   }, []);
 
-  // ✅ Đóng popup khi click ra ngoài
   useEffect(() => {
     function handleClickOutside(event) {
       if (popupRef.current && !popupRef.current.contains(event.target)) {
@@ -110,6 +109,7 @@ function Navigation() {
           </div>
 
           <div className="user-popup-actions">
+
             <button
               className="user-popup-btn"
               onClick={() => {
@@ -119,9 +119,11 @@ function Navigation() {
             >
               Đổi mật khẩu
             </button>
-            <button className="user-popup-btn logout" onClick={handleLogout}>
+
+            <button className="user-popup-btn-logout" onClick={handleLogout}>
               Đăng xuất
             </button>
+
           </div>
         </div>
       )}

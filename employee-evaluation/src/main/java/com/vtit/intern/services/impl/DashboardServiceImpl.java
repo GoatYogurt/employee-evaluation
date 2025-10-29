@@ -77,4 +77,17 @@ public class DashboardServiceImpl implements DashboardService {
                 )
         ).toList());
     }
+
+    public ResponseEntity<ResponseDTO<List<EmployeePerformanceResponseDTO>>> getBottomEmployees(Long evaluationCycleId, int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        List<Evaluation> bottomEvaluations = evaluationRepository.findBottomEvaluations(evaluationCycleId, pageable);
+
+        return ResponseUtil.success(bottomEvaluations.stream().map(
+                eval -> new EmployeePerformanceResponseDTO(
+                        eval.getEmployee().getId(),
+                        eval.getEmployee().getFullName(),
+                        eval.getTotalScore()
+                )
+        ).toList());
+    }
 }

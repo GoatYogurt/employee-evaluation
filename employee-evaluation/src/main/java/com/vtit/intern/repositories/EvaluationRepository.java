@@ -85,4 +85,13 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
                 ORDER BY e.totalScore DESC
             """)
     List<Evaluation> findTopEvaluations(@Param("evaluationCycleId") Long evaluationCycleId, Pageable pageable);
+
+    @Query("""
+                SELECT e
+                FROM Evaluation e
+                WHERE e.evaluationCycle.id = :evaluationCycleId
+                  AND (e.isDeleted = false OR e.isDeleted IS NULL)
+                ORDER BY e.totalScore ASC
+            """)
+    List<Evaluation> findBottomEvaluations(@Param("evaluationCycleId") Long evaluationCycleId, Pageable pageable);
 }

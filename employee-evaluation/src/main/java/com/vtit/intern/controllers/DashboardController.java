@@ -36,10 +36,13 @@ public class DashboardController {
         return dashboardService.getTopEmployees(evaluationCycleId, limit);
     }
 
-//    @GetMapping("/bottom")
-//    public List<EmployeePerformanceDTO> getBottomEmployees(@RequestParam int limit) {
-//
-//    }
+    @GetMapping("/bottom/{evaluationCycleId}")
+    public ResponseEntity<ResponseDTO<List<EmployeePerformanceResponseDTO>>> getBottomEmployees(
+            @PathVariable Long evaluationCycleId,
+            @RequestParam int limit
+    ) {
+        return dashboardService.getBottomEmployees(evaluationCycleId, limit);
+    }
 
 //    @GetMapping("/average-scores")
 //    public List<AverageScoreDTO> getAverageScoresOverCycles() {

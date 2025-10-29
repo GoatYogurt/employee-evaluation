@@ -79,6 +79,4 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
                 ORDER BY range
             """)
     List<Object[]> getScoreDistributionRaw(@Param("evaluationCycleId") Long evaluationCycleId);
-
-
 }

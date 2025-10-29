@@ -1,5 +1,6 @@
 package com.vtit.intern.services.impl;
 
+import com.vtit.intern.dtos.dashboard.AverageScoreResponseDTO;
 import com.vtit.intern.dtos.dashboard.EmployeePerformanceResponseDTO;
 import com.vtit.intern.dtos.dashboard.ScoreDistributionResponseDTO;
 import com.vtit.intern.models.Evaluation;
@@ -78,6 +79,7 @@ public class DashboardServiceImpl implements DashboardService {
         ).toList());
     }
 
+    @Override
     public ResponseEntity<ResponseDTO<List<EmployeePerformanceResponseDTO>>> getBottomEmployees(Long evaluationCycleId, int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         List<Evaluation> bottomEvaluations = evaluationRepository.findBottomEvaluations(evaluationCycleId, pageable);
@@ -89,5 +91,20 @@ public class DashboardServiceImpl implements DashboardService {
                         eval.getTotalScore()
                 )
         ).toList());
+    }
+
+    @Override
+    public ResponseEntity<ResponseDTO<List<AverageScoreResponseDTO>>> getAverageScoresOverCycles() {
+        List<Object[]> raw = evaluationRepository.getAverageScoresOverCyclesRaw();
+
+        List<AverageScoreResponseDTO> responseDTOs = raw.stream().map(
+                r -> new AverageScoreResponseDTO(
+                        ((Number) r[0]).longValue(),
+                        (String) r[1],
+                        ((Number) r[2]).doubleValue()
+                )
+        ).toList();
+
+        return ResponseUtil.success(responseDTOs);
     }
 }

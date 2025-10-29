@@ -1,10 +1,10 @@
 package com.vtit.intern.controllers;
 
+import com.vtit.intern.dtos.dashboard.AverageScoreResponseDTO;
 import com.vtit.intern.dtos.dashboard.EmployeePerformanceResponseDTO;
 import com.vtit.intern.dtos.dashboard.EvaluatedEmployeesResponseDTO;
 import com.vtit.intern.dtos.dashboard.ScoreDistributionResponseDTO;
 import com.vtit.intern.dtos.responses.ResponseDTO;
-import com.vtit.intern.models.Employee;
 import com.vtit.intern.services.DashboardService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -44,8 +44,8 @@ public class DashboardController {
         return dashboardService.getBottomEmployees(evaluationCycleId, limit);
     }
 
-//    @GetMapping("/average-scores")
-//    public List<AverageScoreDTO> getAverageScoresOverCycles() {
-//
-//    }
+    @GetMapping("/average-scores")
+    public ResponseEntity<ResponseDTO<List<AverageScoreResponseDTO>>> getAverageScoresOverCycles() {
+        return dashboardService.getAverageScoresOverCycles();
+    }
 }

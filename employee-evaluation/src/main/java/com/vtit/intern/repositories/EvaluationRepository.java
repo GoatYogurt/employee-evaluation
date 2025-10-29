@@ -94,4 +94,16 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
                 ORDER BY e.totalScore ASC
             """)
     List<Evaluation> findBottomEvaluations(@Param("evaluationCycleId") Long evaluationCycleId, Pageable pageable);
+
+    @Query("""
+                SELECT\s
+                    e.evaluationCycle.id,
+                    e.evaluationCycle.name,
+                    AVG(e.totalScore)
+                FROM Evaluation e
+                WHERE (e.isDeleted = false OR e.isDeleted IS NULL)
+                GROUP BY e.evaluationCycle.id, e.evaluationCycle.name
+                ORDER BY e.evaluationCycle.startDate
+            """)
+    List<Object[]> getAverageScoresOverCyclesRaw();
 }

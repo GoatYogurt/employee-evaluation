@@ -1,5 +1,6 @@
 package com.vtit.intern.services;
 
+import com.vtit.intern.dtos.dashboard.AverageScoreResponseDTO;
 import com.vtit.intern.dtos.dashboard.EmployeePerformanceResponseDTO;
 import com.vtit.intern.dtos.dashboard.EvaluatedEmployeesResponseDTO;
 import com.vtit.intern.dtos.dashboard.ScoreDistributionResponseDTO;
@@ -13,4 +14,5 @@ public interface DashboardService {
     ResponseEntity<ResponseDTO<List<ScoreDistributionResponseDTO>>> getScoreDistribution(Long evaluationCycleId);
     ResponseEntity<ResponseDTO<List<EmployeePerformanceResponseDTO>>> getTopEmployees(Long evaluationCycleId, int limit);
     ResponseEntity<ResponseDTO<List<EmployeePerformanceResponseDTO>>> getBottomEmployees(Long evaluationCycleId, int limit);
+    ResponseEntity<ResponseDTO<List<AverageScoreResponseDTO>>> getAverageScoresOverCycles();
 }

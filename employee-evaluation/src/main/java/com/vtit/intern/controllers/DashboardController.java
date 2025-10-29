@@ -28,13 +28,13 @@ public class DashboardController {
         return dashboardService.getScoreDistribution(evaluationCycleId);
     }
 
-//    @GetMapping("/top/{evaluationCycleId}")
-//    public List<EmployeePerformanceResponseDTO> getTopEmployees(
-//            @PathVariable Long evaluationCycleId,
-//            @RequestParam(defaultValue = "5") int limit
-//    ) {
-//        return dashboardService
-//    }
+    @GetMapping("/top/{evaluationCycleId}")
+    public ResponseEntity<ResponseDTO<List<EmployeePerformanceResponseDTO>>> getTopEmployees(
+            @PathVariable Long evaluationCycleId,
+            @RequestParam(defaultValue = "5") int limit
+    ) {
+        return dashboardService.getTopEmployees(evaluationCycleId, limit);
+    }
 
 //    @GetMapping("/bottom")
 //    public List<EmployeePerformanceDTO> getBottomEmployees(@RequestParam int limit) {

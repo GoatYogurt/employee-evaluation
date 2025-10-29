@@ -1,8 +1,6 @@
 package com.vtit.intern.repositories;
 
-import com.vtit.intern.models.Employee;
 import com.vtit.intern.models.Evaluation;
-import com.vtit.intern.models.Project;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -79,4 +76,13 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
                 ORDER BY range
             """)
     List<Object[]> getScoreDistributionRaw(@Param("evaluationCycleId") Long evaluationCycleId);
+
+    @Query("""
+                SELECT e
+                FROM Evaluation e
+                WHERE e.evaluationCycle.id = :evaluationCycleId
+                  AND (e.isDeleted = false OR e.isDeleted IS NULL)
+                ORDER BY e.totalScore DESC
+            """)
+    List<Evaluation> findTopEvaluations(@Param("evaluationCycleId") Long evaluationCycleId, Pageable pageable);
 }

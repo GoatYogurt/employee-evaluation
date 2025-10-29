@@ -1,12 +1,16 @@
 package com.vtit.intern.services.impl;
 
+import com.vtit.intern.dtos.dashboard.EmployeePerformanceResponseDTO;
 import com.vtit.intern.dtos.dashboard.ScoreDistributionResponseDTO;
+import com.vtit.intern.models.Evaluation;
 import com.vtit.intern.models.EvaluationCycle;
 import com.vtit.intern.repositories.EvaluationCycleRepository;
 import com.vtit.intern.repositories.EvaluationRepository;
 import com.vtit.intern.services.DashboardService;
 import com.vtit.intern.utils.ResponseUtil;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.vtit.intern.dtos.dashboard.EvaluatedEmployeesResponseDTO;
 import com.vtit.intern.dtos.responses.ResponseDTO;
@@ -61,4 +65,16 @@ public class DashboardServiceImpl implements DashboardService {
                 .toList());
     }
 
+    public ResponseEntity<ResponseDTO<List<EmployeePerformanceResponseDTO>>> getTopEmployees(Long evaluationCycleId, int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        List<Evaluation> topEvaluations = evaluationRepository.findTopEvaluations(evaluationCycleId, pageable);
+
+        return ResponseUtil.success(topEvaluations.stream().map(
+                eval -> new EmployeePerformanceResponseDTO(
+                        eval.getEmployee().getId(),
+                        eval.getEmployee().getFullName(),
+                        eval.getTotalScore()
+                )
+        ).toList());
+    }
 }

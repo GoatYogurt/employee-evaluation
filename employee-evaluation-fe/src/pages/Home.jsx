@@ -1,7 +1,10 @@
 import '../index.css';
+import DashboardCharts from '../components/DashboardCharts';
+
 
 function Home() {
-    return <h1>Employee Evaluation System</h1>
+    return <DashboardCharts />
+    
 }
 
 export default Home;

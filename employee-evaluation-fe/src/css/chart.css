@@ -1,0 +1,142 @@
+
+/* ========== Tổng thể Dashboard ========== */
+.chart-container {
+  padding: 2rem;
+  background-color: #f4f4f5;
+  min-height: 100vh;
+  font-family: "Inter", sans-serif;
+  border-radius: 6px;
+}
+
+.chart-text {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 1rem;
+}
+
+/* ========== Bộ lọc chu kỳ ========== */
+.chart-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.chart-option {
+  font-weight: 600;
+  color: #333;
+}
+
+.chart-select {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ddd;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border 0.2s ease;
+  background-color: #fff;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.chart-select:focus {
+  border-color: #007bff;
+}
+
+/* ========== Lưới bố cục ========== */
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+/* Màn hình lớn chia 2 cột */
+@media (min-width: 768px) {
+  .chart-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Màn hình rất lớn chia 3 cột */
+@media (min-width: 1280px) {
+  .chart-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ========== Style chung cho Box ========== */
+.chart-box-1,
+.chart-box-2,
+.chart-box-3,
+.chart-box-4,
+.chart-box-5 {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chart-box-1:hover,
+.chart-box-2:hover,
+.chart-box-3:hover,
+.chart-box-4:hover,
+.chart-box-5:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+/* Tiêu đề chart */
+.chart-box-1 h2,
+.chart-box-2 h2,
+.chart-box-3 h2,
+.chart-box-4 h2,
+.chart-box-5 h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d2d2d;
+  align-self: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+/* ========== Biểu đồ ========== */
+.chart-box-1 .chartjs-render-monitor,
+.chart-box-2 .chartjs-render-monitor,
+.chart-box-3 .chartjs-render-monitor,
+.chart-box-4 .chartjs-render-monitor,
+.chart-box-5 .chartjs-render-monitor {
+  width: 100% !important;
+  height: auto !important;
+}
+
+/* Điều chỉnh chiều cao từng loại */
+.chart-box-1 > div,
+.chart-box-2 > div {
+  width: 250px;
+  height: 250px;
+}
+
+.chart-box-3 > div,
+.chart-box-4 > div {
+  width: 100%;
+  height: 280px;
+}
+
+.chart-box-5 > div {
+  width: 100%;
+  height: 320px;
+}
+
+/* Responsive fix cho mobile */
+@media (max-width: 640px) {
+  .chart-box-1 > div,
+  .chart-box-2 > div {
+    width: 200px;
+    height: 200px;
+  }
+}

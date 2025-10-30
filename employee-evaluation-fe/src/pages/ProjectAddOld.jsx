@@ -210,7 +210,7 @@ const ProjectAddOld = () => {
               Trang {currentPage + 1} / {totalPages} — Tổng: {totalElements} dự án
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            {/* <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <span style={{ fontSize: "14px" }}>Số dòng mỗi trang:</span>
               <select
                 value={pageSize}
@@ -231,7 +231,7 @@ const ProjectAddOld = () => {
                   </option>
                 ))}
               </select>
-            </div>
+            </div> */}
 
             <div
               className="pagination-controls"

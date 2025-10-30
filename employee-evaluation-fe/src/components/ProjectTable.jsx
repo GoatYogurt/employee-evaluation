@@ -1,4 +1,3 @@
-// ProjectTable.jsx
 import React, { useEffect, useState } from "react";
 import "../index.css";
 import { useNavigate, Link, useLocation } from "react-router-dom";
@@ -8,21 +7,18 @@ import { ToastContext } from "../contexts/ToastProvider";
 const ProjectTable = () => {
   const [projects, setProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-  const [pageSize, setPageSize] = useState(10);
-  // const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0); // BE phân trang từ 0
+  const [itemsPerPage] = useState(4);
+  const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
-
   const [managers, setManagers] = useState([]);
 
   const { toast } = useContext(ToastContext);
-
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -42,17 +38,17 @@ const ProjectTable = () => {
 
   // ===================== FETCH PROJECTS & MANAGERS =====================
   useEffect(() => {
-    fetchProjects();
+    fetchProjects(currentPage);
     fetchManagers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [evaluationCycleId, explicitSource, location.pathname]);
+  }, [currentPage, evaluationCycleId, explicitSource, location.pathname]);
 
-  const fetchProjects = async () => {
+  const fetchProjects = async (page = 0) => {
     try {
-      let url = "http://localhost:8080/api/projects";
-
+      setLoading(true);
+      let url = `http://localhost:8080/api/projects?page=${page}&size=${itemsPerPage}`;
       if (evaluationCycleId) {
-        url = `http://localhost:8080/api/evaluation-cycles/${evaluationCycleId}/projects`;
+        url = `http://localhost:8080/api/evaluation-cycles/${evaluationCycleId}/projects?page=${page}&size=${itemsPerPage}`;
       }
 
       const res = await fetch(url, {
@@ -65,18 +61,18 @@ const ProjectTable = () => {
 
       if (!res.ok) {
         console.error("Fetch projects failed:", res.status, await res.text());
+        toast.error("Không thể tải danh sách dự án!");
+        setLoading(false);
         return;
       }
 
       const response = await res.json();
-      console.log("📦 API RESPONSE:", response);
+      const pageData = response.data || {};
 
-      const projectsData = response.data?.content || response.data || [];
-
-      const normalized = (projectsData || []).map((p) => ({
+      const normalized = (pageData.content || []).map((p) => ({
         id: p.id,
         code: p.code,
-        isOdc: p.isOdc === true || p.isOdc === "true" || p.odc === true || p.odc === 1,
+        isOdc: p.isOdc === true || p.odc === true,
         managerName: p.managerName,
         managerId: p.managerId ?? null,
         employees: p.employees || [],
@@ -92,25 +88,18 @@ const ProjectTable = () => {
       }));
 
       setProjects(normalized);
-
-      // If backend provided paging metadata, capture it
-      const maybeData = response.data || {};
-      if (typeof maybeData.totalElements !== "undefined") {
-        setTotalElements(maybeData.totalElements);
-      } else {
-        // fallback to length
-        setTotalElements(normalized.length);
-      }
-
-      console.log("FULL EMPLOYEE RESPONSE:", response);
+      setTotalPages(pageData.totalPages || 1);
+      setTotalElements(pageData.totalElements || normalized.length);
+      setLoading(false);
     } catch (error) {
       console.error("Error fetching projects:", error);
+      setLoading(false);
     }
   };
 
   const fetchManagers = async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/employees", {
+      const res = await fetch("http://localhost:8080/api/employees?size=1000", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -124,34 +113,22 @@ const ProjectTable = () => {
       }
 
       const response = await res.json();
-      console.log("📌 FULL EMPLOYEE RESPONSE:", response);
-
-      // Kiểm tra nơi chứa data
-      const allEmployees = response.data?.content || response.data || response || [];
-      console.log("✅ Danh sách nhân viên chuẩn hoá:", allEmployees);
-
+      const allEmployees = response.data?.content || response.data || [];
       const pmList = Array.isArray(allEmployees)
         ? allEmployees.filter((emp) =>
             emp.role?.toString().trim().toUpperCase().includes("PM")
           )
         : [];
-
-      console.log("✨ Danh sách PM:", pmList);
       setManagers(pmList);
     } catch (error) {
       console.error("🔥 Error fetching managers:", error);
     }
   };
 
-  // ===================== SEARCH & PAGINATION =====================
+  // ===================== SEARCH (FILTER CURRENT PAGE) =====================
   const filteredProjects = projects.filter((p) =>
     p.code?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProjects = filteredProjects.slice(startIndex, endIndex);
 
   // ===================== HANDLERS =====================
   const handleView = (project) => {
@@ -195,15 +172,13 @@ const ProjectTable = () => {
       );
 
       if (!res.ok) {
-        const errMsg = await res.text();
-        console.error("Update failed:", errMsg);
         toast.error("❌ Sửa dự án thất bại!");
         return;
       }
 
       toast.success("Sửa dự án thành công!");
       setShowEditModal(false);
-      fetchProjects();
+      fetchProjects(currentPage);
     } catch (err) {
       console.error("Error:", err);
       toast.error("Có lỗi khi sửa dự án!");
@@ -216,7 +191,6 @@ const ProjectTable = () => {
 
     try {
       let response;
-
       if (evaluationCycleId) {
         response = await fetch(
           `http://localhost:8080/api/projects/${projectId}/remove-evaluation-cycle/${evaluationCycleId}`,
@@ -239,13 +213,12 @@ const ProjectTable = () => {
       }
 
       if (!response.ok) {
-        console.error("Delete failed:", await response.text());
-        alert("❌ Xóa thất bại!");
+        toast.error("❌ Xóa thất bại!");
         return;
       }
 
       toast.success("Xóa thành công!");
-      fetchProjects();
+      fetchProjects(currentPage);
     } catch (err) {
       console.error("Error deleting project:", err);
       toast.error("Có lỗi khi xóa dự án!");
@@ -279,12 +252,10 @@ const ProjectTable = () => {
   // ===================== RENDER =====================
   return (
     <div>
-      {/* Header */}
       <div className="content-header">
         <h1 className="header-title">Quản lý dự án</h1>
         <div className="header-actions">
           {isFromEvaluation ? (
-            // When in evaluation context, allow adding project into evaluation cycle
             <Link to={`/project-add-old?evaluationCycleId=${evaluationCycleId || ""}&source=evaluation`}>
               <button className="btn btn-success">
                 <i className="fas fa-folder-plus"></i> Thêm vào kỳ đánh giá
@@ -300,7 +271,6 @@ const ProjectTable = () => {
         </div>
       </div>
 
-      {/* Table */}
       <div className="excel-container">
         <div className="table-header">
           <h3 className="table-title">Danh sách dự án</h3>
@@ -312,185 +282,102 @@ const ProjectTable = () => {
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                setCurrentPage(1);
+                setCurrentPage(0);
               }}
             />
-            <button className="btn btn-warning" onClick={fetchProjects}>
+            <button className="btn btn-warning" onClick={() => fetchProjects(currentPage)}>
               <i className="fas fa-sync-alt"></i> Làm mới
             </button>
           </div>
         </div>
 
-        <table className="excel-table" style={{ width: "100%", tableLayout: "fixed" }}>
-          <thead>
-            <tr>
-              <th style={{ width: "2%" }}>STT</th>
-              <th style={{ width: "8%" }}>Mã dự án</th>
-              <th style={{ width: "4%" }}>ODC</th>
-              <th style={{ width: "20%" }}>Quản lý</th>
-              <th style={{ width: "20%" }}>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentProjects.length > 0 ? (
-              currentProjects.map((p, index) => (
-                <tr key={p.id}>
-                  <td>{startIndex + index + 1}</td>
-                  <td>{p.code}</td>
-                  <td>{p.isOdc ? "ODC" : "NOT ODC"}</td>
-                  <td>{p.managerName}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <button
-                        className="btn btn-sm btn-edit"
-                        title="Sửa"
-                        onClick={() => handleEdit(p)}
-                      >
-                        <i className="fas fa-edit"></i>
-                      </button>
-                      <button
-                        className="btn btn-sm btn-delete"
-                        title="Xóa"
-                        onClick={() => handleDelete(p.id)}
-                      >
-                        <i className="fas fa-trash"></i>
-                      </button>
-                      <button
-                        className="btn btn-sm btn-view"
-                        title="Xem chi tiết"
-                        onClick={() => handleView(p)}
-                      >
-                        <i className="fas fa-eye"></i>
-                      </button>
-
-                      {/* Xem nhân viên: behavior thay đổi theo ngữ cảnh (project vs evaluation) */}
-                      <button
-                        className="btn btn-sm btn-primary"
-                        title={isFromEvaluation ? "Xem nhân viên (đánh giá)" : "Xem nhân viên (quản lý/add)"}
-                        onClick={() => handleViewEmployees(p)}
-                      >
-                        <i className="fas fa-users"></i>
-                      </button>
-                    </div>
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "20px" }}>Đang tải...</div>
+        ) : (
+          <table className="excel-table" style={{ width: "100%", tableLayout: "fixed" }}>
+            <thead>
+              <tr>
+                <th style={{ width: "2%" }}>STT</th>
+                <th style={{ width: "8%" }}>Mã dự án</th>
+                <th style={{ width: "4%" }}>ODC</th>
+                <th style={{ width: "20%" }}>Quản lý</th>
+                <th style={{ width: "20%" }}>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProjects.length > 0 ? (
+                filteredProjects.map((p, index) => (
+                  <tr key={p.id}>
+                    <td>{index + 1 + currentPage * itemsPerPage}</td>
+                    <td>{p.code}</td>
+                    <td>{p.isOdc ? "ODC" : "NOT ODC"}</td>
+                    <td>{p.managerName}</td>
+                    <td>
+                      <div className="action-buttons">
+                        <button className="btn btn-sm btn-edit" onClick={() => handleEdit(p)}>
+                          <i className="fas fa-edit"></i>
+                        </button>
+                        <button className="btn btn-sm btn-delete" onClick={() => handleDelete(p.id)}>
+                          <i className="fas fa-trash"></i>
+                        </button>
+                        <button className="btn btn-sm btn-view" onClick={() => handleView(p)}>
+                          <i className="fas fa-eye"></i>
+                        </button>
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => handleViewEmployees(p)}
+                        >
+                          <i className="fas fa-users"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: "center", padding: "20px" }}>
+                    Không tìm thấy dự án nào.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="5" style={{ textAlign: "center", padding: "20px" }}>
-                  Không tìm thấy dự án nào.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        )}
 
         {/* Pagination */}
-        {/* Hiển thị controls khi cần (khi số kết quả lớn hơn itemsPerPage) */}
-        {filteredProjects.length > 0 && (
-          <div
-            className="pagination-container"
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginTop: "16px",
-              flexWrap: "wrap",
-              gap: "10px",
-            }}
-          >
-            {/* Thông tin hiển thị */}
-            <div className="pagination-info" style={{ fontSize: "14px" }}>
-              Hiển thị {Math.min(startIndex + 1, filteredProjects.length)}-
-              {Math.min(endIndex, filteredProjects.length)} trong tổng số{" "}
-              {filteredProjects.length} dự án
-            </div>
-
-            {/* Bộ chọn số dòng mỗi trang */}
-            {/* <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ fontSize: "14px" }}>Số dòng mỗi trang:</span>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => {
-                  const newSize = Number(e.target.value);
-                  setItemsPerPage(newSize);
-                  setPageSize(newSize);
-                  setCurrentPage(1);
-                }}
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                  background: "#fff",
-                }}
-              >
-                {[10, 20, 50].map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </div> */}
-
-            {/* Nút phân trang */}
-            <div
-              className="pagination-controls"
-              style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}
-            >
-              <button
-                className="pagination-btn"
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                  background: currentPage === 1 ? "#eee" : "#fff",
-                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                }}
-              >
-                ‹ Trước
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => {
-                const pageNum = i + 1;
-                return (
-                  <button
-                    key={pageNum}
-                    className={`pagination-btn ${currentPage === pageNum ? "active" : ""}`}
-                    onClick={() => setCurrentPage(pageNum)}
-                    style={{
-                      padding: "6px 10px",
-                      borderRadius: "6px",
-                      border: "1px solid #ccc",
-                      background: currentPage === pageNum ? "#007bff" : "#fff",
-                      color: currentPage === pageNum ? "#fff" : "#000",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-              <button
-                className="pagination-btn"
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                  background: currentPage === totalPages ? "#eee" : "#fff",
-                  cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-                }}
-              >
-                Sau ›
-              </button>
-            </div>
+        <div className="pagination-container" style={{ marginTop: "16px" }}>
+          <div className="pagination-info">
+            Trang {currentPage + 1}/{totalPages} — Tổng {totalElements} dự án
           </div>
-        )}
+          <div className="pagination-controls">
+            <button
+              className="pagination-btn"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
+              disabled={currentPage === 0}
+            >
+              ‹ Trước
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                className={`pagination-btn ${currentPage === i ? "active" : ""}`}
+                onClick={() => setCurrentPage(i)}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button
+              className="pagination-btn"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))}
+              disabled={currentPage === totalPages - 1}
+            >
+              Sau ›
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* =================== MODALS =================== */}
+      {/* Modal giữ nguyên như cũ */}
       {showEditModal && selectedProject && (
         <div className="modal-overlay">
           <div className="modal">
@@ -500,40 +387,26 @@ const ProjectTable = () => {
               <input
                 type="text"
                 value={selectedProject.code || ""}
-                onChange={(e) =>
-                  setSelectedProject({
-                    ...selectedProject,
-                    code: e.target.value,
-                  })
-                }
+                onChange={(e) => setSelectedProject({ ...selectedProject, code: e.target.value })}
               />
             </div>
             <div className="form-group">
               <label>ODC</label>
               <select
                 value={selectedProject.isOdc ? "true" : "false"}
-                onChange={(e) =>
-                  setSelectedProject({
-                    ...selectedProject,
-                    isOdc: e.target.value === "true",
-                  })
-                }
+                onChange={(e) => setSelectedProject({ ...selectedProject, isOdc: e.target.value === "true" })}
               >
                 <option value="true">ODC</option>
                 <option value="false">NOT ODC</option>
               </select>
             </div>
             <div className="form-group">
-              <label>Quản lý:</label>
+              <label>Quản lý</label>
               <select
-                name="managerId"
-                required
                 value={selectedProject.managerId || ""}
-                onChange={(e) =>
-                  setSelectedProject({ ...selectedProject, managerId: e.target.value })
-                }
+                onChange={(e) => setSelectedProject({ ...selectedProject, managerId: e.target.value })}
               >
-                <option value="">Chọn Quản lý (PM)</option>
+                <option value="">Chọn PM</option>
                 {managers.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.fullName} ({m.email})
@@ -541,7 +414,6 @@ const ProjectTable = () => {
                 ))}
               </select>
             </div>
-
             <div className="modal-actions">
               <button className="btn btn-primary" onClick={handleEditConfirm}>
                 Xác nhận
@@ -560,34 +432,13 @@ const ProjectTable = () => {
             <h3>Thông tin dự án</h3>
             <table className="excel-table">
               <tbody>
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>Mã dự án</td>
-                  <td>{selectedProject.code}</td>
-                </tr>
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>ODC</td>
-                  <td>{selectedProject.isOdc ? "ODC" : "NOT ODC"}</td>
-                </tr>
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>Quản lý</td>
-                  <td>{selectedProject.managerName}</td>
-                </tr>
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>Ngày tạo</td>
-                  <td>{formatDateTime(selectedProject.createdAt)}</td>
-                </tr>
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>Ngày cập nhật</td>
-                  <td>{formatDateTime(selectedProject.updatedAt)}</td>
-                </tr>
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>Người tạo</td>
-                  <td>{selectedProject.createdBy}</td>
-                </tr>
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>Người cập nhật</td>
-                  <td>{selectedProject.updatedBy}</td>
-                </tr>
+                <tr><td><b>Mã dự án</b></td><td>{selectedProject.code}</td></tr>
+                <tr><td><b>ODC</b></td><td>{selectedProject.isOdc ? "ODC" : "NOT ODC"}</td></tr>
+                <tr><td><b>Quản lý</b></td><td>{selectedProject.managerName}</td></tr>
+                <tr><td><b>Ngày tạo</b></td><td>{formatDateTime(selectedProject.createdAt)}</td></tr>
+                <tr><td><b>Ngày cập nhật</b></td><td>{formatDateTime(selectedProject.updatedAt)}</td></tr>
+                <tr><td><b>Người tạo</b></td><td>{selectedProject.createdBy}</td></tr>
+                <tr><td><b>Người cập nhật</b></td><td>{selectedProject.updatedBy}</td></tr>
               </tbody>
             </table>
             <button className="btn btn-secondary" onClick={() => setShowViewModal(false)}>

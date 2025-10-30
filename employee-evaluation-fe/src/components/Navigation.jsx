@@ -55,7 +55,7 @@ function Navigation() {
     { path: "/criterion-group-list", icon: "fa-layer-group", label: "Nhóm tiêu chí" },
     { path: "/criterion-list", icon: "fa-clipboard-list", label: "Tiêu chí" },
     { path: "/project-list", icon: "fa-diagram-project", label: "Dự án" },
-    { path: "/evaluation-cycle-list", icon: "fa-chart-bar", label: "Chu kỳ đánh giá" },
+    { path: "/evaluation-cycle-list", icon: "fa-chart-bar", label: "Kỳ đánh giá" },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -72,6 +72,7 @@ function Navigation() {
           title={item.label}
         >
           <i className={`fas ${item.icon}`}></i>
+          <span className="tooltip">{item.label}</span>
         </Link>
       ))}
 

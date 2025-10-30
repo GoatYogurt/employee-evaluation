@@ -625,6 +625,7 @@ const mergedEmployees = employees
       toast.error("Có lỗi khi gửi đánh giá");
     } finally {
       setSubmittingEvaluation(false);
+      toast.success("Đánh giá thành công");
     }
   };
 
@@ -844,7 +845,7 @@ const mergedEmployees = employees
             className="btn btn-primary"
             onClick={() => document.getElementById("importDialog").showModal()}
           >
-            <i class="fa-solid fa-file-import"></i>  Import Excel
+            <i className="fa-solid fa-file-import"></i>  Import Excel
           </button>
 
         }
@@ -887,7 +888,7 @@ const mergedEmployees = employees
         </div>
 
         <div style={{ maxHeight: "600px", overflowY: "auto", overflowX: "auto", border: "1px solid #ccc", borderRadius: 6 }}>
-          <table className="excel-table" style={{ width: "200%", tableLayout: "fixed" }}>
+          <table className="excel-table" style={{ width: "210%", tableLayout: "fixed" }}>
             <thead>
               <tr>
                 <th style={{ width: "1%" }}>STT</th>

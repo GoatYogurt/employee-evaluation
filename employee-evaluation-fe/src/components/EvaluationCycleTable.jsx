@@ -4,14 +4,16 @@ import { useNavigate, Link } from "react-router-dom";
 import { useContext } from "react";
 import { ToastContext } from "../contexts/ToastProvider";
 
-
-
 const EvaluationCycleTable = () => {
   const [cycles, setCycles] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0); // BE phân trang bắt đầu từ 0
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
   const [itemsPerPage] = useState(10);
+
   const navigate = useNavigate();
+  const { toast } = useContext(ToastContext);
 
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -19,16 +21,15 @@ const EvaluationCycleTable = () => {
   const [selectedCycle, setSelectedCycle] = useState(null);
   const [deleteMessage, setDeleteMessage] = useState("");
 
-
-  const { toast } = useContext(ToastContext);
-
+  // Gọi API mỗi khi đổi trang
   useEffect(() => {
-    fetchEvaluationCycles();
-  }, []);
+    fetchEvaluationCycles(currentPage);
+  }, [currentPage]);
 
-  const fetchEvaluationCycles = async () => {
+  // ---------------- FETCH PHÂN TRANG TỪ BE ----------------
+  const fetchEvaluationCycles = async (page = 0) => {
     try {
-      const res = await fetch("http://localhost:8080/api/evaluation-cycles", {
+      const res = await fetch(`http://localhost:8080/api/evaluation-cycles?page=${page}&size=${itemsPerPage}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -39,11 +40,7 @@ const EvaluationCycleTable = () => {
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
 
-      let cycleList = [];
-      if (Array.isArray(data.content)) cycleList = data.content;
-      else if (Array.isArray(data.data?.content)) cycleList = data.data.content;
-      else if (Array.isArray(data.data)) cycleList = data.data;
-      else console.error("Unexpected API structure:", data);
+      const pageData = data.data || data; // tùy theo cấu trúc BE
 
       const convertDate = (d) => {
         if (!d) return "";
@@ -52,7 +49,7 @@ const EvaluationCycleTable = () => {
       };
 
       setCycles(
-        cycleList.map((c) => ({
+        (pageData.content || []).map((c) => ({
           id: c.id,
           name: c.name,
           description: c.description,
@@ -66,34 +63,24 @@ const EvaluationCycleTable = () => {
           updatedBy: c.updatedBy,
         }))
       );
+
+      setTotalPages(pageData.totalPages || 1);
+      setTotalElements(pageData.totalElements || 0);
     } catch (error) {
       console.error("Fetch evaluation cycles error:", error);
+      toast.error("Không thể tải danh sách kỳ đánh giá!");
     }
   };
 
+  // ----------------- FILTER CLIENT-SIDE (chỉ lọc trên trang hiện tại) -----------------
   const filteredCycles = cycles.filter((c) =>
     c.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredCycles.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentCycles = filteredCycles.slice(startIndex, endIndex);
-
+  // ----------------- CHỨC NĂNG VIEW / EDIT / DELETE -----------------
   const handleView = (cycle) => {
     setSelectedCycle(cycle);
     setShowViewModal(true);
-  };
-
-  const formatDateTime = (dateString) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${hours}:${minutes} - ${day}/${month}/${year}`;
   };
 
   const handleEdit = (cycle) => {
@@ -113,8 +100,8 @@ const EvaluationCycleTable = () => {
 
       if (!res.ok) throw new Error("Delete failed");
 
-      setCycles((prev) => prev.filter((c) => c.id !== id));
       toast.success("Xóa kỳ đánh giá thành công!");
+      fetchEvaluationCycles(currentPage); // reload trang hiện tại
     } catch (err) {
       console.error(err);
       toast.error("Xóa kỳ đánh giá thất bại!");
@@ -123,7 +110,6 @@ const EvaluationCycleTable = () => {
 
   const handleEditConfirm = async () => {
     try {
-
       const convertToDDMMYYYY = (dateStr) => {
         if (!dateStr) return null;
         const [year, month, day] = dateStr.split("-");
@@ -151,26 +137,9 @@ const EvaluationCycleTable = () => {
       );
 
       if (!res.ok) throw new Error("Update failed");
-
-      const updated = await res.json();
-
-      setCycles((prev) =>
-        prev.map((c) =>
-          c.id === updated.id
-            ? {
-                ...c,
-                name: updated.name,
-                status: updated.status,
-                description: updated.description,
-                startDate: selectedCycle.startDate,
-                endDate: selectedCycle.endDate,
-              }
-            : c
-        )
-      );
-
       toast.success("Sửa kỳ đánh giá thành công!");
       setShowEditModal(false);
+      fetchEvaluationCycles(currentPage);
     } catch (err) {
       console.error(err);
       toast.error("Có lỗi khi sửa kỳ đánh giá!");
@@ -181,8 +150,18 @@ const EvaluationCycleTable = () => {
     navigate(`/project-list?evaluationCycleId=${cycleId}`);
   };
 
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  };
 
-
+  // ----------------- RENDER -----------------
   return (
     <div>
       <div className="content-header">
@@ -207,28 +186,28 @@ const EvaluationCycleTable = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <button className="btn btn-warning" onClick={fetchEvaluationCycles}>
+            <button className="btn btn-warning" onClick={() => fetchEvaluationCycles(currentPage)}>
               <i className="fas fa-sync-alt"></i> Làm mới
             </button>
           </div>
         </div>
 
-        <table className="excel-table" style={{width: "100%", tableLayout: "fixed" }}>
+        <table className="excel-table" style={{ width: "100%", tableLayout: "fixed" }}>
           <thead>
             <tr>
               <th style={{ width: "2%" }}>STT</th>
               <th style={{ width: "5%" }}>Tên kỳ đánh giá</th>
               <th style={{ width: "5%" }}>Ngày bắt đầu</th>
               <th style={{ width: "5%" }}>Ngày kết thúc</th>
-              <th style={{ width: "5%" }}>Status</th>
+              <th style={{ width: "5%" }}>Trạng thái</th>
               <th style={{ width: "10%" }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
-            {currentCycles.length > 0 ? (
-              currentCycles.map((c, index) => (
+            {filteredCycles.length > 0 ? (
+              filteredCycles.map((c, index) => (
                 <tr key={c.id}>
-                  <td>{startIndex + index + 1}</td>
+                  <td>{index + 1 + currentPage * itemsPerPage}</td>
                   <td>{c.name}</td>
                   <td>{c.startDate}</td>
                   <td>{c.endDate}</td>
@@ -269,7 +248,7 @@ const EvaluationCycleTable = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="5" style={{ textAlign: "center", padding: "20px" }}>
+                <td colSpan="6" style={{ textAlign: "center", padding: "20px" }}>
                   Không tìm thấy kỳ đánh giá nào.
                 </td>
               </tr>
@@ -277,36 +256,32 @@ const EvaluationCycleTable = () => {
           </tbody>
         </table>
 
-        {/* Pagination */}
+        {/* PAGINATION */}
         <div className="pagination-container">
           <div className="pagination-info">
-            Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredCycles.length)} trong tổng số{" "}
-            {filteredCycles.length} kỳ đánh giá
+            Trang {currentPage + 1}/{totalPages} — Tổng {totalElements} kỳ đánh giá
           </div>
           <div className="pagination-controls">
             <button
               className="pagination-btn"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
+              disabled={currentPage === 0}
             >
               ‹ Trước
             </button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNum = i + 1;
-              return (
-                <button
-                  key={pageNum}
-                  className={`pagination-btn ${currentPage === pageNum ? "active" : ""}`}
-                  onClick={() => setCurrentPage(pageNum)}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                className={`pagination-btn ${currentPage === i ? "active" : ""}`}
+                onClick={() => setCurrentPage(i)}
+              >
+                {i + 1}
+              </button>
+            ))}
             <button
               className="pagination-btn"
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))}
+              disabled={currentPage === totalPages - 1}
             >
               Sau ›
             </button>
@@ -314,135 +289,95 @@ const EvaluationCycleTable = () => {
         </div>
       </div>
 
+      {/* Modal sửa và xem giữ nguyên y như cũ */}
       {showEditModal && selectedCycle && (
-  <div className="modal-overlay">
-    <div className="modal">
-      <h3>Sửa kỳ đánh giá</h3>
-
-      <div className="form-group">
-        <label>Tên kỳ</label>
-        <input
-          type="text"
-          value={selectedCycle.name || ""}
-          onChange={(e) =>
-            setSelectedCycle({ ...selectedCycle, name: e.target.value })
-          }
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Mô tả</label>
-        <input
-          type="text"
-          value={selectedCycle.description || ""}
-          onChange={(e) =>
-            setSelectedCycle({ ...selectedCycle, description: e.target.value })
-          }
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Trạng thái (status)</label>
-        <select
-          value={selectedCycle.status || "ACTIVE"}
-          onChange={(e) =>
-            setSelectedCycle({ ...selectedCycle, status: e.target.value })
-          }
-        >
-          <option value="ACTIVE">ACTIVE</option>
-          <option value="CANCELLED">CANCELLED</option>
-          <option value="COMPLETED">COMPLETED</option>
-          <option value="NOT_STARTED">NOT_STARTED</option>
-        </select>
-      </div>
-
-      <div className="form-group">
-        <label>Ngày bắt đầu</label>
-        <input
-          type="date"
-          value={selectedCycle.startDate || ""}
-          onChange={(e) =>
-            setSelectedCycle({ ...selectedCycle, startDate: e.target.value })
-          }
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Ngày kết thúc</label>
-        <input
-          type="date"
-          value={selectedCycle.endDate || ""}
-          onChange={(e) =>
-            setSelectedCycle({ ...selectedCycle, endDate: e.target.value })
-          }
-        />
-      </div>
-
-      <div className="modal-actions">
-        <button className="btn btn-primary" onClick={handleEditConfirm}>
-          Xác nhận
-        </button>
-        <button
-          className="btn btn-secondary"
-          onClick={() => setShowEditModal(false)}
-        >
-          Hủy
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-
-      {/* Delete Modal */}
-      {showDeleteModal && (
         <div className="modal-overlay">
           <div className="modal">
-            <h3>{deleteMessage}</h3>
-            <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>
-              Đóng
-            </button>
+            <h3>Sửa kỳ đánh giá</h3>
+            <div className="form-group">
+              <label>Tên kỳ</label>
+              <input
+                type="text"
+                value={selectedCycle.name || ""}
+                onChange={(e) =>
+                  setSelectedCycle({ ...selectedCycle, name: e.target.value })
+                }
+              />
+            </div>
+            <div className="form-group">
+              <label>Mô tả</label>
+              <input
+                type="text"
+                value={selectedCycle.description || ""}
+                onChange={(e) =>
+                  setSelectedCycle({ ...selectedCycle, description: e.target.value })
+                }
+              />
+            </div>
+            <div className="form-group">
+              <label>Trạng thái</label>
+              <select
+                value={selectedCycle.status || "ACTIVE"}
+                onChange={(e) =>
+                  setSelectedCycle({ ...selectedCycle, status: e.target.value })
+                }
+              >
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="CANCELLED">CANCELLED</option>
+                <option value="COMPLETED">COMPLETED</option>
+                <option value="NOT_STARTED">NOT_STARTED</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Ngày bắt đầu</label>
+              <input
+                type="date"
+                value={selectedCycle.startDate || ""}
+                onChange={(e) =>
+                  setSelectedCycle({ ...selectedCycle, startDate: e.target.value })
+                }
+              />
+            </div>
+            <div className="form-group">
+              <label>Ngày kết thúc</label>
+              <input
+                type="date"
+                value={selectedCycle.endDate || ""}
+                onChange={(e) =>
+                  setSelectedCycle({ ...selectedCycle, endDate: e.target.value })
+                }
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn-primary" onClick={handleEditConfirm}>
+                Xác nhận
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowEditModal(false)}
+              >
+                Hủy
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* View Modal */}
       {showViewModal && selectedCycle && (
         <div className="modal-overlay">
           <div className="modal">
             <h3>Thông tin kỳ đánh giá</h3>
             <table className="excel-table">
               <tbody>
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>Tên kỳ</td>
-                  <td>{selectedCycle.name}</td>
-                </tr>
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>Mô tả</td>
-                  <td>{selectedCycle.description}</td>
-                </tr>
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>Trạng thái</td>
-                  <td>{selectedCycle.status}</td>
-                </tr>
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>Ngày bắt đầu</td>
-                  <td>{selectedCycle.startDate}</td>
-                </tr>
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>Ngày kết thúc</td>
-                  <td>{selectedCycle.endDate}</td>
-                </tr>
-                             <tr>
-                  <td style={{ fontWeight: "bold" }}>Ngày tạo</td>
-                  <td>{formatDateTime(selectedCycle.createdAt)}</td>
-                </tr>
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>Ngày cập nhật</td>
-                  <td>{formatDateTime(selectedCycle.updatedAt)}</td>
-                </tr>
-                <tr><td style={{ fontWeight: "bold" }}>Người tạo</td><td>{selectedCycle.createdBy}</td></tr>
-                <tr><td style={{ fontWeight: "bold" }}>Người cập nhật</td><td>{selectedCycle.updatedBy}</td></tr>
+                <tr><td><b>Tên kỳ</b></td><td>{selectedCycle.name}</td></tr>
+                <tr><td><b>Mô tả</b></td><td>{selectedCycle.description}</td></tr>
+                <tr><td><b>Trạng thái</b></td><td>{selectedCycle.status}</td></tr>
+                <tr><td><b>Ngày bắt đầu</b></td><td>{selectedCycle.startDate}</td></tr>
+                <tr><td><b>Ngày kết thúc</b></td><td>{selectedCycle.endDate}</td></tr>
+                <tr><td><b>Ngày tạo</b></td><td>{formatDateTime(selectedCycle.createdAt)}</td></tr>
+                <tr><td><b>Ngày cập nhật</b></td><td>{formatDateTime(selectedCycle.updatedAt)}</td></tr>
+                <tr><td><b>Người tạo</b></td><td>{selectedCycle.createdBy}</td></tr>
+                <tr><td><b>Người cập nhật</b></td><td>{selectedCycle.updatedBy}</td></tr>
               </tbody>
             </table>
             <button className="btn btn-secondary" onClick={() => setShowViewModal(false)}>
@@ -451,7 +386,6 @@ const EvaluationCycleTable = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };

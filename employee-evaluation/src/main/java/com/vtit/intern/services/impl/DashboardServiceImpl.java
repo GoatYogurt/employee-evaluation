@@ -17,6 +17,7 @@ import com.vtit.intern.dtos.dashboard.EvaluatedEmployeesResponseDTO;
 import com.vtit.intern.dtos.responses.ResponseDTO;
 import org.springframework.http.ResponseEntity;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -97,13 +98,15 @@ public class DashboardServiceImpl implements DashboardService {
     public ResponseEntity<ResponseDTO<List<AverageScoreResponseDTO>>> getAverageScoresOverCycles() {
         List<Object[]> raw = evaluationRepository.getAverageScoresOverCyclesRaw();
 
-        List<AverageScoreResponseDTO> responseDTOs = raw.stream().map(
-                r -> new AverageScoreResponseDTO(
+        List<AverageScoreResponseDTO> responseDTOs = raw.stream()
+                .map(r -> new AverageScoreResponseDTO(
                         ((Number) r[0]).longValue(),
                         (String) r[1],
                         ((Number) r[2]).doubleValue()
-                )
-        ).toList();
+                ))
+                .sorted(Comparator.comparing(AverageScoreResponseDTO::getEvaluationCycleId))
+                .toList();
+
 
         return ResponseUtil.success(responseDTOs);
     }

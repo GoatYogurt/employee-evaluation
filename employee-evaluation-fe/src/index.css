@@ -78,6 +78,50 @@
   box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
 }
 
+/* Tooltip nằm bên phải icon */
+.tooltip {
+  position: absolute;
+  left: 65px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: red;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  font-size: 0.9rem;
+  border: 2px solid red;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+  transition: opacity 0.3s ease, left 0.3s ease;
+  z-index: 10;
+}
+
+/* Mũi tên nhỏ dạng bong bóng tin nhắn */
+.tooltip::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -8px; /* vị trí mũi tên so với tooltip */
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 8px solid red; /* cùng màu với tooltip */
+}
+
+/* Khi hover icon thì hiện tooltip */
+.nav-icon:hover .tooltip {
+  opacity: 1;
+  left: 50px; /* trượt nhẹ ra bên phải khi hiện */
+};
+
+
+
+/*-----------------------------*/
+
 .criterion-table {
   background: #fff !important;
   color: #111 !important;

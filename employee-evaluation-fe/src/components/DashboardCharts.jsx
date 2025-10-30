@@ -2,11 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "../css/chart.css";
 
-import {
-  Bar,
-  Pie,
-  Line,
-} from "react-chartjs-2";
+import { Bar, Pie, Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -40,6 +36,8 @@ const DashboardCharts = () => {
   const [topEmployees, setTopEmployees] = useState([]);
   const [bottomEmployees, setBottomEmployees] = useState([]);
   const [averageScores, setAverageScores] = useState([]);
+  const [topLimit, setTopLimit] = useState(5);
+  const [bottomLimit, setBottomLimit] = useState(5);
 
   const api = axios.create({
     baseURL: "http://localhost:8080/api/dashboard",
@@ -48,6 +46,7 @@ const DashboardCharts = () => {
     },
   });
 
+  // Lấy danh sách chu kỳ
   useEffect(() => {
     const fetchCycles = async () => {
       try {
@@ -64,6 +63,7 @@ const DashboardCharts = () => {
     fetchCycles();
   }, []);
 
+  // Lấy dữ liệu chính khi chọn chu kỳ hoặc thay đổi limit
   useEffect(() => {
     if (!selectedCycle) return;
 
@@ -72,8 +72,8 @@ const DashboardCharts = () => {
         const [progressRes, distributionRes, topRes, bottomRes] = await Promise.all([
           api.get(`/progress/${selectedCycle}`),
           api.get(`/distribution/${selectedCycle}`),
-          api.get(`/top/${selectedCycle}?limit=5`),
-          api.get(`/bottom/${selectedCycle}?limit=5`),
+          api.get(`/top/${selectedCycle}?limit=${topLimit}`),
+          api.get(`/bottom/${selectedCycle}?limit=${bottomLimit}`),
         ]);
 
         setProgress(progressRes.data.data);
@@ -86,18 +86,21 @@ const DashboardCharts = () => {
     };
 
     fetchData();
-  }, [selectedCycle]);
+  }, [selectedCycle, topLimit, bottomLimit]);
 
-  const progressData = progress && {
-    labels: ["Đã đánh giá", "Chưa đánh giá"],
-    datasets: [
-      {
-        data: [progress.evaluatedCount, progress.notEvaluatedCount],
-        backgroundColor: ["#36A2EB", "#FF6384"],
-      },
-    ],
-  };
+  // Biểu đồ tiến độ
+  const progressData =
+    progress && {
+      labels: ["Đã đánh giá", "Chưa đánh giá"],
+      datasets: [
+        {
+          data: [progress.evaluatedCount, progress.notEvaluatedCount],
+          backgroundColor: ["#36A2EB", "#FF6384"],
+        },
+      ],
+    };
 
+  // Biểu đồ phân bố điểm
   const distributionData = {
     labels: distribution.map((d) => d.range),
     datasets: [
@@ -109,28 +112,7 @@ const DashboardCharts = () => {
     ],
   };
 
-  const topData = {
-    labels: topEmployees.map((e) => e.employeeName),
-    datasets: [
-      {
-        label: "Điểm trung bình",
-        data: topEmployees.map((e) => e.averageScore),
-        backgroundColor: "#66BB6A",
-      },
-    ],
-  };
-
-  const bottomData = {
-    labels: bottomEmployees.map((e) => e.employeeName),
-    datasets: [
-      {
-        label: "Điểm trung bình",
-        data: bottomEmployees.map((e) => e.averageScore),
-        backgroundColor: "#EF5350",
-      },
-    ],
-  };
-
+  // Biểu đồ đường điểm trung bình
   const averageScoreData = {
     labels: averageScores.map((c) => c.evaluationCycleName),
     datasets: [
@@ -146,7 +128,17 @@ const DashboardCharts = () => {
 
   return (
     <div className="chart-container">
-      <h1 className="chart-text">📊 Báo cáo tổng quát</h1>
+      <h1 className="chart-text">Báo cáo tổng quát</h1>
+
+
+      <div className="eva-chart-form">
+        <div className="eva-chart">
+          <h2 className="text-xl font-bold mb-3">Điểm trung bình qua các chu kỳ</h2>
+          <div className="h-[350px]">
+            <Line data={averageScoreData} options={{ maintainAspectRatio: false }} />
+          </div>
+        </div>
+      </div>
 
       {/* Bộ lọc chu kỳ */}
       <div className="chart-filter">
@@ -164,67 +156,130 @@ const DashboardCharts = () => {
         </select>
       </div>
 
-      {/* Lưới chia 2 cột */}
       <div className="chart-grid">
-         {/* Chart 1 */}
+        {/* Chart 1 */}
         <div className="chart-box-1">
-            <h2 className="text-lg font-semibold mb-2 self-start">Tiến độ đánh giá</h2>
-            <div className="w-[250px] h-[250px] flex items-center justify-center">
+          <h2 className="text-lg font-semibold mb-2 self-start">Tiến độ đánh giá</h2>
+          <div className="w-[250px] h-[250px] flex items-center justify-center">
             {progressData ? (
-                <Pie
+              <Pie
                 data={progressData}
                 options={{
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: "bottom" } },
+                  maintainAspectRatio: false,
+                  plugins: { legend: { position: "bottom" } },
                 }}
-                />
+              />
             ) : (
-                <p>Đang tải...</p>
+              <p>Đang tải...</p>
             )}
-            </div>
+          </div>
         </div>
 
         {/* Chart 2 */}
         <div className="chart-box-2">
-            <h2 className="text-lg font-semibold mb-2">Phân bố điểm</h2>
-            <div className="h-[220px]">
+          <h2 className="text-lg font-semibold mb-2">Phân bố điểm</h2>
+          <div className="h-[220px]">
             <Bar
-                data={distributionData}
-                options={{
+              data={distributionData}
+              options={{
                 maintainAspectRatio: false,
                 scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                  y: { beginAtZero: true, ticks: { stepSize: 1 } },
                 },
                 plugins: { legend: { display: false } },
-                }}
+              }}
             />
-            </div>
-        </div>
-
-        {/* Chart 3 */}
-        <div className="chart-box-3">
-          <h2 className="text-xl font-bold mb-3">Top nhân viên</h2>
-          <div className="h-[300px]">
-            <Bar data={topData} options={{ maintainAspectRatio: false }} />
-          </div>
-        </div>
-
-        {/* Chart 4 */}
-        <div className="chart-box-4">
-          <h2 className="text-xl font-bold mb-3">Nhân viên điểm thấp</h2>
-          <div className="h-[300px]">
-            <Bar data={bottomData} options={{ maintainAspectRatio: false }} />
-          </div>
-        </div>
-
-        {/* Chart 5 */}
-        <div className="chart-box-5">
-          <h2 className="text-xl font-bold mb-3">Điểm trung bình qua các chu kỳ</h2>
-          <div className="h-[350px]">
-            <Line data={averageScoreData} options={{ maintainAspectRatio: false }} />
           </div>
         </div>
       </div>
+
+    <div className="top-bottom">
+        <div className="top-list">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-xl font-bold">Nhân viên điểm cao</h2>
+            <select
+              value={topLimit}
+              onChange={(e) => setTopLimit(Number(e.target.value))}
+              className="border rounded-md p-1 text-sm"
+            >
+              {[3, 5, 10, 15].map((n) => (
+                <option key={n} value={n}>
+                  Hiển thị {n}
+                </option>
+              ))}
+            </select>
+          </div>
+          <table className="w-full text-sm border border-gray-200 rounded-lg">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-2 text-left">#</th>
+                <th className="p-2 text-left">Tên nhân viên</th>
+                <th className="p-2 text-right">Điểm trung bình</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topEmployees.length > 0 ? (
+                topEmployees.map((emp, i) => (
+                  <tr key={i} className="border-t hover:bg-gray-50">
+                    <td className="p-2">{i + 1}</td>
+                    <td className="p-2">{emp.employeeName}</td>
+                    <td className="p-2 text-right">{emp.averageScore.toFixed(2)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3" className="p-3 text-center text-gray-500">
+                    Không có dữ liệu
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="bottom-list">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-xl font-bold">Nhân viên điểm thấp</h2>
+            <select
+              value={bottomLimit}
+              onChange={(e) => setBottomLimit(Number(e.target.value))}
+              className="border rounded-md p-1 text-sm"
+            >
+              {[3, 5, 10, 15].map((n) => (
+                <option key={n} value={n}>
+                  Hiển thị {n}
+                </option>
+              ))}
+            </select>
+          </div>
+          <table className="w-full text-sm border border-gray-200 rounded-lg">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-2 text-left">#</th>
+                <th className="p-2 text-left">Tên nhân viên</th>
+                <th className="p-2 text-right">Điểm trung bình</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bottomEmployees.length > 0 ? (
+                bottomEmployees.map((emp, i) => (
+                  <tr key={i} className="border-t hover:bg-gray-50">
+                    <td className="p-2">{i + 1}</td>
+                    <td className="p-2">{emp.employeeName}</td>
+                    <td className="p-2 text-right">{emp.averageScore.toFixed(2)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3" className="p-3 text-center text-gray-500">
+                    Không có dữ liệu
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+    </div>
     </div>
   );
 };

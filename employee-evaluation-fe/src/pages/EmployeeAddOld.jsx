@@ -6,13 +6,13 @@ import { ToastContext } from "../contexts/ToastProvider";
 
 const EmployeeAddOld = () => {
   const navigate = useNavigate();
-  const [employees, setEmployees] = useState([]); // ở đây sẽ chứa toàn bộ nhân viên **chưa thuộc dự án**
+  const [employees, setEmployees] = useState([]); 
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortOrder, setSortOrder] = useState("asc"); // asc hoặc desc
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const projectId = queryParams.get("projectId");
 
-  // phân trang nội bộ trên FE
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
@@ -22,13 +22,11 @@ const EmployeeAddOld = () => {
     if (projectId) {
       fetchEmployees();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
-  // ------------------ FETCH EMPLOYEES (lấy toàn bộ, rồi lọc những người đã thuộc dự án) ------------------
+  // ------------------ FETCH EMPLOYEES ------------------
   const fetchEmployees = async () => {
     try {
-      // Lấy toàn bộ nhân viên (đặt size lớn để đảm bảo lấy hết)
       const resAll = await fetch("http://localhost:8080/api/employees?size=10000", {
         method: "GET",
         headers: {
@@ -61,7 +59,6 @@ const EmployeeAddOld = () => {
         const txt = await resProject.text();
         console.error("Fetch project employees failed:", resProject.status, txt);
         toast.error("Không thể tải thông tin dự án!");
-        // nếu không lấy được danh sách project, chúng ta vẫn hiển thị allEmployees (an toàn)
         setEmployees(normalizeEmployees(allEmployees));
         return;
       }
@@ -77,7 +74,7 @@ const EmployeeAddOld = () => {
       const availableEmployees = normalizeEmployees(availableEmployeesRaw);
 
       setEmployees(availableEmployees);
-      setCurrentPage(1); // reset về trang 1 sau khi reload
+      setCurrentPage(1);
     } catch (error) {
       console.error("Fetch employees error:", error);
       toast.error("Có lỗi khi tải danh sách nhân viên!");
@@ -85,7 +82,7 @@ const EmployeeAddOld = () => {
     }
   };
 
-  // helper để normalize fields (giữ thống nhất với các component khác)
+  // ------------------ Normalize fields ------------------
   const normalizeEmployees = (list) =>
     (list || []).map((emp) => ({
       id: emp.id,
@@ -103,10 +100,6 @@ const EmployeeAddOld = () => {
 
   // ------------------ Thêm nhân viên vào dự án ------------------
   const handleAddToProject = async (employeeId) => {
-    console.log("==== Thêm nhân viên vào dự án ====");
-    console.log("projectId:", projectId);
-    console.log("employeeId:", employeeId);
-
     if (!projectId) {
       toast.error("Không xác định được dự án. Vui lòng quay lại trang trước.");
       return;
@@ -128,7 +121,6 @@ const EmployeeAddOld = () => {
       });
 
       const data = await res.json();
-      console.log("Response từ API:", data);
 
       if (!res.ok || data.code !== 200) {
         toast.error("Thêm thất bại: " + (data?.message || "Lỗi không xác định"));
@@ -136,32 +128,38 @@ const EmployeeAddOld = () => {
       }
 
       toast.success("Đã thêm nhân viên vào dự án thành công!");
-
-      // Sau khi thêm vào dự án, remove nhân viên đó khỏi danh sách hiện tại (không cần reload toàn bộ)
       setEmployees((prev) => prev.filter((e) => Number(e.id) !== Number(employeeId)));
-
-      // Nếu muốn reload đầy đủ (đảm bảo đồng bộ), có thể gọi fetchEmployees()
-      // fetchEmployees();
     } catch (error) {
       console.error("Add employee error:", error);
       toast.error("Lỗi kết nối server!");
     }
   };
 
-  // ------------------ Filter & Pagination (client-side) ------------------
-  const filteredEmployees = employees.filter((emp) =>
-    (emp.fullName || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // ------------------ Filter & Sort ------------------
+  const filteredEmployees = employees
+    .filter((emp) =>
+      (emp.fullName || "").toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) =>
+      sortOrder === "asc"
+        ? (a.fullName || "").localeCompare(b.fullName || "", "vi", { sensitivity: "base" })
+        : (b.fullName || "").localeCompare(a.fullName || "", "vi", { sensitivity: "base" })
+    );
 
+  // ------------------ Pagination ------------------
   const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentEmployees = filteredEmployees.slice(startIndex, endIndex);
 
   useEffect(() => {
-    // mỗi khi search thay đổi, reset về trang 1
     setCurrentPage(1);
   }, [searchTerm]);
+
+  // ------------------ Toggle sort order ------------------
+  const toggleSortOrder = () => {
+    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+  };
 
   // ------------------ Render ------------------
   return (
@@ -191,6 +189,10 @@ const EmployeeAddOld = () => {
             <button className="btn btn-warning" onClick={fetchEmployees}>
               <i className="fas fa-sync-alt"></i> Làm mới
             </button>
+            {/* <button className="btn btn-info" onClick={toggleSortOrder}>
+              <i className="fas fa-sort-alpha-down"></i>{" "}
+              {sortOrder === "asc" ? "A → Z" : "Z → A"}
+            </button> */}
           </div>
         </div>
 
